@@ -2,6 +2,8 @@
 
 온라인 게임의 TCP 패킷을 캡처하고, 프로토콜 정의에 따라 파싱하여 재현 가능한 로그를 생성하는 도구입니다.
 
+**관련 프로젝트:** [MMORPG Simulator](https://github.com/hcsung-aws/mmorpg-simulator) - 이 도구로 테스트할 수 있는 게임 시뮬레이터
+
 [English](#english)
 
 ## 개요
@@ -112,6 +114,8 @@ MIT License
 ---
 
 # English
+
+**Related Project:** [MMORPG Simulator](https://github.com/hcsung-aws/mmorpg-simulator) - A game simulator that can be tested with this tool
 
 ## Overview
 
