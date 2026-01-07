@@ -1,0 +1,32 @@
+{
+  "protocol": {
+    "name": "EchoClient Protocol",
+    "version": "1.0",
+    "endian": "little",
+    "header": {
+      "size_field": "size",
+      "type_field": "type"
+    }
+  },
+  "types": {
+    "PacketType": {
+      "kind": "enum",
+      "base": "int32",
+      "values": {
+        "header_type": 0,
+        "echo_type": 1
+      }
+    }
+  },
+  "packets": [
+    {
+      "type": 1,
+      "name": "EchoPacket",
+      "fields": [
+        {"name": "size", "type": "int32"},
+        {"name": "type", "type": "int32"},
+        {"name": "message", "type": "string", "length": 1025}
+      ]
+    }
+  ]
+}

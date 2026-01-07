@@ -1,0 +1,59 @@
+{
+  "protocol": {
+    "name": "Tibia/ForgottenServer",
+    "version": "13.10",
+    "endian": "little",
+    "header": {
+      "size_field": "length",
+      "type_field": "type",
+      "fields": [
+        {"name": "length", "type": "uint16", "offset": 0}
+      ]
+    }
+  },
+  "transforms": [
+    {
+      "type": "rsa",
+      "options": {
+        "private_key_file": "C:/Users/hcsung/work/forgottenserver/key.pem",
+        "offset": 6,
+        "length": 128,
+        "xtea_key_output": "xtea_key",
+        "use_raw_rsa": true
+      }
+    },
+    {
+      "type": "xtea",
+      "options": {
+        "key_from_context": "xtea_key"
+      }
+    }
+  ],
+  "packets": [
+    {
+      "type": 1,
+      "name": "LoginServerRequest",
+      "fields": []
+    },
+    {
+      "type": 10,
+      "name": "GameServerRequest",
+      "fields": []
+    },
+    {
+      "type": 15,
+      "name": "Disconnect",
+      "fields": []
+    },
+    {
+      "type": 20,
+      "name": "Ping",
+      "fields": []
+    },
+    {
+      "type": 30,
+      "name": "PingBack",
+      "fields": []
+    }
+  ]
+}
