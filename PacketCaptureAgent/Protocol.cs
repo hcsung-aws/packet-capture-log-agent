@@ -41,6 +41,9 @@ public class ProtocolInfo
     [JsonPropertyName("endian")]
     public string Endian { get; set; } = "little";
 
+    [JsonPropertyName("pack")]
+    public int Pack { get; set; } = 1;  // struct packing: 1, 2, 4, 8
+
     [JsonPropertyName("header")]
     public HeaderInfo Header { get; set; } = new();
 }
@@ -53,8 +56,27 @@ public class HeaderInfo
     [JsonPropertyName("type_field")]
     public string TypeField { get; set; } = "type";
 
+    [JsonPropertyName("size")]
+    public int? Size { get; set; }  // explicit header size (optional, auto-calculated if null)
+
     [JsonPropertyName("fields")]
     public List<HeaderFieldInfo>? Fields { get; set; }
+
+    public int GetHeaderSize()
+    {
+        if (Size.HasValue) return Size.Value;
+        if (Fields == null || Fields.Count == 0) return 4; // default
+        return Fields.Max(f => f.Offset + GetTypeSize(f.Type));
+    }
+
+    private static int GetTypeSize(string type) => type switch
+    {
+        "int8" or "uint8" => 1,
+        "int16" or "uint16" => 2,
+        "int32" or "uint32" => 4,
+        "int64" or "uint64" => 8,
+        _ => 4
+    };
 }
 
 public class HeaderFieldInfo

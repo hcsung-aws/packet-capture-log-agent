@@ -40,7 +40,7 @@ public class PacketParser
             _typeOffset = typeField?.Offset ?? 4;
             _typeType = typeField?.Type ?? "int32";
             
-            _headerSize = header.Fields.Max(f => f.Offset + GetTypeSize(f.Type));
+            _headerSize = header.GetHeaderSize();
         }
         else
         {
@@ -49,7 +49,7 @@ public class PacketParser
             _sizeType = "int32";
             _typeOffset = 4;
             _typeType = "int32";
-            _headerSize = 8;
+            _headerSize = header.GetHeaderSize();
         }
     }
 
@@ -82,14 +82,14 @@ public class PacketParser
         };
 
         if (def != null)
-            ParseFields(data, def.Fields, packet.Fields);
+            ParseFields(data, def.Fields, packet.Fields, _headerSize);
 
         return packet;
     }
 
-    private void ParseFields(byte[] data, List<FieldDefinition> fields, Dictionary<string, object> result)
+    private void ParseFields(byte[] data, List<FieldDefinition> fields, Dictionary<string, object> result, int startOffset = 0)
     {
-        int offset = 0;
+        int offset = startOffset;
         foreach (var field in fields)
         {
             int remaining = data.Length - offset;

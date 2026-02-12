@@ -161,4 +161,73 @@ public class PacketReplayer
             return false;
         }
     }
+
+    public void ReplayWithParsing(string host, int port, List<ReplayPacket> packets, ReplayOptions? options = null)
+    {
+        options ??= new ReplayOptions();
+        using var client = new TcpClient();
+        client.Connect(host, port);
+        using var stream = client.GetStream();
+        var parser = new PacketParser(_protocol);
+        var connKey = new ConnectionKey(System.Net.IPAddress.Parse(host), port, System.Net.IPAddress.Loopback, 0);
+        var tcpStream = new TcpStream(connKey);
+        
+        Console.WriteLine($"Connected to {host}:{port}");
+        Console.WriteLine($"Mode: {options.Mode}, Timeout: {options.TimeoutMs}ms\n");
+
+        var recvBuffer = new byte[65536];
+        var startTime = DateTime.Now;
+        int sent = 0, received = 0;
+
+        foreach (var pkt in packets.Where(p => p.Direction == "SEND"))
+        {
+            var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
+            stream.Write(data);
+            sent++;
+            var elapsed = DateTime.Now - startTime;
+            Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
+
+            // Receive and parse response
+            stream.ReadTimeout = options.TimeoutMs;
+            try
+            {
+                Thread.Sleep(50); // Wait for response
+                int totalRead = 0;
+                while (stream.DataAvailable)
+                {
+                    int len = stream.Read(recvBuffer, totalRead, recvBuffer.Length - totalRead);
+                    if (len == 0) break;
+                    totalRead += len;
+                    Thread.Sleep(10);
+                }
+
+                if (totalRead > 0)
+                {
+                    elapsed = DateTime.Now - startTime;
+                    tcpStream.Append(recvBuffer.AsSpan(0, totalRead));
+                    
+                    // Parse received packets
+                    ParsedPacket? result;
+                    while ((result = parser.TryParse(tcpStream)) != null)
+                    {
+                        received++;
+                        Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
+                        foreach (var field in result.Fields)
+                        {
+                            var val = field.Value;
+                            string display = val is string s ? $"\"{s}\"" : val?.ToString() ?? "null";
+                            Console.WriteLine($"    {field.Key}: {display}");
+                        }
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                Console.WriteLine($"  ⚠ Response timeout");
+            }
+        }
+
+        Console.WriteLine($"\n=== Replay Result ===");
+        Console.WriteLine($"Sent: {sent}, Received: {received}");
+    }
 }

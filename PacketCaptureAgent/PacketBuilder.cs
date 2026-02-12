@@ -40,14 +40,36 @@ public class PacketBuilder
                 merged[kv.Key] = kv.Value;
 
         using var ms = new MemoryStream();
+        
+        // Write header first
+        var header = _protocol.Protocol.Header;
+        foreach (var hf in header.Fields!)
+        {
+            object? val = hf.Name == header.TypeField ? def.Type : 0;
+            WriteHeaderField(ms, hf.Type, val);
+        }
+        
+        // Write payload fields
         foreach (var field in def.Fields)
             WriteField(ms, field, merged.GetValueOrDefault(field.Name), merged);
 
         var data = ms.ToArray();
         
-        // size 필드 업데이트
+        // Update size field
         WriteSizeToBuffer(data, data.Length);
         return data;
+    }
+
+    private void WriteHeaderField(MemoryStream ms, string type, object? value)
+    {
+        switch (type)
+        {
+            case "uint16": WriteUInt16(ms, Convert.ToUInt16(value ?? 0)); break;
+            case "int16": WriteInt16(ms, Convert.ToInt16(value ?? 0)); break;
+            case "uint32": WriteUInt32(ms, Convert.ToUInt32(value ?? 0)); break;
+            case "int32": WriteInt32(ms, Convert.ToInt32(value ?? 0)); break;
+            default: WriteUInt16(ms, Convert.ToUInt16(value ?? 0)); break;
+        }
     }
 
     private void WriteSizeToBuffer(byte[] data, int size)

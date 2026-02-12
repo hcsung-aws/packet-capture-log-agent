@@ -1,31 +1,38 @@
 {
   "protocol": {
-    "name": "MMORPG Simulator",
+    "name": "MMORPG Simulator Protocol",
     "version": "1.0",
     "endian": "little",
+    "pack": 1,
     "header": {
-      "size_field": "length",
-      "type_field": "type",
+      "size": 4,
       "fields": [
         {"name": "length", "type": "uint16", "offset": 0},
         {"name": "type", "type": "uint16", "offset": 2}
       ]
     }
   },
+  "types": {
+    "CharListEntry": {
+      "kind": "struct",
+      "fields": [
+        {"name": "charUid", "type": "uint64"},
+        {"name": "name", "type": "string", "length": 20},
+        {"name": "charType", "type": "uint8"},
+        {"name": "level", "type": "uint16"}
+      ]
+    }
+  },
   "packets": [
     {
-      "type": "0x0101",
-      "name": "CS_LOGIN",
-      "direction": "C2S",
+      "type": 257, "name": "CS_LOGIN", "direction": "C2S",
       "fields": [
         {"name": "accountId", "type": "string", "length": 32},
         {"name": "password", "type": "string", "length": 32}
       ]
     },
     {
-      "type": "0x0102",
-      "name": "SC_LOGIN_RESULT",
-      "direction": "S2C",
+      "type": 258, "name": "SC_LOGIN_RESULT", "direction": "S2C",
       "fields": [
         {"name": "success", "type": "uint8"},
         {"name": "accountUid", "type": "uint64"},
@@ -33,29 +40,40 @@
       ]
     },
     {
-      "type": "0x0103",
-      "name": "CS_LOGOUT",
-      "direction": "C2S",
+      "type": 513, "name": "CS_CHAR_LIST", "direction": "C2S",
       "fields": []
     },
     {
-      "type": "0x0104",
-      "name": "SC_LOGOUT_RESULT",
-      "direction": "S2C",
-      "fields": []
+      "type": 514, "name": "SC_CHAR_LIST", "direction": "S2C",
+      "fields": [
+        {"name": "count", "type": "uint8"},
+        {"name": "chars", "type": "array", "length": 5, "element": "CharListEntry"}
+      ]
     },
     {
-      "type": "0x0203",
-      "name": "CS_CHAR_SELECT",
-      "direction": "C2S",
+      "type": 515, "name": "CS_CHAR_CREATE", "direction": "C2S",
+      "fields": [
+        {"name": "charUid", "type": "uint64"},
+        {"name": "name", "type": "string", "length": 20},
+        {"name": "charType", "type": "uint8"}
+      ]
+    },
+    {
+      "type": 516, "name": "SC_CHAR_CREATE_RESULT", "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "charUid", "type": "uint64"},
+        {"name": "message", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 517, "name": "CS_CHAR_SELECT", "direction": "C2S",
       "fields": [
         {"name": "charUid", "type": "uint64"}
       ]
     },
     {
-      "type": "0x0204",
-      "name": "SC_CHAR_INFO",
-      "direction": "S2C",
+      "type": 518, "name": "SC_CHAR_INFO", "direction": "S2C",
       "fields": [
         {"name": "charUid", "type": "uint64"},
         {"name": "name", "type": "string", "length": 32},
@@ -64,30 +82,43 @@
         {"name": "posX", "type": "int16"},
         {"name": "posY", "type": "int16"},
         {"name": "hp", "type": "uint16"},
-        {"name": "maxHp", "type": "uint16"}
+        {"name": "maxHp", "type": "uint16"},
+        {"name": "gold", "type": "uint64"}
       ]
     },
     {
-      "type": "0x0205",
-      "name": "SC_CHAR_LEAVE",
-      "direction": "S2C",
+      "type": 519, "name": "SC_CHAR_LEAVE", "direction": "S2C",
       "fields": [
         {"name": "charUid", "type": "uint64"}
       ]
     },
     {
-      "type": "0x0301",
-      "name": "CS_MOVE",
-      "direction": "C2S",
+      "type": 769, "name": "CS_ATTENDANCE_CHECK", "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 770, "name": "SC_ATTENDANCE_INFO", "direction": "S2C",
+      "fields": [
+        {"name": "todayAttended", "type": "uint8"},
+        {"name": "rewardGold", "type": "uint32"}
+      ]
+    },
+    {
+      "type": 771, "name": "SC_ATTENDANCE_RESULT", "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "rewardGold", "type": "uint32"}
+      ]
+    },
+    {
+      "type": 1025, "name": "CS_MOVE", "direction": "C2S",
       "fields": [
         {"name": "dirX", "type": "int8"},
         {"name": "dirY", "type": "int8"}
       ]
     },
     {
-      "type": "0x0302",
-      "name": "SC_MOVE_RESULT",
-      "direction": "S2C",
+      "type": 1026, "name": "SC_MOVE_RESULT", "direction": "S2C",
       "fields": [
         {"name": "success", "type": "uint8"},
         {"name": "posX", "type": "int16"},
@@ -95,17 +126,13 @@
       ]
     },
     {
-      "type": "0x0401",
-      "name": "CS_ATTACK",
-      "direction": "C2S",
+      "type": 1281, "name": "CS_ATTACK", "direction": "C2S",
       "fields": [
         {"name": "targetUid", "type": "uint64"}
       ]
     },
     {
-      "type": "0x0402",
-      "name": "SC_ATTACK_RESULT",
-      "direction": "S2C",
+      "type": 1282, "name": "SC_ATTACK_RESULT", "direction": "S2C",
       "fields": [
         {"name": "success", "type": "uint8"},
         {"name": "targetUid", "type": "uint64"},
@@ -114,9 +141,7 @@
       ]
     },
     {
-      "type": "0x0403",
-      "name": "SC_NPC_SPAWN",
-      "direction": "S2C",
+      "type": 1283, "name": "SC_NPC_SPAWN", "direction": "S2C",
       "fields": [
         {"name": "npcUid", "type": "uint64"},
         {"name": "posX", "type": "int16"},
@@ -126,27 +151,21 @@
       ]
     },
     {
-      "type": "0x0404",
-      "name": "SC_NPC_DEATH",
-      "direction": "S2C",
+      "type": 1284, "name": "SC_NPC_DEATH", "direction": "S2C",
       "fields": [
         {"name": "npcUid", "type": "uint64"},
         {"name": "expReward", "type": "uint32"}
       ]
     },
     {
-      "type": "0x0405",
-      "name": "SC_EXP_UPDATE",
-      "direction": "S2C",
+      "type": 1285, "name": "SC_EXP_UPDATE", "direction": "S2C",
       "fields": [
         {"name": "exp", "type": "uint32"},
         {"name": "maxExp", "type": "uint32"}
       ]
     },
     {
-      "type": "0x0406",
-      "name": "SC_LEVEL_UP",
-      "direction": "S2C",
+      "type": 1286, "name": "SC_LEVEL_UP", "direction": "S2C",
       "fields": [
         {"name": "level", "type": "uint16"},
         {"name": "hp", "type": "uint16"},
@@ -156,21 +175,15 @@
       ]
     },
     {
-      "type": "0xFF01",
-      "name": "CS_HEARTBEAT",
-      "direction": "C2S",
+      "type": 65281, "name": "CS_HEARTBEAT", "direction": "C2S",
       "fields": []
     },
     {
-      "type": "0xFF02",
-      "name": "SC_HEARTBEAT",
-      "direction": "S2C",
+      "type": 65282, "name": "SC_HEARTBEAT", "direction": "S2C",
       "fields": []
     },
     {
-      "type": "0xFF03",
-      "name": "SC_ERROR",
-      "direction": "S2C",
+      "type": 65283, "name": "SC_ERROR", "direction": "S2C",
       "fields": [
         {"name": "errorCode", "type": "uint16"},
         {"name": "message", "type": "string", "length": 64}

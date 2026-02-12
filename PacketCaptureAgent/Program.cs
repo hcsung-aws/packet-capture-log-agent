@@ -116,7 +116,7 @@ class Program
         }
 
         Console.WriteLine($"\n{parts[0]}:{port}로 재현 시작...\n");
-        replayer.Replay(parts[0], port, packets, options);
+        replayer.ReplayWithParsing(parts[0], port, packets, options);
     }
 
     static void RunCaptureMode(string? protocolPath)
