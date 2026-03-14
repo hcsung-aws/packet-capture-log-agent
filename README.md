@@ -107,6 +107,10 @@ packet-capture-log-agent/
 - 암호화된 패킷 미지원
 - 127.0.0.1 loopback 캡처 불가 (Windows 제한)
 
+## 개발 히스토리
+
+이 프로젝트는 [Mickey (AI Developer Agent)](https://github.com/hcsung-aws/ai-developer-mickey)를 활용하여 개발되었습니다. 세션별 작업 기록은 `MICKEY-*-SESSION.md` 파일에서 확인할 수 있습니다.
+
 ## 라이선스
 
 MIT License
@@ -160,6 +164,10 @@ PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 - TCP only (no UDP support)
 - No encrypted packet support
 - Cannot capture 127.0.0.1 loopback (Windows limitation)
+
+## Development History
+
+This project was developed with [Mickey (AI Developer Agent)](https://github.com/hcsung-aws/ai-developer-mickey). Session logs are available in `MICKEY-*-SESSION.md` files.
 
 ## License
 
