@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
 
 namespace PacketCaptureAgent;
 
@@ -50,21 +49,6 @@ public class PacketFormatter
         
         sb.Append($"  raw: {Convert.ToHexString(packet.RawData)}");
         return sb.ToString();
-    }
-
-    public string FormatJson(ParsedPacket packet, ConnectionKey conn, string direction)
-    {
-        var obj = new
-        {
-            timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff"),
-            direction,
-            packet = packet.Name,
-            src = $"{conn.SrcIP}:{conn.SrcPort}",
-            dst = $"{conn.DstIP}:{conn.DstPort}",
-            fields = packet.Fields,
-            raw = Convert.ToHexString(packet.RawData)
-        };
-        return JsonSerializer.Serialize(obj);
     }
 
     private string FormatValue(string fieldName, object value)

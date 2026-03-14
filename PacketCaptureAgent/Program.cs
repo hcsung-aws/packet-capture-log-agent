@@ -26,6 +26,9 @@ class Program
         {
             switch (args[i])
             {
+                case "-h" or "--help":
+                    ShowUsage();
+                    return;
                 case "-p" or "--protocol" when i + 1 < args.Length:
                     protocolPath = args[++i];
                     break;
@@ -116,7 +119,8 @@ class Program
         }
 
         Console.WriteLine($"\n{parts[0]}:{port}로 재현 시작...\n");
-        replayer.ReplayWithParsing(parts[0], port, packets, options);
+        var handler = new ParsingResponseHandler(protocol, parts[0], port);
+        replayer.Replay(parts[0], port, packets, handler, options);
     }
 
     static void RunCaptureMode(string? protocolPath)

@@ -102,7 +102,7 @@
         {
           "name": "chars",
           "type": "array",
-          "length": 5,
+          "count_field": "count",
           "element": "CharListEntry"
         }
       ]

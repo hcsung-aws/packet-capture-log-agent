@@ -15,6 +15,67 @@ public class ReplayOptions
     public Dictionary<string, object>? Overrides { get; set; }
 }
 
+/// <summary>응답 처리 전략. 코어 리플레이 루프와 응답 해석을 분리.</summary>
+public interface IResponseHandler
+{
+    /// <summary>수신 데이터 처리. 반환값: 수신 패킷 수.</summary>
+    int OnResponse(byte[] data, int length, ReplayContext context);
+}
+
+/// <summary>리플레이 중 공유되는 세션 상태.</summary>
+public class ReplayContext
+{
+    public TimeSpan Elapsed { get; set; }
+    /// <summary>응답값 저장 → 다음 패킷 Overrides에 동적 주입 가능.</summary>
+    public Dictionary<string, object> SessionState { get; } = new();
+}
+
+/// <summary>바이트 크기만 출력하는 기본 핸들러.</summary>
+public class RawResponseHandler : IResponseHandler
+{
+    public int OnResponse(byte[] data, int length, ReplayContext context)
+    {
+        Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV ({length} bytes)");
+        return 1;
+    }
+}
+
+/// <summary>프로토콜 파싱 후 필드까지 출력하는 핸들러.</summary>
+public class ParsingResponseHandler : IResponseHandler
+{
+    private readonly PacketParser _parser;
+    private readonly TcpStream _tcpStream;
+
+    public ParsingResponseHandler(ProtocolDefinition protocol, string host, int port)
+    {
+        _parser = new PacketParser(protocol);
+        var connKey = new ConnectionKey(System.Net.IPAddress.Parse(host), port, System.Net.IPAddress.Loopback, 0);
+        _tcpStream = new TcpStream(connKey);
+    }
+
+    public int OnResponse(byte[] data, int length, ReplayContext context)
+    {
+        _tcpStream.Append(data.AsSpan(0, length));
+        int count = 0;
+        ParsedPacket? result;
+        while ((result = _parser.TryParse(_tcpStream)) != null)
+        {
+            count++;
+            Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
+            foreach (var field in result.Fields)
+            {
+                var val = field.Value;
+                string display = val is string s ? $"\"{s}\"" : val?.ToString() ?? "null";
+                Console.WriteLine($"    {field.Key}: {display}");
+            }
+            // 응답 필드를 SessionState에 저장 (동적 주입용)
+            foreach (var field in result.Fields)
+                context.SessionState[$"{result.Name}.{field.Key}"] = field.Value;
+        }
+        return count;
+    }
+}
+
 public class PacketReplayer
 {
     private readonly ProtocolDefinition _protocol;
@@ -85,61 +146,57 @@ public class PacketReplayer
         return valueStr;
     }
 
-    public void Replay(string host, int port, List<ReplayPacket> packets, ReplayOptions? options = null)
+    /// <summary>코어 리플레이 루프. 타이밍·송수신 시퀀싱을 담당하고, 응답 처리는 handler에 위임.</summary>
+    public void Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null)
     {
         options ??= new ReplayOptions();
         using var client = new TcpClient();
         client.Connect(host, port);
         using var stream = client.GetStream();
-        
+
         Console.WriteLine($"Connected to {host}:{port}");
         Console.WriteLine($"Mode: {options.Mode}, Timeout: {options.TimeoutMs}ms, Speed: {options.Speed}x\n");
 
         var recvBuffer = new byte[65536];
         var startTime = DateTime.Now;
+        var context = new ReplayContext();
         int sent = 0, received = 0;
 
         for (int i = 0; i < packets.Count; i++)
         {
             var pkt = packets[i];
-            
-            if (pkt.Direction == "SEND")
+            if (pkt.Direction != "SEND") continue;
+
+            // 타이밍 대기 (timing/hybrid 모드)
+            if (options.Mode != ReplayMode.Response && i > 0)
             {
-                // 시간 간격 대기 (timing/hybrid 모드)
-                if (options.Mode != ReplayMode.Response && i > 0)
+                var prev = packets.Take(i).LastOrDefault(p => p.Direction == "SEND");
+                if (prev != null)
                 {
-                    var delay = (pkt.Timestamp - packets[i - 1].Timestamp) / options.Speed;
+                    var delay = (pkt.Timestamp - prev.Timestamp) / options.Speed;
                     if (delay > TimeSpan.Zero)
                         Thread.Sleep(delay);
                 }
+            }
 
-                var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
-                stream.Write(data);
-                sent++;
-                var elapsed = DateTime.Now - startTime;
-                Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
+            var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
+            stream.Write(data);
+            sent++;
+            context.Elapsed = DateTime.Now - startTime;
+            Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
 
-                // 응답 대기 (response/hybrid 모드)
-                if (options.Mode != ReplayMode.Timing)
+            // 응답 대기 (response/hybrid 모드)
+            if (options.Mode != ReplayMode.Timing)
+            {
+                bool expectResponse = packets.Skip(i + 1).Any(p => p.Direction == "RECV");
+                if (expectResponse && WaitForResponse(stream, recvBuffer, options.TimeoutMs, out var recvLen))
                 {
-                    var nextRecv = packets.Skip(i + 1).FirstOrDefault(p => p.Direction == "RECV");
-                    if (nextRecv != null)
-                    {
-                        if (WaitForResponse(stream, recvBuffer, options.TimeoutMs, out var recvLen))
-                        {
-                            received++;
-                            elapsed = DateTime.Now - startTime;
-                            Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] RECV ({recvLen} bytes) OK");
-                            
-                            // RECV 패킷 인덱스까지 스킵
-                            var recvIdx = packets.FindIndex(i + 1, p => p.Direction == "RECV");
-                            if (recvIdx > i) i = recvIdx;
-                        }
-                        else
-                        {
-                            Console.WriteLine($"  ⚠ Response timeout ({options.TimeoutMs}ms)");
-                        }
-                    }
+                    context.Elapsed = DateTime.Now - startTime;
+                    received += handler.OnResponse(recvBuffer, recvLen, context);
+                }
+                else if (expectResponse)
+                {
+                    Console.WriteLine($"  ⚠ Response timeout ({options.TimeoutMs}ms)");
                 }
             }
         }
@@ -160,74 +217,5 @@ public class PacketReplayer
         {
             return false;
         }
-    }
-
-    public void ReplayWithParsing(string host, int port, List<ReplayPacket> packets, ReplayOptions? options = null)
-    {
-        options ??= new ReplayOptions();
-        using var client = new TcpClient();
-        client.Connect(host, port);
-        using var stream = client.GetStream();
-        var parser = new PacketParser(_protocol);
-        var connKey = new ConnectionKey(System.Net.IPAddress.Parse(host), port, System.Net.IPAddress.Loopback, 0);
-        var tcpStream = new TcpStream(connKey);
-        
-        Console.WriteLine($"Connected to {host}:{port}");
-        Console.WriteLine($"Mode: {options.Mode}, Timeout: {options.TimeoutMs}ms\n");
-
-        var recvBuffer = new byte[65536];
-        var startTime = DateTime.Now;
-        int sent = 0, received = 0;
-
-        foreach (var pkt in packets.Where(p => p.Direction == "SEND"))
-        {
-            var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
-            stream.Write(data);
-            sent++;
-            var elapsed = DateTime.Now - startTime;
-            Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
-
-            // Receive and parse response
-            stream.ReadTimeout = options.TimeoutMs;
-            try
-            {
-                Thread.Sleep(50); // Wait for response
-                int totalRead = 0;
-                while (stream.DataAvailable)
-                {
-                    int len = stream.Read(recvBuffer, totalRead, recvBuffer.Length - totalRead);
-                    if (len == 0) break;
-                    totalRead += len;
-                    Thread.Sleep(10);
-                }
-
-                if (totalRead > 0)
-                {
-                    elapsed = DateTime.Now - startTime;
-                    tcpStream.Append(recvBuffer.AsSpan(0, totalRead));
-                    
-                    // Parse received packets
-                    ParsedPacket? result;
-                    while ((result = parser.TryParse(tcpStream)) != null)
-                    {
-                        received++;
-                        Console.WriteLine($"[{elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
-                        foreach (var field in result.Fields)
-                        {
-                            var val = field.Value;
-                            string display = val is string s ? $"\"{s}\"" : val?.ToString() ?? "null";
-                            Console.WriteLine($"    {field.Key}: {display}");
-                        }
-                    }
-                }
-            }
-            catch (IOException)
-            {
-                Console.WriteLine($"  ⚠ Response timeout");
-            }
-        }
-
-        Console.WriteLine($"\n=== Replay Result ===");
-        Console.WriteLine($"Sent: {sent}, Received: {received}");
     }
 }
