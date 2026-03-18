@@ -44,6 +44,14 @@
           "type": "uint16"
         }
       ]
+    },
+    "ShopEntry": {
+      "kind": "struct",
+      "fields": [
+        {"name": "itemId", "type": "uint16"},
+        {"name": "itemName", "type": "string", "length": 32},
+        {"name": "price", "type": "uint32"}
+      ]
     }
   },
   "packets": [
@@ -356,6 +364,10 @@
         {
           "name": "expReward",
           "type": "uint32"
+        },
+        {
+          "name": "goldReward",
+          "type": "uint32"
         }
       ]
     },
@@ -399,6 +411,130 @@
           "name": "def",
           "type": "uint16"
         }
+      ]
+    },
+    {
+      "type": 1537,
+      "name": "CS_CHAT",
+      "direction": "C2S",
+      "fields": [
+        {"name": "channel", "type": "uint8"},
+        {"name": "targetName", "type": "string", "length": 20},
+        {"name": "message", "type": "string", "length": 128}
+      ]
+    },
+    {
+      "type": 1538,
+      "name": "SC_CHAT",
+      "direction": "S2C",
+      "fields": [
+        {"name": "channel", "type": "uint8"},
+        {"name": "senderName", "type": "string", "length": 20},
+        {"name": "message", "type": "string", "length": 128}
+      ]
+    },
+    {
+      "type": 1793,
+      "name": "SC_ITEM_DROP",
+      "direction": "S2C",
+      "fields": [
+        {"name": "slot", "type": "uint8"},
+        {"name": "itemId", "type": "uint16"},
+        {"name": "itemName", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 1794,
+      "name": "CS_ITEM_USE",
+      "direction": "C2S",
+      "fields": [
+        {"name": "slot", "type": "uint8"}
+      ]
+    },
+    {
+      "type": 1795,
+      "name": "SC_ITEM_USE_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {"name": "charUid", "type": "uint64"},
+        {"name": "charName", "type": "string", "length": 20},
+        {"name": "itemName", "type": "string", "length": 32},
+        {"name": "effectType", "type": "uint8"},
+        {"name": "effectValue", "type": "uint16"}
+      ]
+    },
+    {
+      "type": 1796,
+      "name": "CS_ITEM_EQUIP",
+      "direction": "C2S",
+      "fields": [
+        {"name": "slot", "type": "uint8"}
+      ]
+    },
+    {
+      "type": 1797,
+      "name": "SC_EQUIP_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "slot", "type": "uint8"},
+        {"name": "atk", "type": "uint16"},
+        {"name": "def", "type": "uint16"},
+        {"name": "weaponName", "type": "string", "length": 32},
+        {"name": "armorName", "type": "string", "length": 32},
+        {"name": "message", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 1798,
+      "name": "SC_INVENTORY_UPDATE",
+      "direction": "S2C",
+      "fields": [
+        {"name": "slot", "type": "uint8"},
+        {"name": "itemId", "type": "uint16"},
+        {"name": "itemName", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 2049,
+      "name": "CS_SHOP_OPEN",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 2050,
+      "name": "SC_SHOP_LIST",
+      "direction": "S2C",
+      "fields": [
+        {"name": "count", "type": "uint8"},
+        {"name": "items", "type": "array", "count_field": "count", "element": "ShopEntry"}
+      ]
+    },
+    {
+      "type": 2051,
+      "name": "CS_SHOP_BUY",
+      "direction": "C2S",
+      "fields": [
+        {"name": "itemId", "type": "uint16"}
+      ]
+    },
+    {
+      "type": 2052,
+      "name": "SC_SHOP_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "itemId", "type": "uint16"},
+        {"name": "remainGold", "type": "uint64"},
+        {"name": "message", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 2053,
+      "name": "CS_SHOP_SELL",
+      "direction": "C2S",
+      "fields": [
+        {"name": "slot", "type": "uint8"}
       ]
     },
     {

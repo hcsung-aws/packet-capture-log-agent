@@ -28,6 +28,7 @@ public class ReplayContext
     public TimeSpan Elapsed { get; set; }
     /// <summary>응답값 저장 → 다음 패킷 Overrides에 동적 주입 가능.</summary>
     public Dictionary<string, object> SessionState { get; } = new();
+    public GameWorldState World { get; } = new();
 }
 
 /// <summary>바이트 크기만 출력하는 기본 핸들러.</summary>
@@ -71,6 +72,7 @@ public class ParsingResponseHandler : IResponseHandler
             // 응답 필드를 SessionState에 저장 (동적 주입용)
             foreach (var field in result.Fields)
                 context.SessionState[$"{result.Name}.{field.Key}"] = field.Value;
+            context.World.Update(result.Name, result.Fields);
         }
         return count;
     }
@@ -147,7 +149,7 @@ public class PacketReplayer
     }
 
     /// <summary>코어 리플레이 루프. 타이밍·송수신 시퀀싱을 담당하고, 응답 처리는 handler에 위임.</summary>
-    public void Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null)
+    public void Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null, List<IReplayInterceptor>? interceptors = null)
     {
         options ??= new ReplayOptions();
         using var client = new TcpClient();
@@ -160,6 +162,7 @@ public class PacketReplayer
         var recvBuffer = new byte[65536];
         var startTime = DateTime.Now;
         var context = new ReplayContext();
+        var session = new ReplaySession(stream, _builder, handler, context, startTime);
         int sent = 0, received = 0;
 
         for (int i = 0; i < packets.Count; i++)
@@ -178,6 +181,11 @@ public class PacketReplayer
                         Thread.Sleep(delay);
                 }
             }
+
+            // 인터셉터: 사전 작업 수행 후 수정된 패킷 반환
+            var interceptor = interceptors?.FirstOrDefault(ic => ic.ShouldIntercept(pkt, context.World));
+            if (interceptor != null)
+                pkt = interceptor.Prepare(session, pkt);
 
             var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
             stream.Write(data);

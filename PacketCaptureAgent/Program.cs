@@ -120,7 +120,8 @@ class Program
 
         Console.WriteLine($"\n{parts[0]}:{port}로 재현 시작...\n");
         var handler = new ParsingResponseHandler(protocol, parts[0], port);
-        replayer.Replay(parts[0], port, packets, handler, options);
+        var interceptors = new List<IReplayInterceptor> { new NpcAttackInterceptor() };
+        replayer.Replay(parts[0], port, packets, handler, options, interceptors);
     }
 
     static void RunCaptureMode(string? protocolPath)
