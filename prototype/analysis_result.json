@@ -1,0 +1,588 @@
+{
+  "phases": [
+    {
+      "name": "login",
+      "packets": [
+        {
+          "name": "CS_LOGIN",
+          "direction": "SEND",
+          "category": "essential",
+          "fields": {
+            "accountId": "test002",
+            "password": ""
+          },
+          "time": "23:16:39.931"
+        },
+        {
+          "name": "SC_LOGIN_RESULT",
+          "direction": "RECV",
+          "category": "essential",
+          "fields": {
+            "success": 1,
+            "accountUid": 186346157,
+            "message": "Login successful"
+          },
+          "time": "23:16:39.932"
+        }
+      ]
+    },
+    {
+      "name": "character_select",
+      "packets": [
+        {
+          "name": "SC_CHAR_LIST",
+          "direction": "RECV",
+          "category": "essential",
+          "fields": {
+            "count": 1,
+            "chars": "System.Collections.Generic.List`1[System.Object]"
+          },
+          "time": "23:16:39.939"
+        },
+        {
+          "name": "CS_CHAR_SELECT",
+          "direction": "SEND",
+          "category": "essential",
+          "fields": {
+            "charUid": 186346157000
+          },
+          "time": "23:16:52.767"
+        },
+        {
+          "name": "SC_CHAR_INFO",
+          "direction": "RECV",
+          "category": "essential",
+          "fields": {
+            "charUid": 186346157,
+            "name": "",
+            "level": 1,
+            "exp": 0,
+            "posX": 9,
+            "posY": 5,
+            "hp": 100,
+            "maxHp": 100,
+            "gold": 100
+          },
+          "time": "23:16:52.788"
+        }
+      ]
+    },
+    {
+      "name": "gameplay",
+      "packets": [
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:55.236"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 6
+          },
+          "time": "23:16:55.237"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:55.649"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 7
+          },
+          "time": "23:16:55.650"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:55.934"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 8
+          },
+          "time": "23:16:55.935"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:56.115"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 9
+          },
+          "time": "23:16:56.116"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:56.352"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 10
+          },
+          "time": "23:16:56.352"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:56.588"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 11
+          },
+          "time": "23:16:56.588"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:56.885"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 12
+          },
+          "time": "23:16:56.886"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 0,
+            "dirY": 1
+          },
+          "time": "23:16:57.170"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 9,
+            "posY": 13
+          },
+          "time": "23:16:57.172"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:57.584"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 10,
+            "posY": 13
+          },
+          "time": "23:16:57.586"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:57.821"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 11,
+            "posY": 13
+          },
+          "time": "23:16:57.822"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:58.049"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 12,
+            "posY": 13
+          },
+          "time": "23:16:58.050"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:58.207"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 13,
+            "posY": 13
+          },
+          "time": "23:16:58.207"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:58.386"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 14,
+            "posY": 13
+          },
+          "time": "23:16:58.388"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:58.618"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 15,
+            "posY": 13
+          },
+          "time": "23:16:58.620"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:58.868"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 16,
+            "posY": 13
+          },
+          "time": "23:16:58.869"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:59.153"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 17,
+            "posY": 13
+          },
+          "time": "23:16:59.154"
+        },
+        {
+          "name": "CS_MOVE",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "dirX": 1,
+            "dirY": 0
+          },
+          "time": "23:16:59.568"
+        },
+        {
+          "name": "SC_MOVE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "posX": 18,
+            "posY": 13
+          },
+          "time": "23:16:59.570"
+        },
+        {
+          "name": "CS_ATTACK",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "targetUid": 2
+          },
+          "time": "23:16:59.987"
+        },
+        {
+          "name": "SC_ATTACK_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "targetUid": 2,
+            "damage": 13,
+            "targetHp": 17
+          },
+          "time": "23:16:59.987"
+        },
+        {
+          "name": "CS_ATTACK",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "targetUid": 2
+          },
+          "time": "23:17:00.217"
+        },
+        {
+          "name": "SC_ATTACK_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "targetUid": 2,
+            "damage": 13,
+            "targetHp": 4
+          },
+          "time": "23:17:00.220"
+        },
+        {
+          "name": "CS_ATTACK",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "targetUid": 2
+          },
+          "time": "23:17:00.489"
+        },
+        {
+          "name": "SC_ATTACK_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 1,
+            "targetUid": 2,
+            "damage": 13,
+            "targetHp": 0
+          },
+          "time": "23:17:00.490"
+        },
+        {
+          "name": "CS_ATTACK",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {
+            "targetUid": 10
+          },
+          "time": "23:17:00.733"
+        },
+        {
+          "name": "SC_ATTACK_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 0,
+            "targetUid": 0,
+            "damage": 0,
+            "targetHp": 0
+          },
+          "time": "23:17:00.736"
+        },
+        {
+          "name": "CS_ATTENDANCE_CHECK",
+          "direction": "SEND",
+          "category": "gameplay",
+          "fields": {},
+          "time": "23:17:02.704"
+        },
+        {
+          "name": "SC_ATTENDANCE_RESULT",
+          "direction": "RECV",
+          "category": "gameplay",
+          "fields": {
+            "success": 0,
+            "rewardGold": 0
+          },
+          "time": "23:17:02.707"
+        }
+      ]
+    }
+  ],
+  "dynamic_fields": [
+    {
+      "packet": "CS_LOGIN",
+      "field": "accountId",
+      "source": "csv",
+      "reason": "Login credential - must be unique per client"
+    },
+    {
+      "packet": "CS_LOGIN",
+      "field": "password",
+      "source": "csv",
+      "reason": "Login credential"
+    },
+    {
+      "packet": "CS_CHAR_SELECT",
+      "field": "charUid",
+      "source": "response",
+      "source_packet": "SC_CHAR_LIST",
+      "source_field": "chars[0].charUid",
+      "reason": "Character UID from server response"
+    },
+    {
+      "packet": "CS_ATTACK",
+      "field": "targetUid",
+      "source": "response",
+      "source_packet": "SC_NPC_SPAWN",
+      "source_field": "npcUid",
+      "reason": "NPC UID from spawn notification"
+    },
+    {
+      "packet": "CS_MOVE",
+      "field": "dirX",
+      "source": "static",
+      "reason": "Movement direction value"
+    },
+    {
+      "packet": "CS_MOVE",
+      "field": "dirY",
+      "source": "static",
+      "reason": "Movement direction value"
+    }
+  ],
+  "noise_filtered": [
+    "SC_ATTENDANCE_INFO",
+    "SC_EXP_UPDATE",
+    "SC_NPC_DEATH",
+    "SC_NPC_SPAWN"
+  ],
+  "summary": {
+    "total_packets": 58,
+    "essential": 5,
+    "gameplay": 44,
+    "noise": 9
+  }
+}
