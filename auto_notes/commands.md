@@ -10,6 +10,10 @@
 - 재현: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json -r capture.log -t host:port`
   - 옵션: `--mode timing|response|hybrid`, `--speed 1.0`, `--timeout 5000`
 
+## Git (Kiro CLI 환경)
+- rebase --continue 시 에디터 hang 방지: `GIT_EDITOR=true git rebase --continue`
+- 원인: core.editor 미설정 → 시스템 기본 vim 실행 → 비인터랙티브 환경에서 입력 대기 무한 hang
+
 ## Notes
 - Raw Socket 사용 → Windows 관리자 권한 필수
 - WSL2에서는 빌드만 가능, 실행은 Windows에서
