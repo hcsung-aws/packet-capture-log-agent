@@ -186,8 +186,29 @@ public class PacketParser
         "int16" or "uint16" => 2,
         "int32" or "uint32" or "float" => 4,
         "int64" or "uint64" or "double" => 8,
-        _ => 4
+        _ => GetCustomTypeSize(type)
     };
+
+    private int GetCustomTypeSize(string typeName)
+    {
+        if (_protocol.Types.TryGetValue(typeName, out var typeDef))
+        {
+            if (typeDef.Kind == "struct" && typeDef.Fields != null)
+                return typeDef.Fields.Sum(f => GetFieldSize(f));
+            if (typeDef.Kind == "enum" && typeDef.Base != null)
+                return GetTypeSize(typeDef.Base);
+        }
+        return 0;
+    }
+
+    private int GetFieldSize(FieldDefinition field)
+    {
+        if (field.Type == "string" || field.Type == "bytes")
+            return field.GetLength();
+        if (field.Type == "array")
+            return 0; // 가변 길이 배열은 정적 크기 계산 불가
+        return GetTypeSize(field.Type);
+    }
 
     private (string, int) ReadString(byte[] data, int offset, int length)
     {

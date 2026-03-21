@@ -43,10 +43,19 @@ public class PacketBuilder
         
         // Write header first
         var header = _protocol.Protocol.Header;
-        foreach (var hf in header.Fields!)
+        if (header.Fields != null)
         {
-            object? val = hf.Name == header.TypeField ? def.Type : 0;
-            WriteHeaderField(ms, hf.Type, val);
+            foreach (var hf in header.Fields)
+            {
+                object? val = hf.Name == header.TypeField ? def.Type : 0;
+                WriteHeaderField(ms, hf.Type, val);
+            }
+        }
+        else
+        {
+            // 기본 헤더: int32 size + int32 type
+            WriteInt32(ms, 0); // size (후에 갱신)
+            WriteInt32(ms, def.Type);
         }
         
         // Write payload fields

@@ -201,6 +201,7 @@ public class PacketReplayer
                 {
                     context.Elapsed = DateTime.Now - startTime;
                     received += handler.OnResponse(recvBuffer, recvLen, context);
+                    DrainPendingData(stream, recvBuffer, handler, context, ref received);
                 }
                 else if (expectResponse)
                 {
@@ -224,6 +225,26 @@ public class PacketReplayer
         catch (IOException)
         {
             return false;
+        }
+    }
+
+    /// <summary>DataAvailable인 동안 추가 데이터를 읽어 handler에 전달.</summary>
+    private void DrainPendingData(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, ref int received)
+    {
+        Thread.Sleep(50); // 서버 응답 도착 대기
+        while (stream.DataAvailable)
+        {
+            try
+            {
+                stream.ReadTimeout = 100;
+                int len = stream.Read(buffer);
+                if (len > 0)
+                {
+                    context.Elapsed = DateTime.Now - DateTime.Now; // updated by caller
+                    received += handler.OnResponse(buffer, len, context);
+                }
+            }
+            catch (IOException) { break; }
         }
     }
 }

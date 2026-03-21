@@ -3,25 +3,23 @@
 ## 잠재적 이슈
 
 ### 배열 파싱 count_field vs length 불일치
-- `PacketParser`는 `count_field` 기반 동적 카운트 지원
-- 그러나 `mmorpg_simulator.json`의 SC_CHAR_LIST chars 배열은 `"length": 5` 고정
-- `count` 필드(uint8)가 별도로 있지만 `count_field`로 연결되지 않음
-- 결과: count=0이어도 항상 5개 엔트리를 파싱 시도 → 빈 데이터 출력
+- ~~`mmorpg_simulator.json`의 SC_CHAR_LIST chars 배열は `"length": 5` 고정~~ → 수정 완료 (`count_field: "count"` 연결됨, Mickey 9 확인)
 
 ### 미사용 코드
-- `PacketReplayer.Replay()` — Program.cs에서 `ReplayWithParsing()`만 호출
-- `PacketFormatter.FormatJson()` — 어디서도 호출되지 않음
-- `Program.ShowUsage()` — 어디서도 호출되지 않음 (--help 미구현)
+- `PacketFormatter.FormatJson()` — 어디서도 호출되지 않음 (이미 삭제됨, 확인 완료 Mickey 9)
+- `TcpStreamManager.Cleanup()` — 어디서도 호출되지 않음
 
 ### Program.cs 구조
-- 294줄, 캡처 로직이 static 메서드로 모두 포함
-- 캡처 모드에서 `--port` CLI 인자 미지원 (인터랙티브 입력만)
-- README에는 `--port` 옵션이 문서화되어 있으나 실제 구현 없음
+- 캡처 로직이 static 메서드로 포함 (인자 파싱은 ParseArgs로 분리됨, Mickey 9)
 
 ### 재현 모드 제한
-- `ReplayWithParsing()`은 SEND 패킷만 순회, 시간 간격 미적용
-- 응답 대기가 `Thread.Sleep(50)` + `DataAvailable` 폴링 방식
+- 응답 수신이 SEND 당 1회 `stream.Read()`만 호출 — 서버가 연속 응답 시 일부 누락 가능
 - 단일 TCP 연결, 연결 실패 시 재시도 없음
+
+### NPC 공격 인터셉터 — 보류된 개선 사항
+- NPC가 예상보다 먼저/늦게 죽는 경우 공격 시퀀스 불일치 발생 가능
+- 보류 사유: 현재 리플레이는 완전한 재현이 아닌 파이프라인 검증 수준 (Mickey 9)
+- 재검토 시점: 에이전트가 상태 기반 동적 판단으로 고도화될 때
 
 ### 빌드 경고
 - CA1416: `IOControlCode.ReceiveAll` Windows 전용 — 의도된 동작이므로 suppress 가능

@@ -12,23 +12,34 @@ class Program
     static PacketFormatter? formatter = null;
     static TcpStreamManager streamManager = new();
 
-    static void Main(string[] args)
+    public record CliOptions(
+        string? ProtocolPath = null,
+        string? ReplayLog = null,
+        string? Target = null,
+        string Mode = "hybrid",
+        int Timeout = 5000,
+        double Speed = 1.0,
+        int? Port = null,
+        bool ShowHelp = false);
+
+    public static CliOptions ParseArgs(string[] args)
     {
-        // 인자 파싱
         string? protocolPath = null;
         string? replayLog = null;
         string? target = null;
         string mode = "hybrid";
         int timeout = 5000;
         double speed = 1.0;
+        int? port = null;
+        bool showHelp = false;
 
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i])
             {
                 case "-h" or "--help":
-                    ShowUsage();
-                    return;
+                    showHelp = true;
+                    break;
                 case "-p" or "--protocol" when i + 1 < args.Length:
                     protocolPath = args[++i];
                     break;
@@ -47,29 +58,46 @@ class Program
                 case "--speed" when i + 1 < args.Length:
                     double.TryParse(args[++i], out speed);
                     break;
+                case "--port" when i + 1 < args.Length:
+                    if (int.TryParse(args[++i], out var p)) port = p;
+                    break;
             }
         }
 
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp);
+    }
+
+    static void Main(string[] args)
+    {
+        var cli = ParseArgs(args);
+
+        if (cli.ShowHelp)
+        {
+            ShowUsage();
+            return;
+        }
+
         // Replay 모드
-        if (replayLog != null)
+        if (cli.ReplayLog != null)
         {
             var options = new ReplayOptions
             {
-                Mode = mode switch
+                Mode = cli.Mode switch
                 {
                     "timing" => ReplayMode.Timing,
                     "response" => ReplayMode.Response,
                     _ => ReplayMode.Hybrid
                 },
-                TimeoutMs = timeout,
-                Speed = speed
+                TimeoutMs = cli.Timeout,
+                Speed = cli.Speed
             };
-            RunReplayMode(protocolPath, replayLog, target, options);
+            RunReplayMode(cli.ProtocolPath, cli.ReplayLog, cli.Target, options);
             return;
         }
 
         // Capture 모드
-        RunCaptureMode(protocolPath);
+        filterPort = cli.Port;
+        RunCaptureMode(cli.ProtocolPath);
     }
 
     static void RunReplayMode(string? protocolPath, string replayLog, string? target, ReplayOptions options)
@@ -171,10 +199,13 @@ class Program
             return;
         }
 
-        Console.Write("필터링할 포트 (전체 캡처는 Enter): ");
-        var portInput = Console.ReadLine();
-        if (!string.IsNullOrEmpty(portInput) && int.TryParse(portInput, out int port))
-            filterPort = port;
+        if (!filterPort.HasValue)
+        {
+            Console.Write("필터링할 포트 (전체 캡처는 Enter): ");
+            var portInput = Console.ReadLine();
+            if (!string.IsNullOrEmpty(portInput) && int.TryParse(portInput, out int port))
+                filterPort = port;
+        }
 
         var localIP = addresses[idx];
         var logFileName = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.log";
@@ -288,8 +319,11 @@ class Program
     static void ShowUsage()
     {
         Console.WriteLine("사용법:");
-        Console.WriteLine("  캡처: PacketCaptureAgent -p protocol.json");
+        Console.WriteLine("  캡처: PacketCaptureAgent -p protocol.json [--port 9000]");
         Console.WriteLine("  재현: PacketCaptureAgent -p protocol.json -r capture.log -t host:port [options]");
+        Console.WriteLine();
+        Console.WriteLine("캡처 옵션:");
+        Console.WriteLine("  --port 9000                    필터링할 포트 (미지정 시 인터랙티브 입력)");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");

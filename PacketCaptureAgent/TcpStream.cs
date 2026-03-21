@@ -21,7 +21,11 @@ public class TcpStream
     public void Append(ReadOnlySpan<byte> data)
     {
         if (_writePos + data.Length > _buffer.Length)
+        {
             Compact();
+            if (_writePos + data.Length > _buffer.Length)
+                Grow(_writePos + data.Length);
+        }
         data.CopyTo(_buffer.AsSpan(_writePos));
         _writePos += data.Length;
         LastActivity = DateTime.Now;
@@ -59,6 +63,15 @@ public class TcpStream
             _writePos = remaining;
         }
     }
+
+    private void Grow(int required)
+    {
+        int newSize = _buffer.Length;
+        while (newSize < required) newSize *= 2;
+        var newBuffer = new byte[newSize];
+        Buffer.BlockCopy(_buffer, 0, newBuffer, 0, _writePos);
+        _buffer = newBuffer;
+    }
 }
 
 public class TcpStreamManager
@@ -73,15 +86,5 @@ public class TcpStreamManager
             _streams[key] = stream;
         }
         return stream;
-    }
-
-    public void Cleanup(TimeSpan timeout)
-    {
-        var expired = _streams
-            .Where(kv => DateTime.Now - kv.Value.LastActivity > timeout)
-            .Select(kv => kv.Key)
-            .ToList();
-        foreach (var key in expired)
-            _streams.Remove(key);
     }
 }
