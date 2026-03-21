@@ -14,7 +14,8 @@
 
 - **패킷 캡처**: 특정 포트의 TCP 패킷 캡처
 - **프로토콜 파싱**: JSON 기반 동적 패킷 파싱
-- **패킷 재현**: 캡처된 로그를 사용한 패킷 재전송
+- **패킷 재현**: 캡처된 로그를 사용한 패킷 재전송 (타이밍 기반 딜레이)
+- **인터셉터**: 재현 중 패킷을 동적으로 수정 (예: NPC 공격 대상 자동 교체)
 - **지원 타입**: 정수, 문자열, 배열, 구조체
 
 ## 요구사항
@@ -89,13 +90,16 @@ PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 ```
 packet-capture-log-agent/
 ├── PacketCaptureAgent/
-│   ├── Program.cs          # 메인 (캡처/재현 모드)
-│   ├── Protocol.cs         # JSON 프로토콜 정의
-│   ├── PacketParser.cs     # 동적 패킷 파싱
-│   ├── PacketBuilder.cs    # 패킷 빌드 (재현용)
-│   ├── PacketReplayer.cs   # 로그 파싱 + 재전송
-│   ├── PacketFormatter.cs  # 출력 포맷
-│   └── TcpStream.cs        # TCP 스트림 재조립
+│   ├── Program.cs              # 메인 (캡처/재현 모드)
+│   ├── Protocol.cs             # JSON 프로토콜 정의
+│   ├── PacketParser.cs         # 동적 패킷 파싱
+│   ├── PacketBuilder.cs        # 패킷 빌드 (재현용)
+│   ├── PacketReplayer.cs       # 로그 파싱 + 재전송
+│   ├── PacketFormatter.cs      # 출력 포맷
+│   ├── TcpStream.cs            # TCP 스트림 재조립
+│   ├── GameWorldState.cs       # 리플레이 중 게임 상태 추적
+│   ├── IReplayInterceptor.cs   # 인터셉터 인터페이스
+│   └── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
 └── protocols/
     ├── echoclient.json
     └── mmorpg_simulator.json
@@ -129,7 +133,8 @@ A tool for capturing TCP packets from online games, parsing them according to pr
 
 - **Packet Capture**: Capture TCP packets on specific ports
 - **Protocol Parsing**: Dynamic packet parsing based on JSON definitions
-- **Packet Replay**: Resend packets using captured logs
+- **Packet Replay**: Resend packets using captured logs (timing-based delay)
+- **Interceptor**: Dynamically modify packets during replay (e.g., auto-retarget NPC attacks)
 - **Supported Types**: integers, strings, arrays, structs
 
 ## Requirements

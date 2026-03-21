@@ -3,6 +3,7 @@ namespace PacketCaptureAgent;
 /// <summary>리플레이 중 서버 응답에서 추출한 게임 월드 상태.</summary>
 public class GameWorldState
 {
+    public ulong PlayerCharUid { get; private set; }
     public (int x, int y) PlayerPos { get; set; }
     public Dictionary<ulong, (int x, int y)> Npcs { get; } = new();
 
@@ -12,7 +13,11 @@ public class GameWorldState
         switch (packetName)
         {
             case "SC_CHAR_INFO":
-                if (fields.TryGetValue("posX", out var cx) && fields.TryGetValue("posY", out var cy))
+                if (!fields.TryGetValue("charUid", out var uid)) break;
+                var charUid = ToUlong(uid);
+                if (PlayerCharUid == 0) PlayerCharUid = charUid;
+                if (charUid == PlayerCharUid &&
+                    fields.TryGetValue("posX", out var cx) && fields.TryGetValue("posY", out var cy))
                     PlayerPos = (ToInt(cx), ToInt(cy));
                 break;
             case "SC_MOVE_RESULT":
