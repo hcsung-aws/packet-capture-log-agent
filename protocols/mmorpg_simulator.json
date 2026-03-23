@@ -22,6 +22,12 @@
       "type_field": "type"
     }
   },
+  "phases": {
+    "Login": [1],
+    "Enter Game": [2, 3],
+    "Gameplay": [4, 5, 6, 7],
+    "Shop": [8]
+  },
   "types": {
     "CharListEntry": {
       "kind": "struct",
@@ -51,6 +57,14 @@
         {"name": "itemId", "type": "uint16"},
         {"name": "itemName", "type": "string", "length": 32},
         {"name": "price", "type": "uint32"}
+      ]
+    },
+    "InventoryEntry": {
+      "kind": "struct",
+      "fields": [
+        {"name": "slot", "type": "uint8"},
+        {"name": "itemId", "type": "uint16"},
+        {"name": "itemName", "type": "string", "length": 32}
       ]
     }
   },
@@ -493,6 +507,15 @@
         {"name": "slot", "type": "uint8"},
         {"name": "itemId", "type": "uint16"},
         {"name": "itemName", "type": "string", "length": 32}
+      ]
+    },
+    {
+      "type": 1799,
+      "name": "SC_INVENTORY_LIST",
+      "direction": "S2C",
+      "fields": [
+        {"name": "count", "type": "uint8"},
+        {"name": "items", "type": "array", "count_field": "count", "element": "InventoryEntry"}
       ]
     },
     {

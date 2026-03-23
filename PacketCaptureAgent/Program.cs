@@ -6,12 +6,6 @@ namespace PacketCaptureAgent;
 
 class Program
 {
-    static int? filterPort = null;
-    static StreamWriter? logWriter = null;
-    static PacketParser? parser = null;
-    static PacketFormatter? formatter = null;
-    static TcpStreamManager streamManager = new();
-
     public record CliOptions(
         string? ProtocolPath = null,
         string? ReplayLog = null,
@@ -20,7 +14,8 @@ class Program
         int Timeout = 5000,
         double Speed = 1.0,
         int? Port = null,
-        bool ShowHelp = false);
+        bool ShowHelp = false,
+        string? AnalyzeLog = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -32,6 +27,7 @@ class Program
         double speed = 1.0;
         int? port = null;
         bool showHelp = false;
+        string? analyzeLog = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -61,10 +57,13 @@ class Program
                 case "--port" when i + 1 < args.Length:
                     if (int.TryParse(args[++i], out var p)) port = p;
                     break;
+                case "--analyze" when i + 1 < args.Length:
+                    analyzeLog = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog);
     }
 
     static void Main(string[] args)
@@ -77,7 +76,12 @@ class Program
             return;
         }
 
-        // Replay 모드
+        if (cli.AnalyzeLog != null)
+        {
+            RunAnalyzeMode(cli.ProtocolPath, cli.AnalyzeLog);
+            return;
+        }
+
         if (cli.ReplayLog != null)
         {
             var options = new ReplayOptions
@@ -95,9 +99,56 @@ class Program
             return;
         }
 
-        // Capture 모드
-        filterPort = cli.Port;
-        RunCaptureMode(cli.ProtocolPath);
+        RunCaptureMode(cli.ProtocolPath, cli.Port);
+    }
+
+    static void RunAnalyzeMode(string? protocolPath, string logPath)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        {
+            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
+            return;
+        }
+        if (!File.Exists(logPath))
+        {
+            Console.WriteLine($"로그 파일을 찾을 수 없음: {logPath}");
+            return;
+        }
+
+        var protocol = ProtocolLoader.Load(protocolPath);
+        var replayer = new PacketReplayer(protocol);
+        var packets = replayer.ParseLog(logPath);
+
+        var analyzer = new SequenceAnalyzer();
+        var classified = analyzer.Classify(packets);
+        var groups = analyzer.GroupPackets(classified);
+        Console.Write(analyzer.FormatDiagram(groups));
+
+        var phased = analyzer.AssignPhases(groups, protocol);
+        var mdPath = Path.ChangeExtension(logPath, null) + "_sequence.md";
+        File.WriteAllText(mdPath, $"# Sequence Diagram\n\n{analyzer.FormatMermaid(phased)}");
+        Console.WriteLine($"\nMermaid 다이어그램 저장: {mdPath}");
+
+        // Action Catalog 생성
+        var dynamicFields = analyzer.DetectDynamicFields(packets, protocol.FieldMappings);
+        var catalogBuilder = new ActionCatalogBuilder();
+        var newActions = catalogBuilder.BuildActions(packets, classified, dynamicFields, protocol, logPath);
+
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var catalogDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions");
+        var catalogPath = Path.Combine(catalogDir, $"{protocolName}_actions.json");
+
+        var existing = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        var catalog = catalogBuilder.Merge(existing, newActions, protocol);
+        ActionCatalogBuilder.SaveCatalog(catalogPath, catalog);
+
+        Console.WriteLine($"Action Catalog 저장: {catalogPath} ({catalog.Actions.Count} actions)");
+        if (dynamicFields.Count > 0)
+        {
+            Console.WriteLine($"Dynamic Fields 감지: {dynamicFields.Count}건");
+            foreach (var df in dynamicFields)
+                Console.WriteLine($"  {df.SendPacket}.{df.SendField} ← {df.SourcePacket}.{df.SourceField}");
+        }
     }
 
     static void RunReplayMode(string? protocolPath, string replayLog, string? target, ReplayOptions options)
@@ -152,9 +203,12 @@ class Program
         replayer.Replay(parts[0], port, packets, handler, options, interceptors);
     }
 
-    static void RunCaptureMode(string? protocolPath)
+    static void RunCaptureMode(string? protocolPath, int? filterPort)
     {
         Console.WriteLine("=== Packet Capture Agent (Raw Socket) ===\n");
+
+        PacketParser? parser = null;
+        PacketFormatter? formatter = null;
 
         if (protocolPath != null)
         {
@@ -209,16 +263,22 @@ class Program
 
         var localIP = addresses[idx];
         var logFileName = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.log";
-        logWriter = new StreamWriter(logFileName, false) { AutoFlush = true };
+        using var logWriter = new StreamWriter(logFileName, false) { AutoFlush = true };
 
         Console.WriteLine($"\n선택된 IP: {localIP}");
         Console.WriteLine(filterPort.HasValue ? $"필터: 포트 {filterPort}" : "필터: 없음 (전체 TCP)");
         Console.WriteLine($"로그 파일: {logFileName}");
-        Console.WriteLine("패킷 캡처 시작... (Ctrl+C로 중지)\n");
+        Console.WriteLine("패킷 캡처 시작... (Q: 분석 후 종료, Ctrl+C: 즉시 종료)\n");
 
-        Log($"=== Capture Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
-        Log($"IP: {localIP}, Filter: {(filterPort.HasValue ? $"Port {filterPort}" : "All TCP")}");
-        Log("");
+        void LogBoth(string msg) { Console.WriteLine(msg); logWriter.WriteLine(msg); }
+        void LogFile(string msg) { logWriter.WriteLine(msg); }
+
+        LogBoth($"=== Capture Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+        LogBoth($"IP: {localIP}, Filter: {(filterPort.HasValue ? $"Port {filterPort}" : "All TCP")}");
+        LogBoth("");
+
+        var session = new CaptureSession(parser, formatter, new TcpStreamManager(), filterPort, LogBoth, LogFile);
+        bool analyzeOnExit = false;
 
         try
         {
@@ -228,91 +288,55 @@ class Program
             socket.IOControl(IOControlCode.ReceiveAll, BitConverter.GetBytes(1), null);
 
             byte[] buffer = new byte[65535];
-            
-            Console.CancelKeyPress += (s, e) => { 
-                e.Cancel = true; 
+
+            Console.CancelKeyPress += (s, e) => {
+                e.Cancel = true;
                 socket.Close();
-                Log($"\n=== Capture Stopped: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
-                logWriter?.Close();
             };
+
+            // Q 키 감시 스레드
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Q)
+                    {
+                        analyzeOnExit = true;
+                        socket.Close();
+                        break;
+                    }
+                    Thread.Sleep(100);
+                }
+            });
 
             while (true)
             {
                 int len = socket.Receive(buffer);
-                if (len > 0) ProcessPacket(buffer, len);
+                if (len > 0) session.ProcessPacket(buffer, len);
             }
+        }
+        catch (SocketException) when (analyzeOnExit)
+        {
+            // Q 키로 정상 종료
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.Interrupted || ex.SocketErrorCode == SocketError.OperationAborted)
+        {
+            // Ctrl+C로 정상 종료
         }
         catch (SocketException ex)
         {
             Console.WriteLine($"소켓 오류: {ex.Message}");
             Console.WriteLine("관리자 권한으로 실행했는지 확인하세요.");
         }
-    }
 
-    static void Log(string message, bool consoleOnly = false)
-    {
-        Console.WriteLine(message);
-        if (!consoleOnly)
-            logWriter?.WriteLine(message);
-    }
+        LogBoth($"\n=== Capture Stopped: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+        logWriter.Flush();
+        logWriter.Dispose();
 
-    static void LogFile(string message)
-    {
-        logWriter?.WriteLine(message);
-    }
-
-    static void ProcessPacket(byte[] buffer, int length)
-    {
-        int ipHeaderLen = (buffer[0] & 0x0F) * 4;
-        int protocol = buffer[9];
-        
-        if (protocol != 6) return;
-
-        var srcIP = new IPAddress(new ReadOnlySpan<byte>(buffer, 12, 4));
-        var dstIP = new IPAddress(new ReadOnlySpan<byte>(buffer, 16, 4));
-
-        int tcpOffset = ipHeaderLen;
-        int srcPort = (buffer[tcpOffset] << 8) | buffer[tcpOffset + 1];
-        int dstPort = (buffer[tcpOffset + 2] << 8) | buffer[tcpOffset + 3];
-
-        if (filterPort.HasValue && srcPort != filterPort && dstPort != filterPort)
-            return;
-
-        int tcpHeaderLen = ((buffer[tcpOffset + 12] >> 4) & 0x0F) * 4;
-        int payloadOffset = ipHeaderLen + tcpHeaderLen;
-        int payloadLen = length - payloadOffset;
-
-        if (payloadLen <= 0) return;
-
-        var connKey = new ConnectionKey(srcIP, srcPort, dstIP, dstPort);
-        var payload = new ReadOnlySpan<byte>(buffer, payloadOffset, payloadLen);
-
-        if (parser != null && formatter != null)
+        if (analyzeOnExit && protocolPath != null)
         {
-            var stream = streamManager.GetOrCreate(connKey);
-            stream.Append(payload);
-
-            while (true)
-            {
-                var parsed = parser.TryParse(stream);
-                if (parsed == null) break;
-
-                string direction = filterPort.HasValue && dstPort == filterPort ? "SEND" : "RECV";
-                var (consoleOut, fileOut) = formatter.Format(parsed, connKey, direction);
-                Console.WriteLine(consoleOut);
-                logWriter?.WriteLine(fileOut);
-            }
-        }
-        else
-        {
-            var rawHex = Convert.ToHexString(payload);
-            var shortHex = rawHex.Length > 64 ? rawHex[..64] + "..." : rawHex;
-            
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {srcIP}:{srcPort} -> {dstIP}:{dstPort} | Len: {payloadLen}");
-            Console.WriteLine($"  raw: {shortHex}");
-            
-            logWriter?.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {srcIP}:{srcPort} -> {dstIP}:{dstPort} | Len: {payloadLen}");
-            logWriter?.WriteLine($"  raw: {rawHex}");
+            Console.WriteLine("\n캡처 로그 분석 중...\n");
+            RunAnalyzeMode(protocolPath, logFileName);
         }
     }
 
@@ -321,9 +345,13 @@ class Program
         Console.WriteLine("사용법:");
         Console.WriteLine("  캡처: PacketCaptureAgent -p protocol.json [--port 9000]");
         Console.WriteLine("  재현: PacketCaptureAgent -p protocol.json -r capture.log -t host:port [options]");
+        Console.WriteLine("  분석: PacketCaptureAgent -p protocol.json --analyze capture.log");
         Console.WriteLine();
         Console.WriteLine("캡처 옵션:");
         Console.WriteLine("  --port 9000                    필터링할 포트 (미지정 시 인터랙티브 입력)");
+        Console.WriteLine();
+        Console.WriteLine("분석 옵션:");
+        Console.WriteLine("  --analyze capture.log          캡처 로그 시퀀스 분석 + 다이어그램 출력");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");

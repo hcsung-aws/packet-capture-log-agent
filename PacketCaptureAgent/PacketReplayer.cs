@@ -118,7 +118,7 @@ public class PacketReplayer
                 continue;
             }
 
-            var fieldMatch = Regex.Match(line, @"^\s+(\w+):\s+(.+)$");
+            var fieldMatch = Regex.Match(line, @"^\s+([\w\[\]\.]+):\s+(.+)$");
             if (fieldMatch.Success && currentPacket != null)
             {
                 var name = fieldMatch.Groups[1].Value;

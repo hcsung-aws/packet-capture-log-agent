@@ -17,6 +17,12 @@ public class ProtocolDefinition
     [JsonPropertyName("packets")]
     public List<PacketDefinition> Packets { get; set; } = new();
 
+    [JsonPropertyName("phases")]
+    public Dictionary<string, List<int>>? Phases { get; set; }
+
+    [JsonPropertyName("field_mappings")]
+    public List<FieldMapping>? FieldMappings { get; set; }
+
     public PacketDefinition? GetPacketByType(int type) =>
         Packets.FirstOrDefault(p => p.Type == type);
 }
@@ -158,4 +164,13 @@ public static class ProtocolLoader
         return JsonSerializer.Deserialize<ProtocolDefinition>(json) 
             ?? throw new InvalidOperationException("Failed to load protocol");
     }
+}
+
+public class FieldMapping
+{
+    [JsonPropertyName("target")]
+    public string Target { get; set; } = "";  // "CS_ATTACK.targetUid"
+
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "";  // "SC_NPC_SPAWN.npcUid" | "external" | "static"
 }

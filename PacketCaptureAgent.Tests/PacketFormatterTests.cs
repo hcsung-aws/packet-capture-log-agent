@@ -146,4 +146,70 @@ public class PacketFormatterTests
         // 필드 패턴: "  fieldName: value"
         Assert.Matches(@"^\s+dirX:\s+-1", file.Split('\n').First(l => l.Contains("dirX")));
     }
+
+    [Fact]
+    public void Format_ArrayField_FlattenedKeys()
+    {
+        var formatter = new PacketFormatter(CreateProtocol());
+        var chars = new List<object>
+        {
+            new Dictionary<string, object> { ["charUid"] = 1001, ["name"] = "Hero" },
+            new Dictionary<string, object> { ["charUid"] = 1002, ["name"] = "Alt" }
+        };
+        var pkt = MakePacket("SC_CHAR_LIST", 2, new byte[4], ("count", 2));
+        pkt.Fields["chars"] = chars;
+
+        var (_, file) = formatter.Format(pkt, DummyConn, "RECV");
+
+        Assert.Contains("chars[0].charUid: 1001", file);
+        Assert.Contains("chars[0].name: \"Hero\"", file);
+        Assert.Contains("chars[1].charUid: 1002", file);
+        Assert.DoesNotContain("System.Collections", file);
+    }
+
+    [Fact]
+    public void Format_ArrayField_ParseLogRoundtrip()
+    {
+        // Formatter 배열 출력 → ParseLog가 flat key로 파싱하는지 검증
+        var formatter = new PacketFormatter(CreateProtocol());
+        var chars = new List<object>
+        {
+            new Dictionary<string, object> { ["charUid"] = 1001 }
+        };
+        var pkt = MakePacket("SC_CHAR_LIST", 2, new byte[4], ("count", 1));
+        pkt.Fields["chars"] = chars;
+
+        var (_, file) = formatter.Format(pkt, DummyConn, "RECV");
+
+        // Write to temp file and parse
+        var tmpPath = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tmpPath, file);
+            var protocol = new ProtocolDefinition
+            {
+                Protocol = new ProtocolInfo
+                {
+                    Name = "Test", Endian = "little",
+                    Header = new HeaderInfo
+                    {
+                        SizeField = "size", TypeField = "type",
+                        Fields = new List<HeaderFieldInfo>
+                        {
+                            new() { Name = "size", Type = "uint16", Offset = 0 },
+                            new() { Name = "type", Type = "uint16", Offset = 2 }
+                        }
+                    }
+                }
+            };
+            var replayer = new PacketReplayer(protocol);
+            var parsed = replayer.ParseLog(tmpPath);
+
+            Assert.Single(parsed);
+            Assert.Equal("SC_CHAR_LIST", parsed[0].Name);
+            Assert.True(parsed[0].Fields.ContainsKey("chars[0].charUid"));
+            Assert.Equal(1001, parsed[0].Fields["chars[0].charUid"]);
+        }
+        finally { File.Delete(tmpPath); }
+    }
 }

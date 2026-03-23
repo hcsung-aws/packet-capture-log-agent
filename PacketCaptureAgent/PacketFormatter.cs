@@ -25,8 +25,7 @@ public class PacketFormatter
         foreach (var (name, value) in packet.Fields)
         {
             if (name == "size" || name == "type") continue;
-            var displayValue = FormatValue(name, value);
-            sb.AppendLine($"  {name}: {displayValue}");
+            AppendField(sb, name, name, value);
         }
         
         var rawHex = Convert.ToHexString(packet.RawData);
@@ -42,13 +41,34 @@ public class PacketFormatter
         sb.AppendLine($"  {conn.SrcIP}:{conn.SrcPort} -> {conn.DstIP}:{conn.DstPort}");
         
         foreach (var (name, value) in packet.Fields)
-        {
-            var displayValue = FormatValue(name, value);
-            sb.AppendLine($"  {name}: {displayValue}");
-        }
+            AppendField(sb, name, name, value);
         
         sb.Append($"  raw: {Convert.ToHexString(packet.RawData)}");
         return sb.ToString();
+    }
+
+    private void AppendField(StringBuilder sb, string key, string fieldName, object value)
+    {
+        if (value is List<object> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] is Dictionary<string, object> structFields)
+                    foreach (var (fn, fv) in structFields)
+                        AppendField(sb, $"{key}[{i}].{fn}", fn, fv);
+                else
+                    sb.AppendLine($"  {key}[{i}]: {FormatValue(fieldName, list[i])}");
+            }
+        }
+        else if (value is Dictionary<string, object> fields)
+        {
+            foreach (var (fn, fv) in fields)
+                AppendField(sb, $"{key}.{fn}", fn, fv);
+        }
+        else
+        {
+            sb.AppendLine($"  {key}: {FormatValue(fieldName, value)}");
+        }
     }
 
     private string FormatValue(string fieldName, object value)
