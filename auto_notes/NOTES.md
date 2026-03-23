@@ -9,7 +9,6 @@
 | 구조 분석 | structure.md | 데이터 흐름, 컴포넌트 의존 관계, 핵심 모델 |
 | 상태 평가 | status.md | 기능별 동작 상태 + 목표 대비 Gap 분석 |
 | 품질 관찰 | observations.md | 잠재적 이슈, 미사용 코드, 구조 개선점 |
-
 | E2E 테스트 | e2e-test.md | 캡처/재현 실행 방법, 제약사항, mockdb SP 적용 순서 |
 | 패킷 분석 | packet-analysis.md | 노이즈 분류, 다른 플레이어 패킷 구분, 동적 필드 추적 |
 | Windows 콘솔 | windows-console.md | _getch/std::cin 혼용 금지, UTF-8 설정, 한글 입력 |
