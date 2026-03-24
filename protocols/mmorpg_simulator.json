@@ -24,7 +24,7 @@
   },
   "phases": {
     "Login": [1],
-    "Enter Game": [2, 3],
+    "Enter Game": [2],
     "Gameplay": [4, 5, 6, 7],
     "Shop": [8]
   },
