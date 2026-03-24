@@ -11,6 +11,7 @@
 | 인터셉터, 전략 패턴, Prepare/Execute | interceptor-design.md | 최종 실행 책임자 결정, Prepare vs Execute 판단 기준 |
 | Mermaid, 시퀀스 다이어그램, GitHub 렌더링, rect | mermaid-patterns.md | sequenceDiagram rect/loop/Note 패턴, GitHub 네이티브 지원 |
 | 공유 상수, 중복 정의, 공통 헤더 | shared-constants.md | 여러 모듈 공유 상수는 공통 파일에 통합 정의 |
+| 기능 추가, 확장, 인터페이스 분리, Open/Closed | extension-pattern.md | 기존 코드 수정 없이 새 파일 + 인터페이스 구현으로 기능 추가 |
 
 ## Last Updated
-2026-03-23
+2026-03-25
