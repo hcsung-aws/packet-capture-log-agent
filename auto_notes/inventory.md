@@ -12,7 +12,8 @@
 | TcpStream.cs | TCP 스트림 버퍼 재조립, ConnectionKey 레코드, TcpStreamManager |
 | RawPacketParser.cs | IP/TCP 헤더 파싱 (static, 의존성 0). TcpPacketInfo 레코드 |
 | CaptureSession.cs | 캡처 세션 (생성자 주입: parser, formatter, streamManager, filterPort) |
-| SequenceAnalyzer.cs | 캡처 로그 시퀀스 분석 — 분류(Core/DataSource/Conditional/Noise) + ASCII/Mermaid 다이어그램 + Phase 영역 구분 |
+| SequenceAnalyzer.cs | 캡처 로그 시퀀스 분석 — 분류(Core/DataSource/Conditional/Noise) + ASCII/Mermaid 다이어그램 + Phase 영역 구분 + DynamicField 자동 감지 |
+| ActionCatalogBuilder.cs | Action Catalog 빌드 — 의미 단위 분할 + merge 저장 (actions/{protocol}_actions.json) |
 | GameWorldState.cs | 리플레이 중 플레이어/NPC 위치 추적 (서버 응답 기반) |
 | IReplayInterceptor.cs | 리플레이 패킷 가로채기 인터페이스 + ReplaySession 헬퍼 |
 | NpcAttackInterceptor.cs | CS_ATTACK 감지 → NPC 탐색 → 이동 → targetUid 교체 |
@@ -24,5 +25,5 @@
 | 파일 | 대상 | 패킷 수 |
 |------|------|---------|
 | echoclient.json | 에코 테스트 | 1 |
-| mmorpg_simulator.json | MMORPG 시뮬레이터 | 37 (로그인/캐릭터/이동/전투/출석/채팅/아이템/상점/하트비트) + phases 매핑 |
+| mmorpg_simulator.json | MMORPG 시뮬레이터 | 37 (로그인/캐릭터/이동/전투/출석/채팅/아이템/상점/하트비트) + phases 매핑 + field_mappings |
 | tibia.json | Tibia/ForgottenServer | 5 (RSA+XTEA 암호화) |

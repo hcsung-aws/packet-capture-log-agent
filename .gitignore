@@ -8,6 +8,9 @@ obj/
 # Capture logs
 *.log
 
+# Capture archive
+captures/
+
 # IDE
 .vs/
 .idea/

@@ -29,6 +29,7 @@ public class ActionPacket
     [JsonPropertyName("direction")] public string Direction { get; set; } = "";
     [JsonPropertyName("name")] public string Name { get; set; } = "";
     [JsonPropertyName("role")] public string Role { get; set; } = "";
+    [JsonPropertyName("fields")] public Dictionary<string, object>? Fields { get; set; }
 }
 
 public class ActionDynamicField
@@ -102,7 +103,8 @@ public class ActionCatalogBuilder
             {
                 Direction = "SEND",
                 Name = group.Send.Name,
-                Role = roleMap.GetValueOrDefault($"SEND:{group.Send.Name}").ToString()!
+                Role = roleMap.GetValueOrDefault($"SEND:{group.Send.Name}").ToString()!,
+                Fields = group.Send.Fields.Count > 0 ? new Dictionary<string, object>(group.Send.Fields) : null
             });
 
             // 연속 동일 RECV 압축

@@ -7,8 +7,12 @@
 ## Run (Windows, 관리자 권한)
 - 캡처: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json`
   - 인터페이스 선택 → 포트 입력 → 캡처 시작
+  - Q 키: 캡처 종료 + 자동 분석 (Action Catalog 갱신)
+  - Ctrl+C: 즉시 종료 (분석 없음)
 - 재현: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json -r capture.log -t host:port`
   - 옵션: `--mode timing|response|hybrid`, `--speed 1.0`, `--timeout 5000`
+- 분석: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json --analyze capture.log`
+  - 시퀀스 분석 + Action Catalog 빌드 → actions/{protocol}_actions.json
 
 ## Git (Kiro CLI 환경)
 - rebase --continue 시 에디터 hang 방지: `GIT_EDITOR=true git rebase --continue`

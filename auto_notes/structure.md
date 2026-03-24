@@ -22,6 +22,15 @@
     → 응답 수신 → PacketParser.TryParse() → 콘솔 출력
 ```
 
+### 분석 모드
+```
+로그 파일 → PacketReplayer.ParseLog() → List<ReplayPacket>
+  → SequenceAnalyzer.Analyze() → 분류 + Phase + ASCII/Mermaid
+  → DetectDynamicFields() → suffix 타입 필터 + 시간 순서
+  → ActionCatalogBuilder.Build() → Action 단위 분할
+  → ActionCatalogBuilder.MergeAndSave() → actions/{protocol}_actions.json
+```
+
 ## 컴포넌트 의존 관계
 ```
 Program.cs
@@ -29,6 +38,8 @@ Program.cs
   ├── PacketFormatter ← Protocol
   ├── PacketReplayer ← Protocol, PacketBuilder, PacketParser
   │     └── PacketBuilder ← Protocol
+  ├── SequenceAnalyzer ← Protocol (분석 모드)
+  │     └── ActionCatalogBuilder (카탈로그 빌드 + merge)
   └── TcpStreamManager → TcpStream
 
 IPacketTransform (인터페이스)

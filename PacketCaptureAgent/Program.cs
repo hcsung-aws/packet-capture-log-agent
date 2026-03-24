@@ -15,7 +15,9 @@ class Program
         double Speed = 1.0,
         int? Port = null,
         bool ShowHelp = false,
-        string? AnalyzeLog = null);
+        string? AnalyzeLog = null,
+        string? ScenarioPath = null,
+        bool BuildScenario = false);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -28,6 +30,8 @@ class Program
         int? port = null;
         bool showHelp = false;
         string? analyzeLog = null;
+        string? scenarioPath = null;
+        bool buildScenario = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -60,10 +64,16 @@ class Program
                 case "--analyze" when i + 1 < args.Length:
                     analyzeLog = args[++i];
                     break;
+                case "-s" or "--scenario" when i + 1 < args.Length:
+                    scenarioPath = args[++i];
+                    break;
+                case "--build-scenario":
+                    buildScenario = true;
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario);
     }
 
     static void Main(string[] args)
@@ -79,6 +89,29 @@ class Program
         if (cli.AnalyzeLog != null)
         {
             RunAnalyzeMode(cli.ProtocolPath, cli.AnalyzeLog);
+            return;
+        }
+
+        if (cli.BuildScenario)
+        {
+            RunBuildScenarioMode(cli.ProtocolPath);
+            return;
+        }
+
+        if (cli.ScenarioPath != null)
+        {
+            var options = new ReplayOptions
+            {
+                Mode = cli.Mode switch
+                {
+                    "timing" => ReplayMode.Timing,
+                    "response" => ReplayMode.Response,
+                    _ => ReplayMode.Hybrid
+                },
+                TimeoutMs = cli.Timeout,
+                Speed = cli.Speed
+            };
+            RunScenarioReplayMode(cli.ProtocolPath, cli.ScenarioPath, cli.Target, options);
             return;
         }
 
@@ -340,18 +373,155 @@ class Program
         }
     }
 
+    // ── 시나리오 빌드 모드 (기존 코드와 완전 분리) ──
+
+    static void RunBuildScenarioMode(string? protocolPath)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        {
+            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
+            return;
+        }
+
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        if (catalog == null || catalog.Actions.Count == 0)
+        {
+            Console.WriteLine($"Action Catalog 없음: {catalogPath}");
+            Console.WriteLine("먼저 --analyze로 캡처 로그를 분석하세요.");
+            return;
+        }
+
+        var scenario = ScenarioBuilder.BuildInteractive(catalog);
+        if (scenario.Steps.Count == 0)
+        {
+            Console.WriteLine("시나리오가 비어 있습니다.");
+            return;
+        }
+
+        var builder = new ScenarioBuilder();
+        var errors = builder.Validate(scenario, catalog);
+        if (errors.Count > 0)
+        {
+            Console.WriteLine("\n⚠ 검증 오류:");
+            foreach (var e in errors) Console.WriteLine($"  - {e}");
+            Console.Write("계속 저장하시겠습니까? (y/N): ");
+            if (Console.ReadLine()?.Trim().ToLower() != "y") return;
+        }
+
+        var scenarioDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "scenarios");
+        var safeName = string.Join("_", scenario.Name.Split(Path.GetInvalidFileNameChars()));
+        var scenarioPath = Path.Combine(scenarioDir, $"{safeName}.json");
+        ScenarioBuilder.Save(scenarioPath, scenario);
+
+        var packets = builder.Build(scenario, catalog);
+        var sendCount = packets.Count(p => p.Direction == "SEND");
+        Console.WriteLine($"\n시나리오 저장: {scenarioPath}");
+        Console.WriteLine($"  Steps: {scenario.Steps.Count}, 패킷: {packets.Count} (SEND: {sendCount})");
+
+        var dynamicFields = builder.CollectDynamicFields(scenario, catalog);
+        if (dynamicFields.Count > 0)
+        {
+            Console.WriteLine($"  Dynamic Fields: {dynamicFields.Count}건 (재현 시 자동 주입)");
+            foreach (var df in dynamicFields)
+                Console.WriteLine($"    {df.Packet}.{df.Field} ← {df.Source}");
+        }
+    }
+
+    // ── 시나리오 재현 모드 (기존 코드와 완전 분리) ──
+
+    static void RunScenarioReplayMode(string? protocolPath, string scenarioPath, string? target, ReplayOptions options)
+    {
+        Console.WriteLine("=== Scenario Replay Mode ===\n");
+
+        if (protocolPath == null || !File.Exists(protocolPath))
+        {
+            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
+            return;
+        }
+        if (!File.Exists(scenarioPath))
+        {
+            Console.WriteLine($"시나리오 파일을 찾을 수 없음: {scenarioPath}");
+            return;
+        }
+
+        var protocol = ProtocolLoader.Load(protocolPath);
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        if (catalog == null)
+        {
+            Console.WriteLine($"Action Catalog 없음: {catalogPath}");
+            return;
+        }
+
+        var scenario = ScenarioBuilder.Load(scenarioPath);
+        var builder = new ScenarioBuilder();
+
+        var errors = builder.Validate(scenario, catalog);
+        if (errors.Count > 0)
+        {
+            Console.WriteLine("⚠ 검증 오류:");
+            foreach (var e in errors) Console.WriteLine($"  - {e}");
+            return;
+        }
+
+        var packets = builder.Build(scenario, catalog);
+        var dynamicFields = builder.CollectDynamicFields(scenario, catalog);
+
+        Console.WriteLine($"시나리오: {scenario.Name}");
+        Console.WriteLine($"프로토콜: {protocol.Protocol.Name}");
+        Console.WriteLine($"패킷: {packets.Count}개 (SEND: {packets.Count(p => p.Direction == "SEND")})");
+        if (dynamicFields.Count > 0)
+            Console.WriteLine($"Dynamic Fields: {dynamicFields.Count}건 (자동 주입)");
+
+        if (target == null)
+        {
+            Console.Write("\n대상 서버 (host:port): ");
+            target = Console.ReadLine();
+        }
+        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return; }
+
+        var parts = target.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
+        {
+            Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000");
+            return;
+        }
+
+        Console.WriteLine($"\n{parts[0]}:{port}로 시나리오 재현 시작...\n");
+
+        // 동적 필드 주입: 공유 상태 + TrackingResponseHandler + DynamicFieldInterceptor
+        var sharedState = new Dictionary<string, object>();
+        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port);
+        var handler = new TrackingResponseHandler(innerHandler, sharedState);
+        var interceptors = new List<IReplayInterceptor>();
+        if (dynamicFields.Count > 0)
+            interceptors.Add(new DynamicFieldInterceptor(dynamicFields, sharedState));
+
+        var replayer = new PacketReplayer(protocol);
+        replayer.Replay(parts[0], port, packets, handler, options, interceptors);
+    }
+
     static void ShowUsage()
     {
         Console.WriteLine("사용법:");
         Console.WriteLine("  캡처: PacketCaptureAgent -p protocol.json [--port 9000]");
         Console.WriteLine("  재현: PacketCaptureAgent -p protocol.json -r capture.log -t host:port [options]");
         Console.WriteLine("  분석: PacketCaptureAgent -p protocol.json --analyze capture.log");
+        Console.WriteLine("  시나리오 생성: PacketCaptureAgent -p protocol.json --build-scenario");
+        Console.WriteLine("  시나리오 재현: PacketCaptureAgent -p protocol.json -s scenario.json -t host:port [options]");
         Console.WriteLine();
         Console.WriteLine("캡처 옵션:");
         Console.WriteLine("  --port 9000                    필터링할 포트 (미지정 시 인터랙티브 입력)");
         Console.WriteLine();
         Console.WriteLine("분석 옵션:");
         Console.WriteLine("  --analyze capture.log          캡처 로그 시퀀스 분석 + 다이어그램 출력");
+        Console.WriteLine();
+        Console.WriteLine("시나리오 옵션:");
+        Console.WriteLine("  --build-scenario               인터랙티브 시나리오 생성");
+        Console.WriteLine("  -s, --scenario scenario.json   시나리오 파일로 재현");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");

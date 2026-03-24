@@ -9,10 +9,9 @@
 - 응답 수신이 SEND 당 1회 `stream.Read()`만 호출 — 서버가 연속 응답 시 일부 누락 가능
 - 단일 TCP 연결, 연결 실패 시 재시도 없음
 
-### ParseLog 배열 필드 미확장
-- `PacketReplayer.ParseLog`가 배열 필드를 `System.Collections.Generic.List'1[System.Object]`로 저장
-- 배열 내부 개별 필드값(예: SC_CHAR_LIST.chars[].charUid)이 추출되지 않음
-- SequenceAnalyzer DataSource 감지에서 배열 기반 의존성 누락 원인 (Mickey 10)
+### ParseLog 배열 필드 — 해결됨 (Mickey 12)
+- PacketFormatter가 배열/구조체를 flat key로 출력 (chars[0].charUid 등)
+- ParseLog regex 확장으로 flat key 추출 정상 동작
 
 ### NPC 공격 인터셉터 — 보류된 개선 사항
 - NPC가 예상보다 먼저/늦게 죽는 경우 공격 시퀀스 불일치 발생 가능
