@@ -14,6 +14,7 @@
 | CaptureSession.cs | 캡처 세션 (생성자 주입: parser, formatter, streamManager, filterPort) |
 | SequenceAnalyzer.cs | 캡처 로그 시퀀스 분석 — 분류(Core/DataSource/Conditional/Noise) + ASCII/Mermaid 다이어그램 + Phase 영역 구분 + DynamicField 자동 감지 |
 | ActionCatalogBuilder.cs | Action Catalog 빌드 — 의미 단위 분할 + merge 저장 (actions/{protocol}_actions.json) |
+| ScenarioBuilder.cs | 시나리오 조립 — 모델 + Build/Validate/BuildInteractive + DynamicFieldInterceptor + TrackingResponseHandler |
 | GameWorldState.cs | 리플레이 중 플레이어/NPC 위치 추적 (서버 응답 기반) |
 | IReplayInterceptor.cs | 리플레이 패킷 가로채기 인터페이스 + ReplaySession 헬퍼 |
 | NpcAttackInterceptor.cs | CS_ATTACK 감지 → NPC 탐색 → 이동 → targetUid 교체 |

@@ -40,6 +40,9 @@ Program.cs
   │     └── PacketBuilder ← Protocol
   ├── SequenceAnalyzer ← Protocol (분석 모드)
   │     └── ActionCatalogBuilder (카탈로그 빌드 + merge)
+  ├── ScenarioBuilder ← ActionCatalog (시나리오 모드, 기존 코드와 완전 분리)
+  │     ├── DynamicFieldInterceptor ← IReplayInterceptor
+  │     └── TrackingResponseHandler ← IResponseHandler (래핑)
   └── TcpStreamManager → TcpStream
 
 IPacketTransform (인터페이스)

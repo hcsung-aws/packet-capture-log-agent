@@ -17,7 +17,7 @@
 | 시퀀스 분석 | ✅ | Core/DataSource/Conditional/Noise 분류 + ASCII/Mermaid + Phase 구분 |
 | Dynamic Field 감지 | ✅ | suffix 타입 필터 + 시간 순서 + 수동 오버라이드 (field_mappings) |
 | Action Catalog | ✅ | 의미 단위 분할 + merge 저장 (actions/{protocol}_actions.json) |
-| 시나리오 조립 | ❌ | Action Catalog → 재현 가능 시나리오 파일 생성 (미구현) |
+| 시나리오 조립 | ✅ | ScenarioBuilder — 카탈로그에서 Action 선택 → 시나리오 JSON 생성 → 재현 (E2E 미검증) |
 | 다중 클라이언트 | ❌ | 단일 TCP 연결만 |
 | 부하/회귀 테스트 | ❌ | 미구현 |
 | Kiro context | ❌ | 미구현 |

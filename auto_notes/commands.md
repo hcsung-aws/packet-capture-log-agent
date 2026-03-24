@@ -13,6 +13,10 @@
   - 옵션: `--mode timing|response|hybrid`, `--speed 1.0`, `--timeout 5000`
 - 분석: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json --analyze capture.log`
   - 시퀀스 분석 + Action Catalog 빌드 → actions/{protocol}_actions.json
+- 시나리오 생성: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json --build-scenario`
+  - Action Catalog에서 인터랙티브 선택 → scenarios/ 에 JSON 저장
+- 시나리오 재현: `PacketCaptureAgent.exe -p ../protocols/mmorpg_simulator.json -s ../scenarios/xxx.json -t host:port`
+  - 동적 필드 자동 주입 (DynamicFieldInterceptor)
 
 ## Git (Kiro CLI 환경)
 - rebase --continue 시 에디터 hang 방지: `GIT_EDITOR=true git rebase --continue`
