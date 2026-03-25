@@ -499,6 +499,7 @@ class Program
         var interceptors = new List<IReplayInterceptor>();
         if (dynamicFields.Count > 0)
             interceptors.Add(new DynamicFieldInterceptor(dynamicFields, sharedState));
+        interceptors.Add(new NpcAttackInterceptor());
 
         var replayer = new PacketReplayer(protocol);
         replayer.Replay(parts[0], port, packets, handler, options, interceptors);

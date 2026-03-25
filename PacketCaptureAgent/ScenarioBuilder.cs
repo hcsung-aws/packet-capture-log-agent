@@ -209,6 +209,8 @@ public class DynamicFieldInterceptor : IReplayInterceptor
     private readonly Dictionary<string, List<ActionDynamicField>> _fieldsByPacket;
     private readonly Dictionary<string, object> _sharedState;
 
+    public int Priority => 0;
+
     public DynamicFieldInterceptor(List<ActionDynamicField> dynamicFields, Dictionary<string, object> sharedState)
     {
         _sharedState = sharedState;

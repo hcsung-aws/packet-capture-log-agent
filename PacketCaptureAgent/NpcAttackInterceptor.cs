@@ -6,6 +6,8 @@ public class NpcAttackInterceptor : IReplayInterceptor
     private const int MoveIntervalMs = 500;
     private const int MaxMoveAttempts = 100;
 
+    public int Priority => 100;
+
     public bool ShouldIntercept(ReplayPacket packet, GameWorldState world)
         => packet.Name == "CS_ATTACK" && world.Npcs.Count > 0;
 

@@ -64,11 +64,7 @@ public class ParsingResponseHandler : IResponseHandler
             count++;
             Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
             foreach (var field in result.Fields)
-            {
-                var val = field.Value;
-                string display = val is string s ? $"\"{s}\"" : val?.ToString() ?? "null";
-                Console.WriteLine($"    {field.Key}: {display}");
-            }
+                FormatField($"    {field.Key}", field.Value);
             // 응답 필드를 SessionState에 저장 (동적 주입용)
             foreach (var field in result.Fields)
                 context.SessionState[$"{result.Name}.{field.Key}"] = field.Value;
@@ -76,6 +72,29 @@ public class ParsingResponseHandler : IResponseHandler
         }
         return count;
     }
+
+    private static void FormatField(string key, object value)
+    {
+        if (value is List<object> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (list[i] is Dictionary<string, object> s)
+                    foreach (var (fn, fv) in s)
+                        FormatField($"{key}[{i}].{fn}", fv);
+                else
+                    Console.WriteLine($"{key}[{i}]: {FormatScalar(list[i])}");
+        }
+        else if (value is Dictionary<string, object> fields)
+        {
+            foreach (var (fn, fv) in fields)
+                FormatField($"{key}.{fn}", fv);
+        }
+        else
+            Console.WriteLine($"{key}: {FormatScalar(value)}");
+    }
+
+    private static string FormatScalar(object value)
+        => value is string s ? $"\"{s}\"" : value?.ToString() ?? "null";
 }
 
 public class PacketReplayer
@@ -182,10 +201,10 @@ public class PacketReplayer
                 }
             }
 
-            // 인터셉터: 사전 작업 수행 후 수정된 패킷 반환
-            var interceptor = interceptors?.FirstOrDefault(ic => ic.ShouldIntercept(pkt, context.World));
-            if (interceptor != null)
-                pkt = interceptor.Prepare(session, pkt);
+            // 인터셉터: Priority 순으로 체이닝 (낮을수록 먼저 실행)
+            if (interceptors != null)
+                foreach (var ic in interceptors.OrderBy(ic => ic.Priority).Where(ic => ic.ShouldIntercept(pkt, context.World)))
+                    pkt = ic.Prepare(session, pkt);
 
             var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
             stream.Write(data);

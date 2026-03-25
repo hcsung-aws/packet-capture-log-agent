@@ -5,6 +5,8 @@ namespace PacketCaptureAgent;
 /// <summary>리플레이 중 특정 패킷을 가로채 사전 작업 수행 후 수정된 패킷 반환.</summary>
 public interface IReplayInterceptor
 {
+    /// <summary>실행 우선순위. 낮을수록 먼저 실행. (0=필드주입, 100=게임로직)</summary>
+    int Priority { get; }
     bool ShouldIntercept(ReplayPacket packet, GameWorldState world);
     /// <summary>사전 작업(이동 등) 수행 후 수정된 패킷 반환. 원래 루프가 이 패킷을 전송.</summary>
     ReplayPacket Prepare(ReplaySession session, ReplayPacket original);
