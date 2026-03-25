@@ -20,6 +20,9 @@ public class CatalogAction
     [JsonPropertyName("outputs")] public List<string> Outputs { get; set; } = new();
     [JsonPropertyName("dependencies")] public List<string> Dependencies { get; set; } = new();
     [JsonPropertyName("repeat_count")] public int RepeatCount { get; set; } = 1;
+    [JsonPropertyName("user_input_fields")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? UserInputFields { get; set; }
     [JsonPropertyName("source_log")] public string SourceLog { get; set; } = "";
     [JsonPropertyName("last_observed")] public string LastObserved { get; set; } = "";
 }
@@ -147,6 +150,7 @@ public class ActionCatalogBuilder
                 DynamicFields = dynFields,
                 Outputs = outputs,
                 RepeatCount = 1,
+                UserInputFields = DetectUserInputFields(group.Send.Name, dynFields, protocol),
                 SourceLog = Path.GetFileName(sourceLog),
                 LastObserved = timestamp
             });
@@ -208,6 +212,21 @@ public class ActionCatalogBuilder
 
     static string DeriveId(string sendName) =>
         sendName.StartsWith("CS_") ? sendName[3..].ToLower() : sendName.ToLower();
+
+    /// <summary>SEND 패킷의 string 필드 중 dynamic_fields가 아닌 것 = 사용자 입력 필드.</summary>
+    static List<string>? DetectUserInputFields(string sendName, List<ActionDynamicField> dynFields, ProtocolDefinition protocol)
+    {
+        var pktDef = protocol.Packets.FirstOrDefault(p => p.Name == sendName);
+        if (pktDef == null) return null;
+
+        var dynamicFieldNames = new HashSet<string>(dynFields.Select(df => df.Field));
+        var fields = pktDef.Fields
+            .Where(f => f.Type == "string" && !dynamicFieldNames.Contains(f.Name))
+            .Select(f => f.Name)
+            .ToList();
+
+        return fields.Count > 0 ? fields : null;
+    }
 
     static string DeriveName(string sendName)
     {

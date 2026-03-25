@@ -34,7 +34,11 @@
       "dependencies": [],
       "repeat_count": 1,
       "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "last_observed": "23:29:17.274",
+      "user_input_fields": [
+        "accountId",
+        "password"
+      ]
     },
     {
       "id": "char_select",
@@ -56,7 +60,7 @@
         },
         {
           "direction": "RECV",
-          "name": "SC_NPC_SPAWN \u00D75",
+          "name": "SC_NPC_SPAWN ×5",
           "role": "DataSource"
         },
         {
@@ -358,7 +362,10 @@
       "dependencies": [],
       "repeat_count": 1,
       "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "last_observed": "23:29:17.274",
+      "user_input_fields": [
+        "name"
+      ]
     },
     {
       "id": "shop_sell",

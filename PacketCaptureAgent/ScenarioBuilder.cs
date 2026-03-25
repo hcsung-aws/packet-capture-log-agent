@@ -61,6 +61,8 @@ public class ScenarioBuilder
         var packets = new List<ReplayPacket>();
         var ts = TimeSpan.Zero;
         var step100ms = TimeSpan.FromMilliseconds(100);
+        // {random:N} 패턴은 시나리오 실행 단위로 1회 생성하여 재사용
+        var randomCache = new Dictionary<string, string>();
 
         foreach (var step in scenario.Steps)
         {
@@ -82,7 +84,7 @@ public class ScenarioBuilder
                         // step-level overrides 적용
                         if (step.Overrides != null)
                             foreach (var kv in step.Overrides)
-                                fields[kv.Key] = kv.Value is JsonElement je2 ? ConvertJsonElement(je2) : kv.Value;
+                                fields[kv.Key] = ResolveValue(kv.Value is JsonElement je2 ? ConvertJsonElement(je2) : kv.Value, randomCache);
                     }
 
                     for (int c = 0; c < count; c++)
@@ -95,6 +97,22 @@ public class ScenarioBuilder
         }
 
         return packets;
+    }
+
+    private static readonly Random _rng = new();
+
+    /// <summary>{random:N} 패턴 해석. 동일 패턴은 같은 실행 내에서 동일 값 반환.</summary>
+    internal static object ResolveValue(object value, Dictionary<string, string> cache)
+    {
+        if (value is not string s) return value;
+        var m = System.Text.RegularExpressions.Regex.Match(s, @"^\{random:(\d+)\}$");
+        if (!m.Success) return value;
+        if (cache.TryGetValue(s, out var cached)) return cached;
+        int len = int.Parse(m.Groups[1].Value);
+        const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        var result = new string(Enumerable.Range(0, len).Select(_ => chars[_rng.Next(chars.Length)]).ToArray());
+        cache[s] = result;
+        return result;
     }
 
     /// <summary>시나리오에 포함된 모든 dynamic field 매핑 수집.</summary>
@@ -166,7 +184,25 @@ public class ScenarioBuilder
                     repeat = action.RepeatCount;
             }
 
-            steps.Add(new ScenarioStep { Action = action.Id, Repeat = repeat });
+            // user_input_fields 프롬프트
+            Dictionary<string, object>? overrides = null;
+            if (action.UserInputFields is { Count: > 0 })
+            {
+                var sendPkt = action.Packets.FirstOrDefault(p => p.Direction == "SEND");
+                foreach (var field in action.UserInputFields)
+                {
+                    var def = sendPkt?.Fields != null && sendPkt.Fields.TryGetValue(field, out var v) ? v?.ToString() ?? "" : "";
+                    Console.Write($"  {field} [{def}]: ");
+                    var val = Console.ReadLine()?.Trim();
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        overrides ??= new();
+                        overrides[field] = val;
+                    }
+                }
+            }
+
+            steps.Add(new ScenarioStep { Action = action.Id, Repeat = repeat, Overrides = overrides });
         }
 
         Console.Write("\n시나리오 이름: ");
