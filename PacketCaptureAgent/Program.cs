@@ -19,7 +19,8 @@ class Program
         string? ScenarioPath = null,
         bool BuildScenario = false,
         int Clients = 1,
-        string? BehaviorPath = null);
+        string? BehaviorPath = null,
+        bool BuildBehavior = false);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -36,6 +37,7 @@ class Program
         bool buildScenario = false;
         int clients = 1;
         string? behaviorPath = null;
+        bool buildBehavior = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -80,10 +82,13 @@ class Program
                 case "--behavior" when i + 1 < args.Length:
                     behaviorPath = args[++i];
                     break;
+                case "--build-behavior":
+                    buildBehavior = true;
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior);
     }
 
     static void Main(string[] args)
@@ -111,6 +116,12 @@ class Program
         if (cli.BehaviorPath != null)
         {
             RunBehaviorTreeMode(cli.ProtocolPath, cli.BehaviorPath, cli.Target);
+            return;
+        }
+
+        if (cli.BuildBehavior)
+        {
+            RunBuildBehaviorMode(cli.ProtocolPath);
             return;
         }
 
@@ -546,6 +557,54 @@ class Program
     }
 
 
+
+    static void RunBuildBehaviorMode(string? protocolPath)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var recordingsPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings", $"{protocolName}_recordings.json");
+        var store = RecordingStore.Load(recordingsPath);
+
+        if (store.Recordings.Count == 0)
+        { Console.WriteLine($"녹화 없음: {recordingsPath}\n먼저 --analyze로 캡처 로그를 분석하세요."); return; }
+
+        Console.WriteLine($"녹화 {store.Recordings.Count}건에서 Behavior Tree 생성...\n");
+
+        var builder = new BehaviorTreeBuilder();
+        var tree = builder.Build(store, $"{protocolName}_auto");
+
+        var btDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "behaviors");
+        var btPath = Path.Combine(btDir, $"{protocolName}_auto.json");
+        tree.Save(btPath);
+
+        Console.WriteLine($"Behavior Tree 저장: {btPath}");
+        PrintTree(tree.Root, "");
+    }
+
+    static void PrintTree(BtNode node, string indent)
+    {
+        var cond = node.Condition != null ? $" [{node.Condition}]" : "";
+        switch (node)
+        {
+            case BtAction a:
+                Console.WriteLine($"{indent}Action: {a.Id}{cond}");
+                break;
+            case BtSequence s:
+                Console.WriteLine($"{indent}Sequence{cond}");
+                foreach (var c in s.Children) PrintTree(c, indent + "  ");
+                break;
+            case BtSelector s:
+                Console.WriteLine($"{indent}Selector{cond}");
+                foreach (var c in s.Children) PrintTree(c, indent + "  ");
+                break;
+            case BtRepeat r:
+                Console.WriteLine($"{indent}Repeat x{r.Count}{cond}");
+                PrintTree(r.Child, indent + "  ");
+                break;
+        }
+    }
     static void RunBehaviorTreeMode(string? protocolPath, string behaviorPath, string? target)
     {
         if (protocolPath == null || !File.Exists(protocolPath))
@@ -629,6 +688,7 @@ class Program
         Console.WriteLine("  -s, --scenario scenario.json   시나리오 파일로 재현");
         Console.WriteLine("  --clients N                    다중 클라이언트 부하 테스트 (기본: 1)");
         Console.WriteLine("  --behavior bt.json             Behavior Tree 실행");
+        Console.WriteLine("  --build-behavior               녹화에서 Behavior Tree 자동 생성");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");
