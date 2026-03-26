@@ -1,6 +1,6 @@
 {
   "protocol": "MMORPG Simulator Protocol",
-  "last_updated": "2026-03-24T23:30:45",
+  "last_updated": "2026-03-26T17:31:10",
   "actions": [
     {
       "id": "login",
@@ -12,7 +12,7 @@
           "name": "CS_LOGIN",
           "role": "Core",
           "fields": {
-            "accountId": "test002",
+            "accountId": "test003",
             "password": ""
           }
         },
@@ -24,21 +24,21 @@
         {
           "direction": "RECV",
           "name": "SC_CHAR_LIST",
-          "role": "DataSource"
+          "role": "Conditional"
         }
       ],
       "dynamic_fields": [],
       "outputs": [
-        "SC_CHAR_LIST.chars[1].charUid"
+        "SC_CHAR_LIST.chars[0].charUid"
       ],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274",
       "user_input_fields": [
         "accountId",
         "password"
-      ]
+      ],
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "char_select",
@@ -50,7 +50,7 @@
           "name": "CS_CHAR_SELECT",
           "role": "Core",
           "fields": {
-            "charUid": 186346157001
+            "charUid": 3
           }
         },
         {
@@ -60,8 +60,8 @@
         },
         {
           "direction": "RECV",
-          "name": "SC_NPC_SPAWN ×5",
-          "role": "DataSource"
+          "name": "SC_NPC_SPAWN \u00D75",
+          "role": "Core"
         },
         {
           "direction": "RECV",
@@ -78,7 +78,7 @@
         {
           "packet": "CS_CHAR_SELECT",
           "field": "charUid",
-          "source": "SC_CHAR_LIST.chars[1].charUid"
+          "source": "SC_CHAR_LIST.chars[0].charUid"
         }
       ],
       "outputs": [
@@ -88,8 +88,8 @@
         "login"
       ],
       "repeat_count": 1,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "move",
@@ -114,9 +114,9 @@
       "dynamic_fields": [],
       "outputs": [],
       "dependencies": [],
-      "repeat_count": 39,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "repeat_count": 30,
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "attack",
@@ -128,7 +128,7 @@
           "name": "CS_ATTACK",
           "role": "Core",
           "fields": {
-            "targetUid": 5
+            "targetUid": 1
           }
         },
         {
@@ -148,9 +148,9 @@
       "dependencies": [
         "char_select"
       ],
-      "repeat_count": 14,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "repeat_count": 9,
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "item_use",
@@ -162,7 +162,7 @@
           "name": "CS_ITEM_USE",
           "role": "Core",
           "fields": {
-            "slot": 19
+            "slot": 1
           }
         },
         {
@@ -178,23 +178,15 @@
         {
           "direction": "RECV",
           "name": "SC_CHAR_INFO",
-          "role": "Core"
+          "role": "DataSource"
         }
       ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_ITEM_USE",
-          "field": "slot",
-          "source": "SC_INVENTORY_LIST.items[19].slot"
-        }
-      ],
+      "dynamic_fields": [],
       "outputs": [],
-      "dependencies": [
-        "char_select"
-      ],
+      "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260324_192602.log",
-      "last_observed": "19:26:16.592"
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "shop_open",
@@ -214,12 +206,12 @@
       ],
       "dynamic_fields": [],
       "outputs": [
-        "SC_SHOP_LIST.items[2].itemId"
+        "SC_SHOP_LIST.items[4].itemId"
       ],
       "dependencies": [],
-      "repeat_count": 2,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "repeat_count": 3,
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "shop_buy",
@@ -231,13 +223,13 @@
           "name": "CS_SHOP_BUY",
           "role": "Core",
           "fields": {
-            "itemId": 3
+            "itemId": 5
           }
         },
         {
           "direction": "RECV",
           "name": "SC_INVENTORY_UPDATE",
-          "role": "Core"
+          "role": "DataSource"
         },
         {
           "direction": "RECV",
@@ -249,23 +241,21 @@
         {
           "packet": "CS_SHOP_BUY",
           "field": "itemId",
-          "source": "SC_SHOP_LIST.items[2].itemId"
+          "source": "SC_SHOP_LIST.items[4].itemId"
         }
       ],
-      "outputs": [
-        "SC_INVENTORY_UPDATE.slot"
-      ],
+      "outputs": [],
       "dependencies": [
         "shop_open"
       ],
       "repeat_count": 1,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "attendance_check",
       "name": "AttendanceCheck",
-      "phase": "Gameplay",
+      "phase": "Shop",
       "packets": [
         {
           "direction": "SEND",
@@ -282,8 +272,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "item_equip",
@@ -301,12 +291,12 @@
         {
           "direction": "RECV",
           "name": "SC_EQUIP_RESULT",
-          "role": "DataSource"
+          "role": "Core"
         },
         {
           "direction": "RECV",
           "name": "SC_INVENTORY_UPDATE",
-          "role": "Core"
+          "role": "DataSource"
         },
         {
           "direction": "RECV",
@@ -314,20 +304,12 @@
           "role": "DataSource"
         }
       ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_ITEM_EQUIP",
-          "field": "slot",
-          "source": "SC_INVENTORY_UPDATE.slot"
-        }
-      ],
-      "outputs": [
-        "SC_INVENTORY_UPDATE.slot"
-      ],
+      "dynamic_fields": [],
+      "outputs": [],
       "dependencies": [],
-      "repeat_count": 2,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "repeat_count": 1,
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "char_create",
@@ -339,9 +321,8 @@
           "name": "CS_CHAR_CREATE",
           "role": "Core",
           "fields": {
-            "charUid": 186346157001,
-            "name": "testc002-2",
-            "charType": 1
+            "name": "testchar003",
+            "charType": 3
           }
         },
         {
@@ -352,20 +333,20 @@
         {
           "direction": "RECV",
           "name": "SC_CHAR_LIST",
-          "role": "DataSource"
+          "role": "Conditional"
         }
       ],
       "dynamic_fields": [],
       "outputs": [
-        "SC_CHAR_LIST.chars[1].charUid"
+        "SC_CHAR_LIST.chars[0].charUid"
       ],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274",
       "user_input_fields": [
         "name"
-      ]
+      ],
+      "source_log": "capture_20260326_172925.log",
+      "last_observed": "17:29:56.009"
     },
     {
       "id": "shop_sell",

@@ -65,9 +65,9 @@ public class ParsingResponseHandler : IResponseHandler
             Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
             foreach (var field in result.Fields)
                 FormatField($"    {field.Key}", field.Value);
-            // 응답 필드를 SessionState에 저장 (동적 주입용)
+            // 응답 필드를 SessionState에 저장 (동적 주입용) — 배열/구조체는 flat key로 펼침
             foreach (var field in result.Fields)
-                context.SessionState[$"{result.Name}.{field.Key}"] = field.Value;
+                FlattenToState(context.SessionState, $"{result.Name}.{field.Key}", field.Value);
             context.World.Update(result.Name, result.Fields);
         }
         return count;
@@ -95,6 +95,26 @@ public class ParsingResponseHandler : IResponseHandler
 
     private static string FormatScalar(object value)
         => value is string s ? $"\"{s}\"" : value?.ToString() ?? "null";
+
+    private static void FlattenToState(Dictionary<string, object> state, string key, object value)
+    {
+        if (value is List<object> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (list[i] is Dictionary<string, object> s)
+                    foreach (var (fn, fv) in s)
+                        FlattenToState(state, $"{key}[{i}].{fn}", fv);
+                else
+                    state[$"{key}[{i}]"] = list[i];
+        }
+        else if (value is Dictionary<string, object> fields)
+        {
+            foreach (var (fn, fv) in fields)
+                FlattenToState(state, $"{key}.{fn}", fv);
+        }
+        else
+            state[key] = value;
+    }
 }
 
 public class PacketReplayer
