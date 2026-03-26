@@ -18,7 +18,8 @@ class Program
         string? AnalyzeLog = null,
         string? ScenarioPath = null,
         bool BuildScenario = false,
-        int Clients = 1);
+        int Clients = 1,
+        string? BehaviorPath = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -34,6 +35,7 @@ class Program
         string? scenarioPath = null;
         bool buildScenario = false;
         int clients = 1;
+        string? behaviorPath = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -75,10 +77,13 @@ class Program
                 case "--clients" when i + 1 < args.Length:
                     int.TryParse(args[++i], out clients);
                     break;
+                case "--behavior" when i + 1 < args.Length:
+                    behaviorPath = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath);
     }
 
     static void Main(string[] args)
@@ -100,6 +105,12 @@ class Program
         if (cli.BuildScenario)
         {
             RunBuildScenarioMode(cli.ProtocolPath);
+            return;
+        }
+
+        if (cli.BehaviorPath != null)
+        {
+            RunBehaviorTreeMode(cli.ProtocolPath, cli.BehaviorPath, cli.Target);
             return;
         }
 
@@ -525,6 +536,70 @@ class Program
         replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
     }
 
+
+    static void RunBehaviorTreeMode(string? protocolPath, string behaviorPath, string? target)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        if (!File.Exists(behaviorPath))
+        { Console.WriteLine($"BT 파일을 찾을 수 없음: {behaviorPath}"); return; }
+
+        var protocol = ProtocolLoader.Load(protocolPath);
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        if (catalog == null) { Console.WriteLine($"Action Catalog 없음: {catalogPath}"); return; }
+
+        var tree = BehaviorTreeDefinition.Load(behaviorPath);
+
+        if (target == null)
+        { Console.Write("대상 서버 (host:port): "); target = Console.ReadLine(); }
+        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return; }
+        var parts = target.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
+        { Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000"); return; }
+
+        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        using var logger = new ReplayLogger(logDir, console: Console.Out);
+
+        var context = new ReplayContext();
+        var sharedState = new Dictionary<string, object>();
+        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port, logger);
+        var handler = new TrackingResponseHandler(innerHandler, sharedState);
+
+        // TrackingResponseHandler → SessionState 동기화
+        var syncHandler = new BtSyncHandler(handler, context, sharedState);
+
+        var interceptors = new List<IReplayInterceptor>
+        {
+            new DynamicFieldInterceptor(
+                new ScenarioBuilder().CollectAllDynamicFields(catalog), sharedState),
+            new NpcAttackInterceptor()
+        };
+
+        var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger);
+        executor.Execute(tree, parts[0], port, syncHandler, context, interceptors);
+    }
+
+    /// <summary>응답 처리 시 SessionState를 ReplayContext와 sharedState 양쪽에 동기화.</summary>
+    class BtSyncHandler : IResponseHandler
+    {
+        private readonly TrackingResponseHandler _inner;
+        private readonly ReplayContext _context;
+        private readonly Dictionary<string, object> _sharedState;
+
+        public BtSyncHandler(TrackingResponseHandler inner, ReplayContext context, Dictionary<string, object> sharedState)
+        { _inner = inner; _context = context; _sharedState = sharedState; }
+
+        public int OnResponse(byte[] data, int length, ReplayContext context)
+        {
+            int count = _inner.OnResponse(data, length, _context);
+            // SessionState → sharedState 동기화 (ConditionEvaluator + DynamicFieldInterceptor 양쪽 사용)
+            foreach (var kv in _context.SessionState)
+                _sharedState[kv.Key] = kv.Value;
+            return count;
+        }
+    }
     static void ShowUsage()
     {
         Console.WriteLine("사용법:");
@@ -544,6 +619,7 @@ class Program
         Console.WriteLine("  --build-scenario               인터랙티브 시나리오 생성");
         Console.WriteLine("  -s, --scenario scenario.json   시나리오 파일로 재현");
         Console.WriteLine("  --clients N                    다중 클라이언트 부하 테스트 (기본: 1)");
+        Console.WriteLine("  --behavior bt.json             Behavior Tree 실행");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");

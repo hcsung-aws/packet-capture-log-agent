@@ -135,6 +135,17 @@ public class ScenarioBuilder
         return result;
     }
 
+    /// <summary>카탈로그 전체에서 dynamic fields 수집 (BT용).</summary>
+    public List<ActionDynamicField> CollectAllDynamicFields(ActionCatalog catalog)
+    {
+        var result = new List<ActionDynamicField>();
+        var seen = new HashSet<string>();
+        foreach (var action in catalog.Actions)
+            foreach (var df in action.DynamicFields)
+                if (seen.Add($"{df.Packet}.{df.Field}")) result.Add(df);
+        return result;
+    }
+
     // ── I/O ──
 
     public static ScenarioDefinition Load(string path)
@@ -218,7 +229,7 @@ public class ScenarioBuilder
 
     // ── 유틸 ──
 
-    static (string Name, int Count) ParsePacketName(string raw)
+    internal static (string Name, int Count) ParsePacketName(string raw)
     {
         var idx = raw.IndexOf(" ×");
         if (idx > 0 && int.TryParse(raw[(idx + 2)..], out var count))
@@ -226,7 +237,7 @@ public class ScenarioBuilder
         return (raw, 1);
     }
 
-    static object ConvertJsonElement(JsonElement je) => je.ValueKind switch
+    internal static object ConvertJsonElement(JsonElement je) => je.ValueKind switch
     {
         JsonValueKind.Number when je.TryGetInt32(out var i) => i,
         JsonValueKind.Number when je.TryGetInt64(out var l) => l,
