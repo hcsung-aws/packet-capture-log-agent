@@ -45,4 +45,6 @@ Mickey 13: Phase 3 완료 (ScenarioBuilder + DynamicFieldInterceptor, 테스트 
 18%
 
 ## Next Steps
-- 사용자 방향 확인 후 결정
+- Phase 5: Behavior Tree 구현 (docs/BEHAVIOR_TREE_DESIGN.md 참조)
+  - 단계 A: BT 노드 모델 + JSON 직렬화 + ConditionEvaluator
+  - 단계 B: ActionExecutor + BehaviorTreeExecutor + CLI
