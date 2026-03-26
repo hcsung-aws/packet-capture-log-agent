@@ -20,7 +20,8 @@ class Program
         bool BuildScenario = false,
         int Clients = 1,
         string? BehaviorPath = null,
-        bool BuildBehavior = false);
+        bool BuildBehavior = false,
+        string? EditBehaviorPath = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -38,6 +39,7 @@ class Program
         int clients = 1;
         string? behaviorPath = null;
         bool buildBehavior = false;
+        string? editBehaviorPath = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -85,10 +87,13 @@ class Program
                 case "--build-behavior":
                     buildBehavior = true;
                     break;
+                case "--edit-behavior" when i + 1 < args.Length:
+                    editBehaviorPath = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath);
     }
 
     static void Main(string[] args)
@@ -122,6 +127,15 @@ class Program
         if (cli.BuildBehavior)
         {
             RunBuildBehaviorMode(cli.ProtocolPath);
+            return;
+        }
+
+        if (cli.EditBehaviorPath != null)
+        {
+            var tree = BehaviorTreeDefinition.Load(cli.EditBehaviorPath);
+            tree = BehaviorTreeEditor.Edit(tree);
+            tree.Save(cli.EditBehaviorPath);
+            Console.WriteLine($"\n저장 완료: {cli.EditBehaviorPath}");
             return;
         }
 
@@ -689,6 +703,7 @@ class Program
         Console.WriteLine("  --clients N                    다중 클라이언트 부하 테스트 (기본: 1)");
         Console.WriteLine("  --behavior bt.json             Behavior Tree 실행");
         Console.WriteLine("  --build-behavior               녹화에서 Behavior Tree 자동 생성");
+        Console.WriteLine("  --edit-behavior bt.json        Behavior Tree 인터랙티브 편집");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");
