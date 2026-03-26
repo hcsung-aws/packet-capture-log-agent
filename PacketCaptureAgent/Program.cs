@@ -198,6 +198,15 @@ class Program
             foreach (var df in dynamicFields)
                 Console.WriteLine($"  {df.SendPacket}.{df.SendField} ← {df.SourcePacket}.{df.SourceField}");
         }
+
+        // Recording 추출 + 저장
+        var recording = RecordingStore.ExtractFromCapture(packets, classified, catalog, logPath);
+        var recordingsDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings");
+        var recordingsPath = Path.Combine(recordingsDir, $"{protocolName}_recordings.json");
+        var store = RecordingStore.Load(recordingsPath);
+        store.Recordings.Add(recording);
+        store.Save(recordingsPath);
+        Console.WriteLine($"Recording 저장: {recordingsPath} ({store.Recordings.Count}건, 이번 {recording.Sequence.Count} steps)");
     }
 
     static void RunReplayMode(string? protocolPath, string replayLog, string? target, ReplayOptions options)
