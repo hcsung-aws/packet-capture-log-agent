@@ -1,0 +1,26 @@
+{
+  "name": "scenario_test_0001",
+  "protocol": "MMORPG Simulator Protocol",
+  "steps": [
+    {
+      "action": "login",
+      "repeat": 1
+    },
+    {
+      "action": "char_select",
+      "repeat": 1
+    },
+    {
+      "action": "move",
+      "repeat": 3
+    },
+    {
+      "action": "attack",
+      "repeat": 2
+    },
+    {
+      "action": "attendance_check",
+      "repeat": 1
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "scenario-test-0003",
+  "protocol": "MMORPG Simulator Protocol",
+  "steps": [
+    {
+      "action": "login",
+      "repeat": 1,
+      "overrides": {
+        "accountId": "{random:8}"
+      }
+    },
+    {
+      "action": "char_create",
+      "repeat": 1,
+      "overrides": {
+        "name": "{random:10}"
+      }
+    },
+    {
+      "action": "char_select",
+      "repeat": 1
+    },
+    {
+      "action": "move",
+      "repeat": 2
+    },
+    {
+      "action": "attack",
+      "repeat": 2
+    },
+    {
+      "action": "attendance_check",
+      "repeat": 1
+    },
+    {
+      "action": "shop_open",
+      "repeat": 1
+    },
+    {
+      "action": "shop_buy",
+      "repeat": 1
+    },
+    {
+      "action": "shop_sell",
+      "repeat": 1
+    }
+  ]
+}
