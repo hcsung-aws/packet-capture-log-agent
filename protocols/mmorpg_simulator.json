@@ -135,10 +135,6 @@
       "direction": "C2S",
       "fields": [
         {
-          "name": "charUid",
-          "type": "uint64"
-        },
-        {
           "name": "name",
           "type": "string",
           "length": 20
