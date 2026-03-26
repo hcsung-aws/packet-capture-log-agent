@@ -48,7 +48,9 @@ public class ReplayLogger : TextWriter
         if (date == _currentDate && _file != null) return;
         _file?.Dispose();
         _currentDate = date;
-        _file = new StreamWriter(Path.Combine(_logDir, $"replay_{date}.jsonl"), append: true, Encoding.UTF8);
+        var path = Path.Combine(_logDir, $"replay_{date}.jsonl");
+        var fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+        _file = new StreamWriter(fs, Encoding.UTF8);
     }
 
     protected override void Dispose(bool disposing)
