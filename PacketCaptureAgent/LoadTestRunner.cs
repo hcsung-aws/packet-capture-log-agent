@@ -8,7 +8,8 @@ public class LoadTestRunner
         ActionCatalog catalog,
         string host, int port,
         int clientCount,
-        ReplayOptions options)
+        ReplayOptions options,
+        string? logDir = null)
     {
         Console.WriteLine($"=== Load Test ===\n");
         Console.WriteLine($"시나리오: {scenario.Name}");
@@ -26,9 +27,12 @@ public class LoadTestRunner
             int idx = i;
             tasks[i] = Task.Run(() =>
             {
+                using var logger = logDir != null ? new ReplayLogger(logDir, idx + 1) : null;
+                var output = (TextWriter?)logger ?? TextWriter.Null;
+
                 var packets = builder.Build(scenario, catalog);
                 var sharedState = new Dictionary<string, object>();
-                var innerHandler = new ParsingResponseHandler(protocol, host, port, TextWriter.Null);
+                var innerHandler = new ParsingResponseHandler(protocol, host, port, output);
                 var handler = new TrackingResponseHandler(innerHandler, sharedState);
                 var interceptors = new List<IReplayInterceptor>();
                 if (dynamicFields.Count > 0)
@@ -39,7 +43,7 @@ public class LoadTestRunner
                 Console.WriteLine($"  [{connected}/{clientCount}] Client {idx + 1} 시작");
 
                 var replayer = new PacketReplayer(protocol);
-                results[idx] = replayer.Replay(host, port, packets, handler, options, interceptors, TextWriter.Null);
+                results[idx] = replayer.Replay(host, port, packets, handler, options, interceptors, output);
 
                 if (results[idx].Error != null)
                     Interlocked.Increment(ref failed);

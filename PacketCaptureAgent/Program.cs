@@ -236,9 +236,11 @@ class Program
         }
 
         Console.WriteLine($"\n{parts[0]}:{port}로 재현 시작...\n");
-        var handler = new ParsingResponseHandler(protocol, parts[0], port);
+        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        using var logger = new ReplayLogger(logDir, console: Console.Out);
+        var handler = new ParsingResponseHandler(protocol, parts[0], port, logger);
         var interceptors = new List<IReplayInterceptor> { new NpcAttackInterceptor() };
-        replayer.Replay(parts[0], port, packets, handler, options, interceptors);
+        replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
     }
 
     static void RunCaptureMode(string? protocolPath, int? filterPort)
@@ -490,7 +492,8 @@ class Program
         // 다중 클라이언트 → LoadTestRunner
         if (clients > 1)
         {
-            LoadTestRunner.Run(protocol, scenario, catalog, parts[0], port, clients, options);
+            var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+            LoadTestRunner.Run(protocol, scenario, catalog, parts[0], port, clients, options, logDir);
             return;
         }
 
@@ -506,9 +509,12 @@ class Program
 
         Console.WriteLine($"\n{parts[0]}:{port}로 시나리오 재현 시작...\n");
 
+        var singleLogDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        using var logger = new ReplayLogger(singleLogDir, console: Console.Out);
+
         // 동적 필드 주입: 공유 상태 + TrackingResponseHandler + DynamicFieldInterceptor
         var sharedState = new Dictionary<string, object>();
-        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port);
+        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port, logger);
         var handler = new TrackingResponseHandler(innerHandler, sharedState);
         var interceptors = new List<IReplayInterceptor>();
         if (dynamicFields.Count > 0)
@@ -516,7 +522,7 @@ class Program
         interceptors.Add(new NpcAttackInterceptor());
 
         var replayer = new PacketReplayer(protocol);
-        replayer.Replay(parts[0], port, packets, handler, options, interceptors);
+        replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
     }
 
     static void ShowUsage()
