@@ -1,0 +1,26 @@
+{
+  "name": "existing_account_gameplay",
+  "root": {
+    "type": "sequence",
+    "children": [
+      {"type": "action", "id": "login", "overrides": {"accountId": "test003"}},
+      {
+        "type": "selector",
+        "children": [
+          {
+            "type": "sequence",
+            "condition": "SC_CHAR_LIST.count == 0",
+            "children": [
+              {"type": "action", "id": "char_create", "overrides": {"name": "newchar"}},
+              {"type": "action", "id": "char_select"}
+            ]
+          },
+          {"type": "action", "id": "char_select", "condition": "SC_CHAR_LIST.count > 0"}
+        ]
+      },
+      {"type": "repeat", "count": 2, "child": {"type": "action", "id": "move"}},
+      {"type": "repeat", "count": 2, "child": {"type": "action", "id": "attack"}},
+      {"type": "action", "id": "attendance_check"}
+    ]
+  }
+}
