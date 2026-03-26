@@ -17,7 +17,8 @@ class Program
         bool ShowHelp = false,
         string? AnalyzeLog = null,
         string? ScenarioPath = null,
-        bool BuildScenario = false);
+        bool BuildScenario = false,
+        int Clients = 1);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -32,6 +33,7 @@ class Program
         string? analyzeLog = null;
         string? scenarioPath = null;
         bool buildScenario = false;
+        int clients = 1;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -70,10 +72,13 @@ class Program
                 case "--build-scenario":
                     buildScenario = true;
                     break;
+                case "--clients" when i + 1 < args.Length:
+                    int.TryParse(args[++i], out clients);
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients);
     }
 
     static void Main(string[] args)
@@ -111,7 +116,7 @@ class Program
                 TimeoutMs = cli.Timeout,
                 Speed = cli.Speed
             };
-            RunScenarioReplayMode(cli.ProtocolPath, cli.ScenarioPath, cli.Target, options);
+            RunScenarioReplayMode(cli.ProtocolPath, cli.ScenarioPath, cli.Target, options, cli.Clients);
             return;
         }
 
@@ -431,9 +436,10 @@ class Program
 
     // ── 시나리오 재현 모드 (기존 코드와 완전 분리) ──
 
-    static void RunScenarioReplayMode(string? protocolPath, string scenarioPath, string? target, ReplayOptions options)
+    static void RunScenarioReplayMode(string? protocolPath, string scenarioPath, string? target, ReplayOptions options, int clients = 1)
     {
-        Console.WriteLine("=== Scenario Replay Mode ===\n");
+        if (clients <= 1)
+            Console.WriteLine("=== Scenario Replay Mode ===\n");
 
         if (protocolPath == null || !File.Exists(protocolPath))
         {
@@ -467,15 +473,6 @@ class Program
             return;
         }
 
-        var packets = builder.Build(scenario, catalog);
-        var dynamicFields = builder.CollectDynamicFields(scenario, catalog);
-
-        Console.WriteLine($"시나리오: {scenario.Name}");
-        Console.WriteLine($"프로토콜: {protocol.Protocol.Name}");
-        Console.WriteLine($"패킷: {packets.Count}개 (SEND: {packets.Count(p => p.Direction == "SEND")})");
-        if (dynamicFields.Count > 0)
-            Console.WriteLine($"Dynamic Fields: {dynamicFields.Count}건 (자동 주입)");
-
         if (target == null)
         {
             Console.Write("\n대상 서버 (host:port): ");
@@ -489,6 +486,23 @@ class Program
             Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000");
             return;
         }
+
+        // 다중 클라이언트 → LoadTestRunner
+        if (clients > 1)
+        {
+            LoadTestRunner.Run(protocol, scenario, catalog, parts[0], port, clients, options);
+            return;
+        }
+
+        // 단일 클라이언트 (기존 동작)
+        var packets = builder.Build(scenario, catalog);
+        var dynamicFields = builder.CollectDynamicFields(scenario, catalog);
+
+        Console.WriteLine($"시나리오: {scenario.Name}");
+        Console.WriteLine($"프로토콜: {protocol.Protocol.Name}");
+        Console.WriteLine($"패킷: {packets.Count}개 (SEND: {packets.Count(p => p.Direction == "SEND")})");
+        if (dynamicFields.Count > 0)
+            Console.WriteLine($"Dynamic Fields: {dynamicFields.Count}건 (자동 주입)");
 
         Console.WriteLine($"\n{parts[0]}:{port}로 시나리오 재현 시작...\n");
 
@@ -523,6 +537,7 @@ class Program
         Console.WriteLine("시나리오 옵션:");
         Console.WriteLine("  --build-scenario               인터랙티브 시나리오 생성");
         Console.WriteLine("  -s, --scenario scenario.json   시나리오 파일로 재현");
+        Console.WriteLine("  --clients N                    다중 클라이언트 부하 테스트 (기본: 1)");
         Console.WriteLine();
         Console.WriteLine("재현 옵션:");
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");

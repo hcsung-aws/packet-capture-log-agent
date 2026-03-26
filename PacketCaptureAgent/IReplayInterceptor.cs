@@ -21,17 +21,19 @@ public class ReplaySession
     private readonly ReplayContext _context;
     private readonly byte[] _recvBuffer = new byte[65536];
     private readonly DateTime _startTime;
+    public TextWriter Output { get; }
 
     public GameWorldState World => _context.World;
 
     public ReplaySession(NetworkStream stream, PacketBuilder builder,
-        IResponseHandler handler, ReplayContext context, DateTime startTime)
+        IResponseHandler handler, ReplayContext context, DateTime startTime, TextWriter? output = null)
     {
         _stream = stream;
         _builder = builder;
         _handler = handler;
         _context = context;
         _startTime = startTime;
+        Output = output ?? Console.Out;
     }
 
     public void SendPacket(string name, Dictionary<string, object> fields)
@@ -39,7 +41,7 @@ public class ReplaySession
         var data = _builder.Build(name, fields);
         _stream.Write(data);
         _context.Elapsed = DateTime.Now - _startTime;
-        Console.WriteLine($"[{_context.Elapsed:mm\\:ss\\.fff}] SEND {name} (interceptor)");
+        Output.WriteLine($"[{_context.Elapsed:mm\\:ss\\.fff}] SEND {name} (interceptor)");
     }
 
     public void ReceiveAndProcess(int timeoutMs = 5000)

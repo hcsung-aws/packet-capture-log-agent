@@ -13,12 +13,13 @@ public class NpcAttackInterceptor : IReplayInterceptor
 
     public ReplayPacket Prepare(ReplaySession session, ReplayPacket original)
     {
+        var output = session.Output;
         for (int attempt = 0; attempt < MaxMoveAttempts; attempt++)
         {
             var nearest = session.World.FindNearestNpc();
             if (nearest == null)
             {
-                Console.WriteLine("[Interceptor] No NPC found, sending original packet");
+                output.WriteLine("[Interceptor] No NPC found, sending original packet");
                 return original;
             }
 
@@ -28,14 +29,14 @@ public class NpcAttackInterceptor : IReplayInterceptor
             // 공격 가능: 맨해튼 거리 1 이하
             if (Math.Abs(px - npcX) + Math.Abs(py - npcY) <= 1)
             {
-                Console.WriteLine($"[Interceptor] In range of NPC {npcUid} at ({npcX},{npcY}), replacing targetUid");
+                output.WriteLine($"[Interceptor] In range of NPC {npcUid} at ({npcX},{npcY}), replacing targetUid");
                 var fields = new Dictionary<string, object>(original.Fields) { ["targetUid"] = npcUid };
                 return original with { Fields = fields };
             }
 
             // 공격 가능 위치 계산 (NPC 상하좌우 중 가장 가까운 칸)
             var (tx, ty) = FindBestAttackPos(px, py, npcX, npcY);
-            Console.WriteLine($"[Interceptor] Moving toward NPC {npcUid}: ({px},{py}) -> ({tx},{ty})");
+            output.WriteLine($"[Interceptor] Moving toward NPC {npcUid}: ({px},{py}) -> ({tx},{ty})");
 
             // 한 칸 이동
             int dx = Math.Sign(tx - px);
@@ -46,7 +47,7 @@ public class NpcAttackInterceptor : IReplayInterceptor
             Thread.Sleep(MoveIntervalMs);
         }
 
-        Console.WriteLine("[Interceptor] Max move attempts reached");
+        output.WriteLine("[Interceptor] Max move attempts reached");
         return original;
     }
 

@@ -46,10 +46,12 @@ public class ParsingResponseHandler : IResponseHandler
 {
     private readonly PacketParser _parser;
     private readonly TcpStream _tcpStream;
+    private readonly TextWriter _output;
 
-    public ParsingResponseHandler(ProtocolDefinition protocol, string host, int port)
+    public ParsingResponseHandler(ProtocolDefinition protocol, string host, int port, TextWriter? output = null)
     {
         _parser = new PacketParser(protocol);
+        _output = output ?? Console.Out;
         var connKey = new ConnectionKey(System.Net.IPAddress.Parse(host), port, System.Net.IPAddress.Loopback, 0);
         _tcpStream = new TcpStream(connKey);
     }
@@ -62,7 +64,7 @@ public class ParsingResponseHandler : IResponseHandler
         while ((result = _parser.TryParse(_tcpStream)) != null)
         {
             count++;
-            Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
+            _output.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
             foreach (var field in result.Fields)
                 FormatField($"    {field.Key}", field.Value);
             // 응답 필드를 SessionState에 저장 (동적 주입용) — 배열/구조체는 flat key로 펼침
@@ -73,7 +75,7 @@ public class ParsingResponseHandler : IResponseHandler
         return count;
     }
 
-    private static void FormatField(string key, object value)
+    private void FormatField(string key, object value)
     {
         if (value is List<object> list)
         {
@@ -82,7 +84,7 @@ public class ParsingResponseHandler : IResponseHandler
                     foreach (var (fn, fv) in s)
                         FormatField($"{key}[{i}].{fn}", fv);
                 else
-                    Console.WriteLine($"{key}[{i}]: {FormatScalar(list[i])}");
+                    _output.WriteLine($"{key}[{i}]: {FormatScalar(list[i])}");
         }
         else if (value is Dictionary<string, object> fields)
         {
@@ -90,7 +92,7 @@ public class ParsingResponseHandler : IResponseHandler
                 FormatField($"{key}.{fn}", fv);
         }
         else
-            Console.WriteLine($"{key}: {FormatScalar(value)}");
+            _output.WriteLine($"{key}: {FormatScalar(value)}");
     }
 
     private static string FormatScalar(object value)
@@ -116,6 +118,8 @@ public class ParsingResponseHandler : IResponseHandler
             state[key] = value;
     }
 }
+
+public record ReplayResult(int Sent, int Received, TimeSpan Duration, string? Error = null);
 
 public class PacketReplayer
 {
@@ -188,20 +192,25 @@ public class PacketReplayer
     }
 
     /// <summary>코어 리플레이 루프. 타이밍·송수신 시퀀싱을 담당하고, 응답 처리는 handler에 위임.</summary>
-    public void Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null, List<IReplayInterceptor>? interceptors = null)
+    public ReplayResult Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null, List<IReplayInterceptor>? interceptors = null, TextWriter? output = null)
     {
+        output ??= Console.Out;
         options ??= new ReplayOptions();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        try
+        {
         using var client = new TcpClient();
         client.Connect(host, port);
         using var stream = client.GetStream();
 
-        Console.WriteLine($"Connected to {host}:{port}");
-        Console.WriteLine($"Mode: {options.Mode}, Timeout: {options.TimeoutMs}ms, Speed: {options.Speed}x\n");
+        output.WriteLine($"Connected to {host}:{port}");
+        output.WriteLine($"Mode: {options.Mode}, Timeout: {options.TimeoutMs}ms, Speed: {options.Speed}x\n");
 
         var recvBuffer = new byte[65536];
         var startTime = DateTime.Now;
         var context = new ReplayContext();
-        var session = new ReplaySession(stream, _builder, handler, context, startTime);
+        var session = new ReplaySession(stream, _builder, handler, context, startTime, output);
         int sent = 0, received = 0;
 
         for (int i = 0; i < packets.Count; i++)
@@ -230,7 +239,7 @@ public class PacketReplayer
             stream.Write(data);
             sent++;
             context.Elapsed = DateTime.Now - startTime;
-            Console.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
+            output.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
 
             // 응답 대기 (response/hybrid 모드)
             if (options.Mode != ReplayMode.Timing)
@@ -244,12 +253,21 @@ public class PacketReplayer
                 }
                 else if (expectResponse)
                 {
-                    Console.WriteLine($"  ⚠ Response timeout ({options.TimeoutMs}ms)");
+                    output.WriteLine($"  ⚠ Response timeout ({options.TimeoutMs}ms)");
                 }
             }
         }
 
-        Console.WriteLine($"\nReplay completed: {sent} sent, {received} received");
+        sw.Stop();
+        output.WriteLine($"\nReplay completed: {sent} sent, {received} received");
+        return new ReplayResult(sent, received, sw.Elapsed);
+
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            return new ReplayResult(0, 0, sw.Elapsed, ex.Message);
+        }
     }
 
     private bool WaitForResponse(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
