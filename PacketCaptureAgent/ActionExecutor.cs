@@ -10,6 +10,7 @@ public class ActionExecutor
     private readonly ProtocolDefinition _protocol;
     private readonly PacketBuilder _builder;
     private readonly ActionCatalog _catalog;
+    private readonly Dictionary<string, string> _randomCache = new();
 
     public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog)
     {
@@ -47,7 +48,7 @@ public class ActionExecutor
                         fields[kv.Key] = kv.Value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je) : kv.Value;
                 if (overrides != null)
                     foreach (var kv in overrides)
-                        fields[kv.Key] = kv.Value;
+                        fields[kv.Key] = ScenarioBuilder.ResolveValue(kv.Value, _randomCache);
 
                 var pkt = new ReplayPacket(name, "SEND", fields, TimeSpan.Zero);
 
