@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace PacketCaptureAgent;
@@ -7,6 +8,10 @@ namespace PacketCaptureAgent;
 /// TextWriter를 상속하여 기존 출력 경로에 그대로 연결 가능.</summary>
 public class ReplayLogger : TextWriter
 {
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
     private readonly TextWriter? _console;
     private readonly string _logDir;
     private readonly int? _clientId;
@@ -32,7 +37,7 @@ public class ReplayLogger : TextWriter
         var now = DateTime.Now;
         var entry = new LogEntry { ts = now.ToString("o"), msg = value.TrimStart() };
         if (_clientId.HasValue) entry.client = _clientId.Value;
-        var json = JsonSerializer.Serialize(entry);
+        var json = JsonSerializer.Serialize(entry, JsonOpts);
 
         lock (_lock)
         {
