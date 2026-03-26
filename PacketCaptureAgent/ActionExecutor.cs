@@ -48,7 +48,10 @@ public class ActionExecutor
                         fields[kv.Key] = kv.Value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je) : kv.Value;
                 if (overrides != null)
                     foreach (var kv in overrides)
-                        fields[kv.Key] = ScenarioBuilder.ResolveValue(kv.Value, _randomCache);
+                    {
+                        var val = kv.Value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je) : kv.Value;
+                        fields[kv.Key] = ScenarioBuilder.ResolveValue(val, _randomCache);
+                    }
 
                 var pkt = new ReplayPacket(name, "SEND", fields, TimeSpan.Zero);
 
