@@ -26,7 +26,9 @@
     "Login": [1],
     "Enter Game": [2],
     "Gameplay": [4, 5, 6, 7],
-    "Shop": [8]
+    "Shop": [8],
+    "Quest": [10],
+    "Party": [11]
   },
   "types": {
     "CharListEntry": {
@@ -65,6 +67,27 @@
         {"name": "slot", "type": "uint8"},
         {"name": "itemId", "type": "uint16"},
         {"name": "itemName", "type": "string", "length": 32}
+      ]
+    },
+    "QuestEntry": {
+      "kind": "struct",
+      "fields": [
+        {"name": "questId", "type": "uint16"},
+        {"name": "name", "type": "string", "length": 32},
+        {"name": "status", "type": "uint8"},
+        {"name": "progress", "type": "uint16"},
+        {"name": "target", "type": "uint16"}
+      ]
+    },
+    "PartyMember": {
+      "kind": "struct",
+      "fields": [
+        {"name": "charUid", "type": "uint64"},
+        {"name": "name", "type": "string", "length": 20},
+        {"name": "hp", "type": "uint16"},
+        {"name": "maxHp", "type": "uint16"},
+        {"name": "posX", "type": "int16"},
+        {"name": "posY", "type": "int16"}
       ]
     }
   },
@@ -554,6 +577,119 @@
       "direction": "C2S",
       "fields": [
         {"name": "slot", "type": "uint8"}
+      ]
+    },
+    {
+      "type": 2561,
+      "name": "CS_QUEST_LIST",
+      "direction": "C2S",
+      "fields": [
+        {"name": "npcUid", "type": "uint64"}
+      ]
+    },
+    {
+      "type": 2562,
+      "name": "SC_QUEST_LIST",
+      "direction": "S2C",
+      "fields": [
+        {"name": "count", "type": "uint8"},
+        {"name": "quests", "type": "array", "count_field": "count", "element": "QuestEntry"}
+      ]
+    },
+    {
+      "type": 2563,
+      "name": "CS_QUEST_ACCEPT",
+      "direction": "C2S",
+      "fields": [
+        {"name": "questId", "type": "uint16"}
+      ]
+    },
+    {
+      "type": 2564,
+      "name": "SC_QUEST_ACCEPT_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "questId", "type": "uint16"},
+        {"name": "message", "type": "string", "length": 64}
+      ]
+    },
+    {
+      "type": 2565,
+      "name": "SC_QUEST_PROGRESS",
+      "direction": "S2C",
+      "fields": [
+        {"name": "questId", "type": "uint16"},
+        {"name": "progress", "type": "uint16"},
+        {"name": "target", "type": "uint16"}
+      ]
+    },
+    {
+      "type": 2566,
+      "name": "CS_QUEST_COMPLETE",
+      "direction": "C2S",
+      "fields": [
+        {"name": "questId", "type": "uint16"}
+      ]
+    },
+    {
+      "type": 2567,
+      "name": "SC_QUEST_REWARD",
+      "direction": "S2C",
+      "fields": [
+        {"name": "success", "type": "uint8"},
+        {"name": "questId", "type": "uint16"},
+        {"name": "rewardGold", "type": "uint32"},
+        {"name": "rewardExp", "type": "uint32"},
+        {"name": "rewardItemId", "type": "uint16"},
+        {"name": "message", "type": "string", "length": 64}
+      ]
+    },
+    {
+      "type": 2817,
+      "name": "CS_PARTY_INVITE",
+      "direction": "C2S",
+      "fields": [
+        {"name": "targetName", "type": "string", "length": 20}
+      ]
+    },
+    {
+      "type": 2818,
+      "name": "SC_PARTY_INVITE",
+      "direction": "S2C",
+      "fields": [
+        {"name": "inviterName", "type": "string", "length": 20}
+      ]
+    },
+    {
+      "type": 2819,
+      "name": "CS_PARTY_ACCEPT",
+      "direction": "C2S",
+      "fields": [
+        {"name": "accept", "type": "uint8"}
+      ]
+    },
+    {
+      "type": 2820,
+      "name": "SC_PARTY_UPDATE",
+      "direction": "S2C",
+      "fields": [
+        {"name": "memberCount", "type": "uint8"},
+        {"name": "members", "type": "array", "count_field": "memberCount", "element": "PartyMember"}
+      ]
+    },
+    {
+      "type": 2821,
+      "name": "CS_PARTY_LEAVE",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 2822,
+      "name": "SC_PARTY_LEAVE",
+      "direction": "S2C",
+      "fields": [
+        {"name": "charUid", "type": "uint64"}
       ]
     },
     {

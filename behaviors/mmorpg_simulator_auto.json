@@ -1,0 +1,1019 @@
+{
+  "name": "mmorpg_simulator_auto",
+  "root": {
+    "Type": "sequence",
+    "children": [
+      {
+        "Type": "action",
+        "id": "login",
+        "type": "action"
+      },
+      {
+        "Type": "selector",
+        "children": [
+          {
+            "Type": "sequence",
+            "children": [
+              {
+                "Type": "action",
+                "id": "char_select",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "move",
+                "type": "action"
+              },
+              {
+                "Type": "selector",
+                "children": [
+                  {
+                    "Type": "sequence",
+                    "children": [
+                      {
+                        "Type": "action",
+                        "id": "move",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "selector",
+                        "children": [
+                          {
+                            "Type": "sequence",
+                            "children": [
+                              {
+                                "Type": "repeat",
+                                "count": 4,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action"
+                                },
+                                "type": "repeat"
+                              },
+                              {
+                                "Type": "action",
+                                "id": "move",
+                                "type": "action"
+                              },
+                              {
+                                "Type": "selector",
+                                "children": [
+                                  {
+                                    "Type": "sequence",
+                                    "children": [
+                                      {
+                                        "Type": "repeat",
+                                        "count": 2,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "attack",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 2,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "action",
+                                        "id": "move",
+                                        "type": "action"
+                                      },
+                                      {
+                                        "Type": "selector",
+                                        "children": [
+                                          {
+                                            "Type": "sequence",
+                                            "children": [
+                                              {
+                                                "Type": "repeat",
+                                                "count": 11,
+                                                "child": {
+                                                  "Type": "action",
+                                                  "id": "move",
+                                                  "type": "action"
+                                                },
+                                                "type": "repeat"
+                                              },
+                                              {
+                                                "Type": "repeat",
+                                                "count": 2,
+                                                "child": {
+                                                  "Type": "action",
+                                                  "id": "attack",
+                                                  "type": "action"
+                                                },
+                                                "type": "repeat"
+                                              },
+                                              {
+                                                "Type": "action",
+                                                "id": "item_use",
+                                                "type": "action"
+                                              },
+                                              {
+                                                "Type": "action",
+                                                "id": "shop_open",
+                                                "type": "action"
+                                              },
+                                              {
+                                                "Type": "repeat",
+                                                "count": 2,
+                                                "child": {
+                                                  "Type": "action",
+                                                  "id": "shop_buy",
+                                                  "type": "action"
+                                                },
+                                                "type": "repeat"
+                                              }
+                                            ],
+                                            "type": "sequence",
+                                            "condition": "SC_CHAR_INFO.posX == 13"
+                                          },
+                                          {
+                                            "Type": "sequence",
+                                            "children": [
+                                              {
+                                                "Type": "repeat",
+                                                "count": 2,
+                                                "child": {
+                                                  "Type": "action",
+                                                  "id": "attack",
+                                                  "type": "action"
+                                                },
+                                                "type": "repeat"
+                                              },
+                                              {
+                                                "Type": "action",
+                                                "id": "item_use",
+                                                "type": "action"
+                                              },
+                                              {
+                                                "Type": "action",
+                                                "id": "shop_open",
+                                                "type": "action"
+                                              },
+                                              {
+                                                "Type": "repeat",
+                                                "count": 2,
+                                                "child": {
+                                                  "Type": "action",
+                                                  "id": "shop_buy",
+                                                  "type": "action"
+                                                },
+                                                "type": "repeat"
+                                              }
+                                            ],
+                                            "type": "sequence",
+                                            "condition": "SC_CHAR_INFO.posX == 8"
+                                          }
+                                        ],
+                                        "type": "selector"
+                                      }
+                                    ],
+                                    "type": "sequence",
+                                    "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+                                  },
+                                  {
+                                    "Type": "sequence",
+                                    "children": [
+                                      {
+                                        "Type": "repeat",
+                                        "count": 3,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "action",
+                                        "id": "quest_list",
+                                        "type": "action"
+                                      },
+                                      {
+                                        "Type": "action",
+                                        "id": "quest_accept",
+                                        "type": "action"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 18,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 2,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "attack",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 9,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 2,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "attack",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 15,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 2,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "attack",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 4,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      },
+                                      {
+                                        "Type": "action",
+                                        "id": "quest_list",
+                                        "type": "action"
+                                      },
+                                      {
+                                        "Type": "action",
+                                        "id": "quest_complete",
+                                        "type": "action"
+                                      },
+                                      {
+                                        "Type": "repeat",
+                                        "count": 5,
+                                        "child": {
+                                          "Type": "action",
+                                          "id": "move",
+                                          "type": "action"
+                                        },
+                                        "type": "repeat"
+                                      }
+                                    ],
+                                    "type": "sequence",
+                                    "condition": "SC_LOGIN_RESULT.accountUid == 151461524"
+                                  }
+                                ],
+                                "type": "selector"
+                              }
+                            ],
+                            "type": "sequence",
+                            "condition": "SC_CHAR_INFO.posX == 13"
+                          },
+                          {
+                            "Type": "sequence",
+                            "children": [
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "type": "action"
+                                },
+                                "type": "repeat"
+                              },
+                              {
+                                "Type": "action",
+                                "id": "item_use",
+                                "type": "action"
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_open",
+                                "type": "action"
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "shop_buy",
+                                  "type": "action"
+                                },
+                                "type": "repeat"
+                              }
+                            ],
+                            "type": "sequence",
+                            "condition": "SC_CHAR_INFO.posX == 12"
+                          }
+                        ],
+                        "type": "selector"
+                      }
+                    ],
+                    "type": "sequence",
+                    "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+                  },
+                  {
+                    "Type": "sequence",
+                    "children": [
+                      {
+                        "Type": "action",
+                        "id": "party_accept",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 4,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "quest_list",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "attendance_check",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "chat",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 7,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_list",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_accept",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 8,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 5,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 9,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 5,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "shop_open",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "shop_buy",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "shop_open",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 5,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 9,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 9,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 29,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action"
+                        },
+                        "type": "repeat"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_list",
+                        "type": "action"
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_complete",
+                        "type": "action"
+                      }
+                    ],
+                    "type": "sequence",
+                    "condition": "SC_LOGIN_RESULT.accountUid == 151461524"
+                  }
+                ],
+                "type": "selector"
+              }
+            ],
+            "type": "sequence",
+            "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+          },
+          {
+            "Type": "sequence",
+            "children": [
+              {
+                "Type": "action",
+                "id": "char_create",
+                "type": "action"
+              },
+              {
+                "Type": "action",
+                "id": "char_select",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 9,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 7,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 7,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 7,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "attendance_check",
+                "type": "action"
+              },
+              {
+                "Type": "action",
+                "id": "item_equip",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 4,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 12,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "party_invite",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 6,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 10,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 6,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "shop_open",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 3,
+                "child": {
+                  "Type": "action",
+                  "id": "shop_buy",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "item_equip",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 13,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "quest_list",
+                "type": "action"
+              },
+              {
+                "Type": "action",
+                "id": "quest_accept",
+                "type": "action"
+              },
+              {
+                "Type": "repeat",
+                "count": 8,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 14,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 6,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 2,
+                "child": {
+                  "Type": "action",
+                  "id": "attack",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "repeat",
+                "count": 18,
+                "child": {
+                  "Type": "action",
+                  "id": "move",
+                  "type": "action"
+                },
+                "type": "repeat"
+              },
+              {
+                "Type": "action",
+                "id": "quest_list",
+                "type": "action"
+              },
+              {
+                "Type": "action",
+                "id": "quest_complete",
+                "type": "action"
+              }
+            ],
+            "type": "sequence",
+            "condition": "SC_LOGIN_RESULT.accountUid == 728205102"
+          }
+        ],
+        "type": "selector"
+      }
+    ],
+    "type": "sequence"
+  }
+}
