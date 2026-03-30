@@ -34,6 +34,9 @@ public abstract class BtNode
     [JsonPropertyName("condition")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Condition { get; set; }
+    [JsonPropertyName("weight")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public float Weight { get; set; } = 1.0f;
 }
 
 public class BtAction : BtNode

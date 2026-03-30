@@ -1,6 +1,6 @@
 {
   "protocol": "MMORPG Simulator Protocol",
-  "last_updated": "2026-03-28T00:17:17",
+  "last_updated": "2026-03-30T12:05:54",
   "actions": [
     {
       "id": "login",
@@ -12,7 +12,7 @@
           "name": "CS_LOGIN",
           "role": "Core",
           "fields": {
-            "accountId": "test007",
+            "accountId": "test002",
             "password": ""
           }
         },
@@ -24,7 +24,7 @@
         {
           "direction": "RECV",
           "name": "SC_CHAR_LIST",
-          "role": "Conditional"
+          "role": "DataSource"
         }
       ],
       "dynamic_fields": [],
@@ -37,296 +37,8 @@
         "accountId",
         "password"
       ],
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "char_select",
-      "name": "CharSelect",
-      "phase": "Enter Game",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_CHAR_SELECT",
-          "role": "Core",
-          "fields": {
-            "charUid": 20
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_NPC_SPAWN \u00D75",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_ATTENDANCE_INFO",
-          "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_INVENTORY_LIST",
-          "role": "Conditional"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO",
-          "role": "DataSource"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_CHAR_SELECT",
-          "field": "charUid",
-          "source": "SC_CHAR_LIST.chars[0].charUid"
-        }
-      ],
-      "outputs": [
-        "SC_NPC_SPAWN.npcUid",
-        "SC_CHAR_INFO.name"
-      ],
-      "dependencies": [
-        "login"
-      ],
-      "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "move",
-      "name": "Move",
-      "phase": "Gameplay",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_MOVE",
-          "role": "Core",
-          "fields": {
-            "dirX": 1,
-            "dirY": 0
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_MOVE_RESULT",
-          "role": "Core"
-        }
-      ],
-      "dynamic_fields": [],
-      "outputs": [],
-      "dependencies": [],
-      "repeat_count": 133,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "attack",
-      "name": "Attack",
-      "phase": "Gameplay",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_ATTACK",
-          "role": "Core",
-          "fields": {
-            "targetUid": 4
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_ATTACK_RESULT",
-          "role": "Core"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_ATTACK",
-          "field": "targetUid",
-          "source": "SC_NPC_SPAWN.npcUid"
-        }
-      ],
-      "outputs": [],
-      "dependencies": [
-        "char_select"
-      ],
-      "repeat_count": 28,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "item_use",
-      "name": "ItemUse",
-      "phase": "Gameplay",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_ITEM_USE",
-          "role": "Core",
-          "fields": {
-            "slot": 19
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_ITEM_USE_RESULT",
-          "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_INVENTORY_UPDATE",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO",
-          "role": "Core"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_ITEM_USE",
-          "field": "slot",
-          "source": "SC_INVENTORY_LIST.items[19].slot"
-        }
-      ],
-      "outputs": [],
-      "dependencies": [
-        "char_select"
-      ],
-      "repeat_count": 1,
-      "source_log": "capture_20260323_210453.log",
-      "last_observed": "21:05:06.230"
-    },
-    {
-      "id": "shop_open",
-      "name": "ShopOpen",
-      "phase": "Shop",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_SHOP_OPEN",
-          "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_SHOP_LIST",
-          "role": "DataSource"
-        }
-      ],
-      "dynamic_fields": [],
-      "outputs": [
-        "SC_SHOP_LIST.items[3].itemId"
-      ],
-      "dependencies": [],
-      "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "shop_buy",
-      "name": "ShopBuy",
-      "phase": "Shop",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_SHOP_BUY",
-          "role": "Core",
-          "fields": {
-            "itemId": 4
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_SHOP_RESULT",
-          "role": "Core"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_SHOP_BUY",
-          "field": "itemId",
-          "source": "SC_SHOP_LIST.items[3].itemId"
-        }
-      ],
-      "outputs": [],
-      "dependencies": [
-        "shop_open"
-      ],
-      "repeat_count": 3,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "attendance_check",
-      "name": "AttendanceCheck",
-      "phase": "Gameplay",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_ATTENDANCE_CHECK",
-          "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_ATTENDANCE_RESULT",
-          "role": "Core"
-        }
-      ],
-      "dynamic_fields": [],
-      "outputs": [],
-      "dependencies": [],
-      "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
-    },
-    {
-      "id": "item_equip",
-      "name": "ItemEquip",
-      "phase": "Gameplay",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_ITEM_EQUIP",
-          "role": "Core",
-          "fields": {
-            "slot": 4
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_EQUIP_RESULT",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_INVENTORY_UPDATE",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO",
-          "role": "DataSource"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_ITEM_EQUIP",
-          "field": "slot",
-          "source": "SC_ITEM_DROP.slot"
-        }
-      ],
-      "outputs": [
-        "SC_CHAR_INFO.name"
-      ],
-      "dependencies": [],
-      "repeat_count": 2,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:23.849"
     },
     {
       "id": "char_create",
@@ -338,8 +50,8 @@
           "name": "CS_CHAR_CREATE",
           "role": "Core",
           "fields": {
-            "name": "testchar007",
-            "charType": 2
+            "name": "testchar001-1",
+            "charType": 3
           }
         },
         {
@@ -355,15 +67,191 @@
       ],
       "dynamic_fields": [],
       "outputs": [
-        "SC_CHAR_LIST.chars[0].charUid"
+        "SC_CHAR_LIST.chars[1].charUid"
       ],
       "dependencies": [],
       "repeat_count": 1,
       "user_input_fields": [
         "name"
       ],
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120307.log",
+      "last_observed": "12:03:17.524"
+    },
+    {
+      "id": "char_select",
+      "name": "CharSelect",
+      "phase": "Enter Game",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_CHAR_SELECT",
+          "role": "Core",
+          "fields": {
+            "charUid": 2
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_CHAR_INFO",
+          "role": "Core"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_SPAWN \u00D75",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_OTHER_CHAR",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_ATTENDANCE_INFO",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_INVENTORY_LIST",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_OTHER_CHAR \u00D73",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_DEATH",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_SPAWN",
+          "role": "Conditional"
+        }
+      ],
+      "dynamic_fields": [
+        {
+          "packet": "CS_CHAR_SELECT",
+          "field": "charUid",
+          "source": "SC_CHAR_LIST.chars[0].charUid"
+        }
+      ],
+      "outputs": [
+        "SC_OTHER_CHAR.name"
+      ],
+      "dependencies": [
+        "login"
+      ],
+      "repeat_count": 1,
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:23.849"
+    },
+    {
+      "id": "move",
+      "name": "Move",
+      "phase": "Gameplay",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_MOVE",
+          "role": "Core",
+          "fields": {
+            "dirX": -1,
+            "dirY": 0
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_MOVE_RESULT",
+          "role": "Core"
+        }
+      ],
+      "dynamic_fields": [],
+      "outputs": [],
+      "dependencies": [],
+      "repeat_count": 14,
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:23.849"
+    },
+    {
+      "id": "attack",
+      "name": "Attack",
+      "phase": "Gameplay",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_ATTACK",
+          "role": "Core",
+          "fields": {
+            "targetUid": 2
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_ATTACK_RESULT",
+          "role": "Core"
+        }
+      ],
+      "dynamic_fields": [
+        {
+          "packet": "CS_ATTACK",
+          "field": "targetUid",
+          "source": "SC_PARTY_UPDATE.members[0].charUid"
+        }
+      ],
+      "outputs": [],
+      "dependencies": [
+        "party_invite"
+      ],
+      "repeat_count": 4,
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:23.849"
+    },
+    {
+      "id": "item_equip",
+      "name": "ItemEquip",
+      "phase": "Gameplay",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_ITEM_EQUIP",
+          "role": "Core",
+          "fields": {
+            "slot": 1
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_EQUIP_RESULT",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_INVENTORY_UPDATE",
+          "role": "Core"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_CHAR_INFO",
+          "role": "DataSource"
+        }
+      ],
+      "dynamic_fields": [
+        {
+          "packet": "CS_ITEM_EQUIP",
+          "field": "slot",
+          "source": "SC_INVENTORY_UPDATE.slot"
+        }
+      ],
+      "outputs": [
+        "SC_INVENTORY_UPDATE.slot"
+      ],
+      "dependencies": [],
+      "repeat_count": 2,
+      "source_log": "capture_20260329_173302.log",
+      "last_observed": "17:33:34.272"
     },
     {
       "id": "shop_sell",
@@ -375,7 +263,7 @@
           "name": "CS_SHOP_SELL",
           "role": "Core",
           "fields": {
-            "slot": 2
+            "slot": 0
           }
         },
         {
@@ -401,8 +289,90 @@
       ],
       "dependencies": [],
       "repeat_count": 2,
-      "source_log": "capture_20260324_232903.log",
-      "last_observed": "23:29:17.274"
+      "source_log": "capture_20260329_173302.log",
+      "last_observed": "17:33:34.272"
+    },
+    {
+      "id": "shop_open",
+      "name": "ShopOpen",
+      "phase": "Shop",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_SHOP_OPEN",
+          "role": "Core"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_SHOP_LIST",
+          "role": "DataSource"
+        }
+      ],
+      "dynamic_fields": [],
+      "outputs": [
+        "SC_SHOP_LIST.items[2].itemId"
+      ],
+      "dependencies": [],
+      "repeat_count": 7,
+      "source_log": "capture_20260329_173302.log",
+      "last_observed": "17:33:34.272"
+    },
+    {
+      "id": "attendance_check",
+      "name": "AttendanceCheck",
+      "phase": "Gameplay",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_ATTENDANCE_CHECK",
+          "role": "Core"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_ATTENDANCE_RESULT",
+          "role": "Core"
+        }
+      ],
+      "dynamic_fields": [],
+      "outputs": [],
+      "dependencies": [],
+      "repeat_count": 1,
+      "source_log": "capture_20260330_120307.log",
+      "last_observed": "12:03:17.524"
+    },
+    {
+      "id": "shop_buy",
+      "name": "ShopBuy",
+      "phase": "Shop",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_SHOP_BUY",
+          "role": "Core",
+          "fields": {
+            "itemId": 3
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_SHOP_RESULT",
+          "role": "DataSource"
+        }
+      ],
+      "dynamic_fields": [
+        {
+          "packet": "CS_SHOP_BUY",
+          "field": "itemId",
+          "source": "SC_SHOP_LIST.items[2].itemId"
+        }
+      ],
+      "outputs": [],
+      "dependencies": [
+        "shop_open"
+      ],
+      "repeat_count": 2,
+      "source_log": "capture_20260329_173302.log",
+      "last_observed": "17:33:34.272"
     },
     {
       "id": "quest_list",
@@ -427,8 +397,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 2,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:12.805"
     },
     {
       "id": "quest_accept",
@@ -453,8 +423,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:12.805"
     },
     {
       "id": "quest_complete",
@@ -487,17 +457,97 @@
         {
           "direction": "RECV",
           "name": "SC_QUEST_REWARD",
-          "role": "Core"
+          "role": "Conditional"
         }
       ],
       "dynamic_fields": [],
-      "outputs": [
-        "SC_CHAR_INFO.name"
-      ],
+      "outputs": [],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:12.805"
+    },
+    {
+      "id": "party_invite",
+      "name": "PartyInvite",
+      "phase": "Party",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_PARTY_INVITE",
+          "role": "Core",
+          "fields": {
+            "targetName": "testchar001-1"
+          }
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_PARTY_UPDATE",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_OTHER_CHAR \u00D715",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_DEATH",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_EXP_UPDATE",
+          "role": "Noise"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_SPAWN",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_OTHER_CHAR \u00D715",
+          "role": "DataSource"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_DEATH",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_EXP_UPDATE",
+          "role": "Noise"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_NPC_SPAWN",
+          "role": "Conditional"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_PARTY_LEAVE \u00D72",
+          "role": "Conditional"
+        }
+      ],
+      "dynamic_fields": [
+        {
+          "packet": "CS_PARTY_INVITE",
+          "field": "targetName",
+          "source": "SC_OTHER_CHAR.name"
+        }
+      ],
+      "outputs": [
+        "SC_OTHER_CHAR.name",
+        "SC_PARTY_UPDATE.members[0].charUid"
+      ],
+      "dependencies": [
+        "char_select"
+      ],
+      "repeat_count": 2,
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:23.849"
     },
     {
       "id": "party_accept",
@@ -516,56 +566,37 @@
           "direction": "RECV",
           "name": "SC_PARTY_UPDATE",
           "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO \u00D74",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_NPC_DEATH",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_EXP_UPDATE",
-          "role": "Noise"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_NPC_SPAWN",
-          "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO \u00D74",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_NPC_DEATH",
-          "role": "DataSource"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_EXP_UPDATE",
-          "role": "Noise"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_NPC_SPAWN",
-          "role": "Core"
         }
       ],
       "dynamic_fields": [],
-      "outputs": [
-        "SC_NPC_SPAWN.npcUid"
+      "outputs": [],
+      "dependencies": [],
+      "repeat_count": 2,
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:12.805"
+    },
+    {
+      "id": "party_leave",
+      "name": "PartyLeave",
+      "phase": "Party",
+      "packets": [
+        {
+          "direction": "SEND",
+          "name": "CS_PARTY_LEAVE",
+          "role": "Core"
+        },
+        {
+          "direction": "RECV",
+          "name": "SC_PARTY_INVITE",
+          "role": "Conditional"
+        }
       ],
+      "dynamic_fields": [],
+      "outputs": [],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260327_235714.log",
-      "last_observed": "23:58:01.108"
+      "source_log": "capture_20260330_120406.log",
+      "last_observed": "12:04:12.805"
     },
     {
       "id": "chat",
@@ -579,18 +610,13 @@
           "fields": {
             "channel": 0,
             "targetName": "",
-            "message": "\uD558\uD558"
+            "message": "haha"
           }
         },
         {
           "direction": "RECV",
           "name": "SC_CHAT",
           "role": "Core"
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_CHAR_INFO \u00D718",
-          "role": "DataSource"
         }
       ],
       "dynamic_fields": [],
@@ -601,42 +627,8 @@
         "targetName",
         "message"
       ],
-      "source_log": "capture_20260327_235714.log",
-      "last_observed": "23:58:01.108"
-    },
-    {
-      "id": "party_invite",
-      "name": "PartyInvite",
-      "phase": "Party",
-      "packets": [
-        {
-          "direction": "SEND",
-          "name": "CS_PARTY_INVITE",
-          "role": "Core",
-          "fields": {
-            "targetName": "testchar002"
-          }
-        },
-        {
-          "direction": "RECV",
-          "name": "SC_PARTY_UPDATE",
-          "role": "DataSource"
-        }
-      ],
-      "dynamic_fields": [
-        {
-          "packet": "CS_PARTY_INVITE",
-          "field": "targetName",
-          "source": "SC_CHAR_INFO.name"
-        }
-      ],
-      "outputs": [],
-      "dependencies": [
-        "char_select"
-      ],
-      "repeat_count": 1,
-      "source_log": "capture_20260328_001426.log",
-      "last_observed": "00:14:47.704"
+      "source_log": "capture_20260330_120307.log",
+      "last_observed": "12:03:17.524"
     }
   ]
 }

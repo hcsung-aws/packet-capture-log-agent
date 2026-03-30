@@ -134,13 +134,28 @@ public class PacketReplayer
 
     public List<ReplayPacket> ParseLog(string logPath)
     {
-        var packets = new List<ReplayPacket>();
+        return ParseLogByClient(logPath).Values.SelectMany(p => p).OrderBy(p => p.Timestamp).ToList();
+    }
+
+    /// <summary>캡처 로그를 클라이언트 포트별로 분리 파싱.</summary>
+    public Dictionary<string, List<ReplayPacket>> ParseLogByClient(string logPath)
+    {
+        var result = new Dictionary<string, List<ReplayPacket>>();
         var lines = File.ReadAllLines(logPath);
 
         string? currentPacket = null;
         string? currentDirection = null;
+        string? currentClient = null;
         TimeSpan currentTimestamp = TimeSpan.Zero;
         var currentFields = new Dictionary<string, object>();
+        int serverPort = 0;
+
+        // 헤더에서 서버 포트 추출
+        foreach (var line in lines)
+        {
+            var portMatch = Regex.Match(line, @"Filter: Port (\d+)");
+            if (portMatch.Success) { serverPort = int.Parse(portMatch.Groups[1].Value); break; }
+        }
 
         foreach (var line in lines)
         {
@@ -148,7 +163,11 @@ public class PacketReplayer
             if (headerMatch.Success)
             {
                 if (currentPacket != null)
-                    packets.Add(new ReplayPacket(currentPacket, currentDirection!, new(currentFields), currentTimestamp));
+                {
+                    var key = currentClient ?? "default";
+                    if (!result.ContainsKey(key)) result[key] = new();
+                    result[key].Add(new ReplayPacket(currentPacket, currentDirection!, new(currentFields), currentTimestamp));
+                }
 
                 currentTimestamp = new TimeSpan(0,
                     int.Parse(headerMatch.Groups[1].Value),
@@ -158,6 +177,17 @@ public class PacketReplayer
                 currentDirection = headerMatch.Groups[5].Value;
                 currentPacket = headerMatch.Groups[6].Value;
                 currentFields.Clear();
+                currentClient = null;
+                continue;
+            }
+
+            // IP:port 행에서 클라이언트 포트 추출
+            var ipMatch = Regex.Match(line, @"^\s+[\d\.]+:(\d+)\s+->\s+[\d\.]+:(\d+)");
+            if (ipMatch.Success && currentPacket != null)
+            {
+                var srcPort = int.Parse(ipMatch.Groups[1].Value);
+                var dstPort = int.Parse(ipMatch.Groups[2].Value);
+                currentClient = (dstPort == serverPort) ? srcPort.ToString() : dstPort.ToString();
                 continue;
             }
 
@@ -166,15 +196,25 @@ public class PacketReplayer
             {
                 var name = fieldMatch.Groups[1].Value;
                 var valueStr = fieldMatch.Groups[2].Value;
-                if (name == "raw" || valueStr.Contains("->")) continue;
+                if (name == "raw") continue;
                 currentFields[name] = ParseValue(valueStr);
             }
         }
 
         if (currentPacket != null)
-            packets.Add(new ReplayPacket(currentPacket, currentDirection!, new(currentFields), currentTimestamp));
+        {
+            var key = currentClient ?? "default";
+            if (!result.ContainsKey(key)) result[key] = new();
+            result[key].Add(new ReplayPacket(currentPacket, currentDirection!, new(currentFields), currentTimestamp));
+        }
 
-        return packets;
+        // 클라이언트 1개만이면 기존 호환
+        if (result.Count == 0)
+        {
+            result["default"] = new();
+        }
+
+        return result;
     }
 
     private object ParseValue(string valueStr)

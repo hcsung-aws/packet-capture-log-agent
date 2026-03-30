@@ -12,6 +12,8 @@ public class ActionExecutor
     private readonly ActionCatalog _catalog;
     private readonly Dictionary<string, string> _randomCache = new();
 
+    private static readonly Random _rng = new();
+
     public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog)
     {
         _protocol = protocol;
@@ -50,6 +52,7 @@ public class ActionExecutor
                     foreach (var kv in overrides)
                     {
                         var val = kv.Value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je) : kv.Value;
+                        val = ResolveStateExpression(val, context.SessionState);
                         fields[kv.Key] = ScenarioBuilder.ResolveValue(val, _randomCache);
                     }
 
@@ -95,5 +98,46 @@ public class ActionExecutor
         stream.ReadTimeout = timeoutMs;
         try { length = stream.Read(buffer); return length > 0; }
         catch (IOException) { return false; }
+    }
+
+    /// <summary>{state_random:key} 표현식 해석.
+    /// key가 배열 → random 0..Count-1, 숫자 → random 0..value-1.
+    /// key가 array.field 형태 → 배열에서 랜덤 원소의 field 값 반환.</summary>
+    internal static object ResolveStateExpression(object val, Dictionary<string, object> sessionState)
+    {
+        if (val is not string s) return val;
+        if (!s.StartsWith("{state_random:") || !s.EndsWith("}")) return val;
+
+        var key = s[14..^1];
+
+        // 직접 키 매칭
+        if (sessionState.TryGetValue(key, out var stateVal))
+        {
+            int bound = stateVal switch
+            {
+                List<object> list => list.Count,
+                int i => i,
+                long l => (int)l,
+                _ => 0
+            };
+            return bound > 0 ? _rng.Next(bound) : 0;
+        }
+
+        // array.field 패턴: 배열에서 랜덤 원소의 필드값
+        var lastDot = key.LastIndexOf('.');
+        if (lastDot > 0)
+        {
+            var arrayKey = key[..lastDot];
+            var fieldName = key[(lastDot + 1)..];
+            if (sessionState.TryGetValue(arrayKey, out var arrVal) && arrVal is List<object> list && list.Count > 0)
+            {
+                var idx = _rng.Next(list.Count);
+                var elemKey = $"{arrayKey}[{idx}].{fieldName}";
+                if (sessionState.TryGetValue(elemKey, out var fieldVal))
+                    return fieldVal;
+            }
+        }
+
+        return val;
     }
 }

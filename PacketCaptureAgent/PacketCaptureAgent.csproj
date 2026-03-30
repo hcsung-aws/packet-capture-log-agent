@@ -11,4 +11,8 @@
     <InternalsVisibleTo Include="PacketCaptureAgent.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

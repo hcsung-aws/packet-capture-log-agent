@@ -16,6 +16,7 @@
 - **프로토콜 파싱**: JSON 기반 동적 패킷 파싱
 - **패킷 재현**: 캡처된 로그를 사용한 패킷 재전송 (타이밍 기반 딜레이)
 - **인터셉터**: 재현 중 패킷을 동적으로 수정 (예: NPC 공격 대상 자동 교체)
+- **Behavior Tree**: 캡처 녹화에서 자동 생성, 확률 기반 실행, 웹 에디터
 - **지원 타입**: 정수, 문자열, 배열, 구조체
 
 ## 요구사항
@@ -45,6 +46,28 @@ PacketCaptureAgent.exe -p protocol.json --port 9000
 PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 ```
 
+### Behavior Tree (자동 QA)
+
+```bash
+# 캡처 로그 분석 → 녹화 + 액션 카탈로그 생성 (멀티 클라이언트 자동 분리)
+PacketCaptureAgent.exe -p protocol.json --analyze capture.log
+
+# 녹화에서 BT 자동 생성 (조건 정제 + 상태 바인딩 + weight + 상호작용 감지)
+PacketCaptureAgent.exe -p protocol.json --build-behavior
+
+# BT 실행 (서버 대상)
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t host:port
+
+# 시간 제한 실행 (60초, 0=무한)
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t host:port --duration 60
+
+# CLI 편집
+PacketCaptureAgent.exe --edit-behavior behaviors/auto.json
+
+# 웹 에디터 (브라우저 GUI)
+PacketCaptureAgent.exe --web-editor behaviors/auto.json [--web-port 8080]
+```
+
 ### 옵션
 
 | 옵션 | 설명 |
@@ -55,6 +78,13 @@ PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 | `--port` | 캡처할 포트 |
 | `--mode` | 재현 모드 (timing/response/hybrid) |
 | `--speed` | 재생 속도 (기본: 1.0) |
+| `--analyze` | 캡처 로그 분석 + 녹화/카탈로그 생성 |
+| `--build-behavior` | 녹화에서 BT 자동 생성 |
+| `--behavior` | BT 실행 |
+| `--duration` | BT 실행 시간 (초, 0=무한) |
+| `--edit-behavior` | BT CLI 편집 |
+| `--web-editor` | BT 웹 에디터 |
+| `--web-port` | 웹 에디터 포트 (기본: 8080) |
 
 ## 프로토콜 JSON 형식
 
@@ -98,6 +128,11 @@ packet-capture-log-agent/
 │   ├── PacketFormatter.cs      # 출력 포맷
 │   ├── TcpStream.cs            # TCP 스트림 재조립
 │   ├── GameWorldState.cs       # 리플레이 중 게임 상태 추적
+│   ├── BehaviorTree.cs         # BT 노드 모델 + JSON 직렬화
+│   ├── BehaviorTreeBuilder.cs  # 녹화 → BT 자동 생성
+│   ├── BehaviorTreeExecutor.cs # BT 런타임 실행
+│   ├── BehaviorTreeEditor.cs   # BT CLI 편집기
+│   ├── BehaviorTreeWebEditor.cs # BT 웹 에디터 (HttpListener)
 │   ├── IReplayInterceptor.cs   # 인터셉터 인터페이스
 │   └── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
 └── protocols/

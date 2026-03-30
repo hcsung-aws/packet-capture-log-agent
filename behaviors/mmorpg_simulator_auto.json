@@ -6,7 +6,8 @@
       {
         "Type": "action",
         "id": "login",
-        "type": "action"
+        "type": "action",
+        "weight": 1
       },
       {
         "Type": "selector",
@@ -16,23 +17,18 @@
             "children": [
               {
                 "Type": "action",
-                "id": "char_select",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
+                "id": "char_create",
+                "type": "action",
+                "weight": 0.6
               },
               {
                 "Type": "action",
-                "id": "move",
-                "type": "action"
+                "id": "char_select",
+                "overrides": {
+                  "charUid": "{state_random:SC_CHAR_LIST.chars.charUid}"
+                },
+                "type": "action",
+                "weight": 1
               },
               {
                 "Type": "selector",
@@ -41,9 +37,22 @@
                     "Type": "sequence",
                     "children": [
                       {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
                         "Type": "action",
                         "id": "move",
-                        "type": "action"
+                        "type": "action",
+                        "weight": 1
                       },
                       {
                         "Type": "selector",
@@ -53,319 +62,677 @@
                             "children": [
                               {
                                 "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
                                 "count": 4,
                                 "child": {
                                   "Type": "action",
                                   "id": "move",
-                                  "type": "action"
+                                  "type": "action",
+                                  "weight": 1
                                 },
-                                "type": "repeat"
+                                "type": "repeat",
+                                "weight": 1
                               },
                               {
-                                "Type": "action",
-                                "id": "move",
-                                "type": "action"
-                              },
-                              {
-                                "Type": "selector",
-                                "children": [
-                                  {
-                                    "Type": "sequence",
-                                    "children": [
-                                      {
-                                        "Type": "repeat",
-                                        "count": 2,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "attack",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 2,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "action",
-                                        "id": "move",
-                                        "type": "action"
-                                      },
-                                      {
-                                        "Type": "selector",
-                                        "children": [
-                                          {
-                                            "Type": "sequence",
-                                            "children": [
-                                              {
-                                                "Type": "repeat",
-                                                "count": 11,
-                                                "child": {
-                                                  "Type": "action",
-                                                  "id": "move",
-                                                  "type": "action"
-                                                },
-                                                "type": "repeat"
-                                              },
-                                              {
-                                                "Type": "repeat",
-                                                "count": 2,
-                                                "child": {
-                                                  "Type": "action",
-                                                  "id": "attack",
-                                                  "type": "action"
-                                                },
-                                                "type": "repeat"
-                                              },
-                                              {
-                                                "Type": "action",
-                                                "id": "item_use",
-                                                "type": "action"
-                                              },
-                                              {
-                                                "Type": "action",
-                                                "id": "shop_open",
-                                                "type": "action"
-                                              },
-                                              {
-                                                "Type": "repeat",
-                                                "count": 2,
-                                                "child": {
-                                                  "Type": "action",
-                                                  "id": "shop_buy",
-                                                  "type": "action"
-                                                },
-                                                "type": "repeat"
-                                              }
-                                            ],
-                                            "type": "sequence",
-                                            "condition": "SC_CHAR_INFO.posX == 13"
-                                          },
-                                          {
-                                            "Type": "sequence",
-                                            "children": [
-                                              {
-                                                "Type": "repeat",
-                                                "count": 2,
-                                                "child": {
-                                                  "Type": "action",
-                                                  "id": "attack",
-                                                  "type": "action"
-                                                },
-                                                "type": "repeat"
-                                              },
-                                              {
-                                                "Type": "action",
-                                                "id": "item_use",
-                                                "type": "action"
-                                              },
-                                              {
-                                                "Type": "action",
-                                                "id": "shop_open",
-                                                "type": "action"
-                                              },
-                                              {
-                                                "Type": "repeat",
-                                                "count": 2,
-                                                "child": {
-                                                  "Type": "action",
-                                                  "id": "shop_buy",
-                                                  "type": "action"
-                                                },
-                                                "type": "repeat"
-                                              }
-                                            ],
-                                            "type": "sequence",
-                                            "condition": "SC_CHAR_INFO.posX == 8"
-                                          }
-                                        ],
-                                        "type": "selector"
-                                      }
-                                    ],
-                                    "type": "sequence",
-                                    "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
                                   },
-                                  {
-                                    "Type": "sequence",
-                                    "children": [
-                                      {
-                                        "Type": "repeat",
-                                        "count": 3,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "action",
-                                        "id": "quest_list",
-                                        "type": "action"
-                                      },
-                                      {
-                                        "Type": "action",
-                                        "id": "quest_accept",
-                                        "type": "action"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 18,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 2,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "attack",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 9,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 2,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "attack",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 15,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 2,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "attack",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 4,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      },
-                                      {
-                                        "Type": "action",
-                                        "id": "quest_list",
-                                        "type": "action"
-                                      },
-                                      {
-                                        "Type": "action",
-                                        "id": "quest_complete",
-                                        "type": "action"
-                                      },
-                                      {
-                                        "Type": "repeat",
-                                        "count": 5,
-                                        "child": {
-                                          "Type": "action",
-                                          "id": "move",
-                                          "type": "action"
-                                        },
-                                        "type": "repeat"
-                                      }
-                                    ],
-                                    "type": "sequence",
-                                    "condition": "SC_LOGIN_RESULT.accountUid == 151461524"
-                                  }
-                                ],
-                                "type": "selector"
-                              }
-                            ],
-                            "type": "sequence",
-                            "condition": "SC_CHAR_INFO.posX == 13"
-                          },
-                          {
-                            "Type": "sequence",
-                            "children": [
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 12,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
                               {
                                 "Type": "repeat",
                                 "count": 2,
                                 "child": {
                                   "Type": "action",
                                   "id": "attack",
-                                  "type": "action"
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
                                 },
-                                "type": "repeat"
-                              },
-                              {
-                                "Type": "action",
-                                "id": "item_use",
-                                "type": "action"
-                              },
-                              {
-                                "Type": "action",
-                                "id": "shop_open",
-                                "type": "action"
+                                "type": "repeat",
+                                "weight": 1
                               },
                               {
                                 "Type": "repeat",
                                 "count": 2,
                                 "child": {
                                   "Type": "action",
-                                  "id": "shop_buy",
-                                  "type": "action"
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
                                 },
-                                "type": "repeat"
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "attack",
+                                "overrides": {
+                                  "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                },
+                                "type": "action",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 7,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "item_equip",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "shop_sell",
+                                  "type": "action",
+                                  "weight": 0.2
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 6,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_open",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "attendance_check",
+                                "type": "action",
+                                "weight": 0.4
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_open",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_buy",
+                                "overrides": {
+                                  "itemId": "{state_random:SC_SHOP_LIST.items.itemId}"
+                                },
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "shop_open",
+                                  "type": "action",
+                                  "weight": 0.2
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 5,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_open",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_buy",
+                                "overrides": {
+                                  "itemId": "{state_random:SC_SHOP_LIST.items.itemId}"
+                                },
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "action",
+                                "id": "item_equip",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 6,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "shop_open",
+                                "type": "action",
+                                "weight": 0.2
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 25,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "quest_list",
+                                "type": "action",
+                                "weight": 0.4
+                              },
+                              {
+                                "Type": "action",
+                                "id": "quest_accept",
+                                "type": "action",
+                                "weight": 0.4
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 6,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 13,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 9,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "quest_list",
+                                "type": "action",
+                                "weight": 0.4
+                              },
+                              {
+                                "Type": "action",
+                                "id": "quest_complete",
+                                "type": "action",
+                                "weight": 0.4
+                              },
+                              {
+                                "Type": "action",
+                                "id": "move",
+                                "type": "action",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_accept",
+                                "type": "action",
+                                "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                                "weight": 0.6
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 8,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_leave",
+                                "type": "action",
+                                "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                                "weight": 0.6
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_invite",
+                                "type": "action",
+                                "condition": "SC_OTHER_CHAR.charUid \u003E 0",
+                                "weight": 0.6
                               }
                             ],
                             "type": "sequence",
-                            "condition": "SC_CHAR_INFO.posX == 12"
+                            "weight": 1
+                          },
+                          {
+                            "Type": "sequence",
+                            "children": [
+                              {
+                                "Type": "repeat",
+                                "count": 4,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 6,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_invite",
+                                "type": "action",
+                                "condition": "SC_OTHER_CHAR.charUid \u003E 0",
+                                "weight": 0.6
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 10,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 10,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 3,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 16,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "move",
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "repeat",
+                                "count": 2,
+                                "child": {
+                                  "Type": "action",
+                                  "id": "attack",
+                                  "overrides": {
+                                    "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                                  },
+                                  "type": "action",
+                                  "weight": 1
+                                },
+                                "type": "repeat",
+                                "weight": 1
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_accept",
+                                "type": "action",
+                                "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                                "weight": 0.6
+                              },
+                              {
+                                "Type": "action",
+                                "id": "party_leave",
+                                "type": "action",
+                                "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                                "weight": 0.6
+                              }
+                            ],
+                            "type": "sequence",
+                            "weight": 1
                           }
                         ],
-                        "type": "selector"
+                        "type": "selector",
+                        "weight": 1
                       }
                     ],
                     "type": "sequence",
-                    "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+                    "condition": "SC_CHAR_LIST.count == 1",
+                    "weight": 1
                   },
                   {
                     "Type": "sequence",
                     "children": [
                       {
                         "Type": "action",
-                        "id": "party_accept",
-                        "type": "action"
+                        "id": "chat",
+                        "type": "action",
+                        "weight": 0.2
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 12,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
                       },
                       {
                         "Type": "repeat",
@@ -373,9 +740,11 @@
                         "child": {
                           "Type": "action",
                           "id": "move",
-                          "type": "action"
+                          "type": "action",
+                          "weight": 1
                         },
-                        "type": "repeat"
+                        "type": "repeat",
+                        "weight": 1
                       },
                       {
                         "Type": "repeat",
@@ -383,49 +752,20 @@
                         "child": {
                           "Type": "action",
                           "id": "attack",
-                          "type": "action"
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
                         },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 3,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "quest_list",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 3,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
+                        "type": "repeat",
+                        "weight": 1
                       },
                       {
                         "Type": "action",
                         "id": "attendance_check",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "chat",
-                        "type": "action"
+                        "type": "action",
+                        "weight": 0.4
                       },
                       {
                         "Type": "repeat",
@@ -433,587 +773,287 @@
                         "child": {
                           "Type": "action",
                           "id": "move",
-                          "type": "action"
+                          "type": "action",
+                          "weight": 1
                         },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "quest_list",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "quest_accept",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 8,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 3,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 5,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 9,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 5,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "shop_open",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "shop_buy",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "shop_open",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 5,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 9,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 3,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 9,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 2,
-                        "child": {
-                          "Type": "action",
-                          "id": "attack",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "repeat",
-                        "count": 29,
-                        "child": {
-                          "Type": "action",
-                          "id": "move",
-                          "type": "action"
-                        },
-                        "type": "repeat"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "quest_list",
-                        "type": "action"
-                      },
-                      {
-                        "Type": "action",
-                        "id": "quest_complete",
-                        "type": "action"
+                        "type": "repeat",
+                        "weight": 1
                       }
                     ],
                     "type": "sequence",
-                    "condition": "SC_LOGIN_RESULT.accountUid == 151461524"
+                    "condition": "SC_CHAR_LIST.count == 2",
+                    "weight": 1
                   }
                 ],
-                "type": "selector"
+                "type": "selector",
+                "weight": 1
               }
             ],
             "type": "sequence",
-            "condition": "SC_LOGIN_RESULT.accountUid == 186346157"
+            "condition": "SC_CHAR_LIST.count == 1",
+            "weight": 1
           },
           {
             "Type": "sequence",
             "children": [
               {
                 "Type": "action",
-                "id": "char_create",
-                "type": "action"
-              },
-              {
-                "Type": "action",
                 "id": "char_select",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 9,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
+                "overrides": {
+                  "charUid": "{state_random:SC_CHAR_LIST.chars.charUid}"
                 },
-                "type": "repeat"
+                "type": "action",
+                "weight": 1
               },
               {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 7,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 7,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 7,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "attendance_check",
-                "type": "action"
-              },
-              {
-                "Type": "action",
-                "id": "item_equip",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 4,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 12,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "party_invite",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 6,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 10,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 6,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "shop_open",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 3,
-                "child": {
-                  "Type": "action",
-                  "id": "shop_buy",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "item_equip",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 13,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "quest_list",
-                "type": "action"
-              },
-              {
-                "Type": "action",
-                "id": "quest_accept",
-                "type": "action"
-              },
-              {
-                "Type": "repeat",
-                "count": 8,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 14,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 6,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 2,
-                "child": {
-                  "Type": "action",
-                  "id": "attack",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "repeat",
-                "count": 18,
-                "child": {
-                  "Type": "action",
-                  "id": "move",
-                  "type": "action"
-                },
-                "type": "repeat"
-              },
-              {
-                "Type": "action",
-                "id": "quest_list",
-                "type": "action"
-              },
-              {
-                "Type": "action",
-                "id": "quest_complete",
-                "type": "action"
+                "Type": "selector",
+                "children": [
+                  {
+                    "Type": "sequence",
+                    "children": [
+                      {
+                        "Type": "repeat",
+                        "count": 14,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_list",
+                        "type": "action",
+                        "weight": 0.4
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_accept",
+                        "type": "action",
+                        "weight": 0.4
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 14,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "action",
+                        "id": "party_accept",
+                        "type": "action",
+                        "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                        "weight": 0.6
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 15,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 15,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "action",
+                        "id": "party_leave",
+                        "type": "action",
+                        "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                        "weight": 0.6
+                      },
+                      {
+                        "Type": "action",
+                        "id": "party_accept",
+                        "type": "action",
+                        "condition": "SC_PARTY_UPDATE.memberCount \u003E 1",
+                        "weight": 0.6
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 17,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 3,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 7,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_list",
+                        "type": "action",
+                        "weight": 0.4
+                      },
+                      {
+                        "Type": "action",
+                        "id": "quest_complete",
+                        "type": "action",
+                        "weight": 0.4
+                      }
+                    ],
+                    "type": "sequence",
+                    "weight": 1
+                  },
+                  {
+                    "Type": "sequence",
+                    "children": [
+                      {
+                        "Type": "repeat",
+                        "count": 2,
+                        "child": {
+                          "Type": "action",
+                          "id": "party_invite",
+                          "type": "action",
+                          "condition": "SC_OTHER_CHAR.charUid \u003E 0",
+                          "weight": 0.6
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 14,
+                        "child": {
+                          "Type": "action",
+                          "id": "move",
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      },
+                      {
+                        "Type": "repeat",
+                        "count": 4,
+                        "child": {
+                          "Type": "action",
+                          "id": "attack",
+                          "overrides": {
+                            "targetUid": "{state_random:SC_PARTY_UPDATE.members.charUid}"
+                          },
+                          "type": "action",
+                          "weight": 1
+                        },
+                        "type": "repeat",
+                        "weight": 1
+                      }
+                    ],
+                    "type": "sequence",
+                    "weight": 1
+                  }
+                ],
+                "type": "selector",
+                "weight": 1
               }
             ],
             "type": "sequence",
-            "condition": "SC_LOGIN_RESULT.accountUid == 728205102"
+            "condition": "SC_CHAR_LIST.count == 2",
+            "weight": 1
           }
         ],
-        "type": "selector"
+        "type": "selector",
+        "weight": 1
       }
     ],
-    "type": "sequence"
+    "type": "sequence",
+    "weight": 1
   }
 }

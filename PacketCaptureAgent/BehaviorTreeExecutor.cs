@@ -8,19 +8,23 @@ public class BehaviorTreeExecutor
     private readonly ActionExecutor _actionExecutor;
     private readonly TextWriter _output;
 
+    private static readonly Random _rng = new();
+
     public BehaviorTreeExecutor(ActionExecutor actionExecutor, TextWriter? output = null)
     {
         _actionExecutor = actionExecutor;
         _output = output ?? Console.Out;
     }
 
+    /// <param name="durationSec">실행 시간(초). null=1회, 0=무한, >0=해당 시간만큼 루프.</param>
     public void Execute(
         BehaviorTreeDefinition tree,
         string host, int port,
         IResponseHandler handler,
         ReplayContext context,
         List<IReplayInterceptor> interceptors,
-        int timeoutMs = 5000)
+        int timeoutMs = 5000,
+        int? durationSec = null)
     {
         _output.WriteLine($"=== Behavior Tree: {tree.Name} ===\n");
 
@@ -29,9 +33,21 @@ public class BehaviorTreeExecutor
         using var stream = client.GetStream();
         _output.WriteLine($"Connected to {host}:{port}\n");
 
-        RunNode(tree.Root, stream, handler, context, interceptors, timeoutMs);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int iteration = 0;
+        do
+        {
+            iteration++;
+            if (durationSec.HasValue)
+                _output.WriteLine($"--- Iteration {iteration} (elapsed: {sw.Elapsed:mm\\:ss}) ---\n");
 
-        _output.WriteLine($"\nBehavior Tree completed.");
+            RunNode(tree.Root, stream, handler, context, interceptors, timeoutMs);
+
+            if (!durationSec.HasValue) break; // 1회 실행
+            if (durationSec.Value > 0 && sw.Elapsed.TotalSeconds >= durationSec.Value) break;
+        } while (true);
+
+        _output.WriteLine($"\nBehavior Tree completed. ({iteration} iterations, {sw.Elapsed:mm\\:ss})");
     }
 
     private bool RunNode(
@@ -45,6 +61,10 @@ public class BehaviorTreeExecutor
         // 조건 체크 (노드에 condition이 있으면)
         if (node.Condition != null && !ConditionEvaluator.Evaluate(node.Condition, context.SessionState))
             return false;
+
+        // weight 체크 (1.0 미만이면 확률 실행)
+        if (node.Weight < 1.0f && _rng.NextSingle() >= node.Weight)
+            return true; // 스킵하되 실패가 아님 (Sequence 계속 진행)
 
         return node switch
         {

@@ -26,10 +26,11 @@ public class BehaviorTreeEditor
                     BtRepeat r => $"Repeat x{r.Count}",
                     _ => node.Type
                 };
-                Console.WriteLine($"  {i,3}. {path}{desc}{cond}");
+                var weight = node.Weight < 1.0f ? $" (w={node.Weight:F2})" : "";
+                Console.WriteLine($"  {i,3}. {path}{desc}{cond}{weight}");
             }
 
-            Console.WriteLine($"\n명령: (r)emove N, (c)ondition N expr, (s)ave, (q)uit");
+            Console.WriteLine($"\n명령: (r)emove N, (c)ondition N expr, (w)eight N value, (s)ave, (q)uit");
             Console.Write("> ");
             var input = Console.ReadLine()?.Trim() ?? "";
             if (string.IsNullOrEmpty(input)) continue;
@@ -58,6 +59,15 @@ public class BehaviorTreeEditor
                         if (string.IsNullOrEmpty(expr)) expr = null;
                         nodes[ci].node.Condition = expr;
                         Console.WriteLine($"  ✓ 노드 {ci} 조건: {expr ?? "(제거)"}\n");
+                    }
+                    break;
+                case "w" or "weight" when parts.Length > 1:
+                    var wParts = parts[1].Trim().Split(' ', 2);
+                    if (int.TryParse(wParts[0], out var wi) && wi >= 0 && wi < nodes.Count
+                        && wParts.Length > 1 && float.TryParse(wParts[1], out var wv))
+                    {
+                        nodes[wi].node.Weight = Math.Clamp(wv, 0f, 1f);
+                        Console.WriteLine($"  ✓ 노드 {wi} weight: {nodes[wi].node.Weight:F2}\n");
                     }
                     break;
             }

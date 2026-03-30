@@ -255,6 +255,30 @@
       ]
     },
     {
+      "type": 520,
+      "name": "SC_OTHER_CHAR",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "charUid",
+          "type": "uint64"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "length": 20
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
+      ]
+    },
+    {
       "type": 769,
       "name": "CS_ATTENDANCE_CHECK",
       "direction": "C2S",

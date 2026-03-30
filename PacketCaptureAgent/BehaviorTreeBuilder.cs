@@ -6,12 +6,68 @@ namespace PacketCaptureAgent;
 /// 알고리즘: 녹화 시퀀스 → Trie → BT 변환 + 분기 조건 자동 감지.</summary>
 public class BehaviorTreeBuilder
 {
+    private HashSet<string> _dynamicFields = new();
+    private Dictionary<string, HashSet<string>> _fieldValuesPerRecording = new();
+
     /// <summary>녹화 저장소에서 BT 자동 생성.</summary>
-    public BehaviorTreeDefinition Build(RecordingStore store, string name = "auto_generated")
+    public BehaviorTreeDefinition Build(RecordingStore store, string name = "auto_generated", ActionCatalog? catalog = null)
     {
+        _dynamicFields = AnalyzeFieldDynamics(store.Recordings);
+        _fieldValuesPerRecording = CollectFieldValuesPerRecording(store.Recordings);
         var trie = BuildTrie(store.Recordings);
         var root = ConvertToNode(trie);
-        return new BehaviorTreeDefinition { Name = name, Root = root };
+        if (catalog != null) AnnotateStateBindings(root, catalog);
+        var tree = new BehaviorTreeDefinition { Name = name, Root = root };
+        if (catalog != null) AnnotateWeightsAndConditions(tree, store.Recordings, catalog);
+        return tree;
+    }
+
+    /// <summary>녹화 내에서 값이 변하는 필드(동적) vs 불변(정적) 분류.
+    /// 정적 필드(accountUid 등)는 세션 고유값이므로 조건 후보에서 제외.</summary>
+    internal static HashSet<string> AnalyzeFieldDynamics(List<Recording> recordings)
+    {
+        var dynamic = new HashSet<string>();
+        foreach (var rec in recordings)
+        {
+            var firstValues = new Dictionary<string, string>();
+            foreach (var step in rec.Sequence)
+                foreach (var (key, value) in step.RecvState)
+                {
+                    var sv = value is JsonElement je ? ConvertJson(je).ToString()! : value?.ToString() ?? "";
+                    if (!firstValues.TryGetValue(key, out var first))
+                        firstValues[key] = sv;
+                    else if (first != sv)
+                        dynamic.Add(key);
+                }
+        }
+        return dynamic;
+    }
+
+    /// <summary>녹화별 대표값 수집. 각 녹화에서 필드의 최빈값(= 세션 대표값)을 추출.
+    /// 고유값 비율이 높으면 세션 식별자로 판단.</summary>
+    private static Dictionary<string, HashSet<string>> CollectFieldValuesPerRecording(List<Recording> recordings)
+    {
+        var result = new Dictionary<string, HashSet<string>>();
+        foreach (var rec in recordings)
+        {
+            // 각 필드의 최빈값 = 세션 대표값 (브로드캐스트 노이즈 제거)
+            var counts = new Dictionary<string, Dictionary<string, int>>();
+            foreach (var step in rec.Sequence)
+                foreach (var (key, value) in step.RecvState)
+                {
+                    var sv = value is JsonElement je ? ConvertJson(je).ToString()! : value?.ToString() ?? "";
+                    if (!counts.ContainsKey(key)) counts[key] = new();
+                    counts[key].TryGetValue(sv, out var c);
+                    counts[key][sv] = c + 1;
+                }
+            foreach (var (key, valCounts) in counts)
+            {
+                var modeValue = valCounts.OrderByDescending(kv => kv.Value).First().Key;
+                if (!result.ContainsKey(key)) result[key] = new();
+                result[key].Add(modeValue);
+            }
+        }
+        return result;
     }
 
     #region Trie
@@ -146,13 +202,18 @@ public class BehaviorTreeBuilder
         var otherIndices = allStates.Keys.Where(k => !branchIndices.Contains(k)).ToList();
         if (otherIndices.Count == 0) return null;
 
-        // 이 분기의 recv_state vs 다른 분기의 recv_state 비교
         var branchState = branch.RecvStates[0];
         var otherState = allStates[otherIndices[0]];
 
-        // 값이 다른 키 찾기 (숫자 비교 가능한 것 우선)
+        // 값이 다른 키 찾기 — 동적 필드만 후보로 사용 (정적 필드=세션 고유값 제외)
         foreach (var key in branchState.Keys.Intersect(otherState.Keys))
         {
+            if (!_dynamicFields.Contains(key)) continue; // 정적 필드 스킵
+
+            // 녹화 간 고유값 비율 체크: 녹화마다 다른 값이면 세션 식별자 → 스킵
+            if (_fieldValuesPerRecording.TryGetValue(key, out var perRec) && perRec.Count >= allStates.Count)
+                continue;
+
             var bv = branchState[key];
             var ov = otherState[key];
             if (bv is JsonElement bje) bv = ConvertJson(bje);
@@ -164,7 +225,7 @@ public class BehaviorTreeBuilder
                 return $"{key} == {bl}";
         }
 
-        return null; // 자동 감지 실패 → 사용자가 수동 편집
+        return null;
     }
 
     private static object ConvertJson(JsonElement je) => je.ValueKind switch
@@ -173,6 +234,129 @@ public class BehaviorTreeBuilder
         JsonValueKind.String => je.GetString()!,
         _ => je.ToString()
     };
+
+    #endregion
+
+    #region 상태 바인딩
+
+    /// <summary>BT 트리를 순회하며 BtAction에 state_random 바인딩 추가.
+    /// dynamic_fields의 배열 소스 패턴을 감지하여 인덱스/값 필드 구분.</summary>
+    private static void AnnotateStateBindings(BtNode node, ActionCatalog catalog)
+    {
+        switch (node)
+        {
+            case BtAction action:
+                var catAction = catalog.Actions.FirstOrDefault(a => a.Id == action.Id);
+                if (catAction == null) break;
+                foreach (var df in catAction.DynamicFields)
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(df.Source, @"^(.+)\[(\d+)\]\.(.+)$");
+                    if (!m.Success) continue;
+                    var arrayKey = m.Groups[1].Value;
+                    var idx = m.Groups[2].Value;
+                    var fieldName = m.Groups[3].Value;
+
+                    // SEND 필드값 가져오기
+                    var sendPkt = catAction.Packets.FirstOrDefault(p => p.Direction == "SEND");
+                    if (sendPkt?.Fields == null || !sendPkt.Fields.TryGetValue(df.Field, out var sendValObj)) continue;
+                    var sendVal = sendValObj is JsonElement je ? ConvertJson(je).ToString() : sendValObj?.ToString();
+
+                    string binding;
+                    if (sendVal == idx)
+                        binding = $"{{state_random:{arrayKey}}}";         // 인덱스 필드 (slot)
+                    else
+                        binding = $"{{state_random:{arrayKey}.{fieldName}}}"; // 값 필드 (itemId)
+
+                    action.Overrides ??= new();
+                    action.Overrides[df.Field] = binding;
+                }
+                break;
+            case BtSequence s:
+                foreach (var c in s.Children) AnnotateStateBindings(c, catalog);
+                break;
+            case BtSelector s:
+                foreach (var c in s.Children) AnnotateStateBindings(c, catalog);
+                break;
+            case BtRepeat r:
+                AnnotateStateBindings(r.Child, catalog);
+                break;
+        }
+    }
+
+    #endregion
+
+    #region Weight + 상호작용 조건
+
+    /// <summary>액션별 녹화 빈도 → weight, 상호작용 액션 → 조건 자동 부여.</summary>
+    private static void AnnotateWeightsAndConditions(BehaviorTreeDefinition tree, List<Recording> recordings, ActionCatalog catalog)
+    {
+        // 액션별 등장 녹화 수
+        var actionRecCount = new Dictionary<string, int>();
+        foreach (var rec in recordings)
+            foreach (var actionId in rec.Sequence.Select(s => s.Action).Distinct())
+            {
+                actionRecCount.TryGetValue(actionId, out var c);
+                actionRecCount[actionId] = c + 1;
+            }
+        int total = recordings.Count;
+
+        // 상호작용 액션 감지: dynamic_field source가 SC_OTHER_CHAR 참조
+        var interactionActions = new HashSet<string>();
+        foreach (var action in catalog.Actions)
+            if (action.DynamicFields.Any(df => df.Source.StartsWith("SC_OTHER_CHAR")))
+                interactionActions.Add(action.Id);
+
+        // recv_state 패턴: party 액션이 항상 SC_PARTY_UPDATE.memberCount > 1일 때 수행되었는지
+        var partyConditionActions = new HashSet<string>();
+        foreach (var action in catalog.Actions)
+        {
+            if (!action.Id.Contains("party")) continue;
+            bool alwaysInParty = true;
+            bool found = false;
+            foreach (var rec in recordings)
+                foreach (var step in rec.Sequence.Where(s => s.Action == action.Id))
+                {
+                    found = true;
+                    if (!step.RecvState.TryGetValue("SC_PARTY_UPDATE.memberCount", out var mc))
+                        alwaysInParty = false;
+                    else
+                    {
+                        var val = mc is JsonElement je ? (je.TryGetInt32(out var jv) ? jv : 0) : Convert.ToInt32(mc);
+                        if (val <= 1) alwaysInParty = false;
+                    }
+                }
+            if (found && alwaysInParty) partyConditionActions.Add(action.Id);
+        }
+
+        ApplyAnnotations(tree.Root, total, actionRecCount, interactionActions, partyConditionActions);
+    }
+
+    private static void ApplyAnnotations(BtNode node, int total, Dictionary<string, int> actionRecCount,
+        HashSet<string> interactionActions, HashSet<string> partyConditionActions)
+    {
+        if (node is BtAction action)
+        {
+            // Weight
+            if (actionRecCount.TryGetValue(action.Id, out var count))
+            {
+                float w = (float)count / total;
+                if (w < 1.0f) action.Weight = MathF.Round(w, 2);
+            }
+
+            // 상호작용 조건
+            if (interactionActions.Contains(action.Id) && action.Condition == null)
+                action.Condition = "SC_OTHER_CHAR.charUid > 0";
+            else if (partyConditionActions.Contains(action.Id) && action.Condition == null)
+                action.Condition = "SC_PARTY_UPDATE.memberCount > 1";
+        }
+
+        switch (node)
+        {
+            case BtSequence s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionActions, partyConditionActions); break;
+            case BtSelector s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionActions, partyConditionActions); break;
+            case BtRepeat r: ApplyAnnotations(r.Child, total, actionRecCount, interactionActions, partyConditionActions); break;
+        }
+    }
 
     #endregion
 }

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>BT Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #1e1e2e; color: #cdd6f4; padding: 16px; }
+#toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+#toolbar button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+#save-btn { background: #a6e3a1; color: #1e1e2e; }
+#reload-btn { background: #89b4fa; color: #1e1e2e; }
+#status { margin-left: 12px; font-size: 13px; color: #a6adc8; }
+h1 { font-size: 18px; font-weight: 600; flex: 1; }
+
+.node { margin: 4px 0 4px 24px; position: relative; }
+.node::before { content: ''; position: absolute; left: -16px; top: 14px; width: 12px; height: 1px; background: #585b70; }
+.node-header { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
+  font-size: 13px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+.node-header:hover { border-color: #585b70; }
+.node-header.selected { border-color: #cba6f7; box-shadow: 0 0 0 2px rgba(203,166,247,0.3); }
+
+.type-action .node-header { background: #1e3a2f; border-color: #2d5a3f; }
+.type-sequence .node-header { background: #1e2d3a; border-color: #2d4a5a; }
+.type-selector .node-header { background: #3a2d1e; border-color: #5a4a2d; }
+.type-repeat .node-header { background: #2d1e3a; border-color: #4a2d5a; }
+
+.tag { font-size: 11px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.tag-action { background: #a6e3a1; color: #1e1e2e; }
+.tag-sequence { background: #89b4fa; color: #1e1e2e; }
+.tag-selector { background: #fab387; color: #1e1e2e; }
+.tag-repeat { background: #cba6f7; color: #1e1e2e; }
+
+.cond { font-size: 11px; color: #f9e2af; margin-left: 4px; }
+.weight-badge { font-size: 11px; color: #f38ba8; margin-left: 4px; }
+.children { border-left: 1px solid #313244; margin-left: 12px; }
+
+#panel { position: fixed; right: 16px; top: 16px; width: 320px; background: #313244; border-radius: 8px;
+  padding: 16px; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+#panel h3 { font-size: 14px; margin-bottom: 12px; }
+#panel label { display: block; font-size: 12px; color: #a6adc8; margin: 8px 0 4px; }
+#panel input { width: 100%; padding: 6px 8px; background: #1e1e2e; border: 1px solid #585b70; border-radius: 4px;
+  color: #cdd6f4; font-size: 13px; }
+#panel .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+#panel button { padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+#apply-btn { background: #a6e3a1; color: #1e1e2e; }
+#delete-btn { background: #f38ba8; color: #1e1e2e; }
+#close-btn { background: #585b70; color: #cdd6f4; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <h1>🌳 Behavior Tree Editor</h1>
+  <button id="reload-btn" onclick="loadTree()">Reload</button>
+  <button id="save-btn" onclick="save()">Save</button>
+  <span id="status"></span>
+</div>
+<div id="tree"></div>
+<div id="panel">
+  <h3 id="panel-title">Node</h3>
+  <label>Condition</label>
+  <input id="edit-cond" placeholder="예: SC_CHAR_LIST.count == 1">
+  <label>Weight (0.0 ~ 1.0)</label>
+  <input id="edit-weight" type="number" min="0" max="1" step="0.05">
+  <div class="btn-row">
+    <button id="apply-btn" onclick="applyEdit()">Apply</button>
+    <button id="delete-btn" onclick="deleteNode()">Delete</button>
+    <button id="close-btn" onclick="closePanel()">Close</button>
+  </div>
+</div>
+<script>
+let treeData = null;
+let selectedIdx = null;
+let nodeList = [];
+
+async function loadTree() {
+  const res = await fetch('/api/tree');
+  treeData = await res.json();
+  nodeList = [];
+  document.getElementById('tree').innerHTML = '';
+  document.getElementById('tree').appendChild(renderNode(treeData.root));
+  setStatus('Loaded');
+  closePanel();
+}
+
+function renderNode(node) {
+  const idx = nodeList.length;
+  nodeList.push(node);
+  const div = document.createElement('div');
+  div.className = `node type-${node.type}`;
+
+  const header = document.createElement('div');
+  header.className = 'node-header';
+  header.dataset.idx = idx;
+  header.onclick = () => selectNode(idx, header);
+
+  const tag = document.createElement('span');
+  tag.className = `tag tag-${node.type}`;
+  tag.textContent = node.type;
+  header.appendChild(tag);
+
+  const label = document.createElement('span');
+  if (node.type === 'action') label.textContent = node.id;
+  else if (node.type === 'repeat') label.textContent = `×${node.count}`;
+  header.appendChild(label);
+
+  if (node.condition) {
+    const c = document.createElement('span');
+    c.className = 'cond';
+    c.textContent = `[${node.condition}]`;
+    header.appendChild(c);
+  }
+  if (node.weight != null && node.weight < 1) {
+    const w = document.createElement('span');
+    w.className = 'weight-badge';
+    w.textContent = `w=${node.weight}`;
+    header.appendChild(w);
+    header.style.opacity = 0.5 + node.weight * 0.5;
+  }
+
+  div.appendChild(header);
+
+  const kids = node.children || (node.child ? [node.child] : []);
+  if (kids.length) {
+    const childDiv = document.createElement('div');
+    childDiv.className = 'children';
+    kids.forEach(c => childDiv.appendChild(renderNode(c)));
+    div.appendChild(childDiv);
+  }
+  return div;
+}
+
+function selectNode(idx, el) {
+  document.querySelectorAll('.node-header.selected').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedIdx = idx;
+  const node = nodeList[idx];
+  document.getElementById('panel').style.display = 'block';
+  document.getElementById('panel-title').textContent =
+    node.type === 'action' ? `Action: ${node.id}` : `${node.type}${node.type === 'repeat' ? ' ×' + node.count : ''}`;
+  document.getElementById('edit-cond').value = node.condition || '';
+  document.getElementById('edit-weight').value = node.weight != null ? node.weight : 1;
+}
+
+async function applyEdit() {
+  if (selectedIdx == null) return;
+  const cond = document.getElementById('edit-cond').value;
+  const weight = parseFloat(document.getElementById('edit-weight').value);
+
+  await fetch(`/api/node/${selectedIdx}/condition`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({value: cond || null})
+  });
+  await fetch(`/api/node/${selectedIdx}/weight`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({value: isNaN(weight) ? 1 : weight})
+  });
+  setStatus('Applied');
+  loadTree();
+}
+
+async function deleteNode() {
+  if (selectedIdx == null || !confirm('이 노드를 삭제하시겠습니까?')) return;
+  await fetch(`/api/node/${selectedIdx}`, {method: 'DELETE'});
+  setStatus('Deleted');
+  loadTree();
+}
+
+async function save() {
+  const res = await fetch('/api/save', {method: 'POST'});
+  const data = await res.json();
+  setStatus(`Saved: ${data.path}`);
+}
+
+function closePanel() {
+  document.getElementById('panel').style.display = 'none';
+  document.querySelectorAll('.node-header.selected').forEach(e => e.classList.remove('selected'));
+  selectedIdx = null;
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+loadTree();
+</script>
+</body>
+</html>

@@ -21,7 +21,10 @@ class Program
         int Clients = 1,
         string? BehaviorPath = null,
         bool BuildBehavior = false,
-        string? EditBehaviorPath = null);
+        string? EditBehaviorPath = null,
+        int? Duration = null,
+        string? WebEditorPath = null,
+        int WebPort = 8080);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -40,6 +43,9 @@ class Program
         string? behaviorPath = null;
         bool buildBehavior = false;
         string? editBehaviorPath = null;
+        int? duration = null;
+        string? webEditorPath = null;
+        int webPort = 8080;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -90,10 +96,19 @@ class Program
                 case "--edit-behavior" when i + 1 < args.Length:
                     editBehaviorPath = args[++i];
                     break;
+                case "--duration" when i + 1 < args.Length:
+                    if (int.TryParse(args[++i], out var dur)) duration = dur;
+                    break;
+                case "--web-editor" when i + 1 < args.Length:
+                    webEditorPath = args[++i];
+                    break;
+                case "--web-port" when i + 1 < args.Length:
+                    int.TryParse(args[++i], out webPort);
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort);
     }
 
     static void Main(string[] args)
@@ -120,7 +135,7 @@ class Program
 
         if (cli.BehaviorPath != null)
         {
-            RunBehaviorTreeMode(cli.ProtocolPath, cli.BehaviorPath, cli.Target);
+            RunBehaviorTreeMode(cli.ProtocolPath, cli.BehaviorPath, cli.Target, cli.Duration);
             return;
         }
 
@@ -136,6 +151,12 @@ class Program
             tree = BehaviorTreeEditor.Edit(tree);
             tree.Save(cli.EditBehaviorPath);
             Console.WriteLine($"\n저장 완료: {cli.EditBehaviorPath}");
+            return;
+        }
+
+        if (cli.WebEditorPath != null)
+        {
+            new BehaviorTreeWebEditor(cli.WebEditorPath).Run(cli.WebPort);
             return;
         }
 
@@ -191,47 +212,63 @@ class Program
 
         var protocol = ProtocolLoader.Load(protocolPath);
         var replayer = new PacketReplayer(protocol);
-        var packets = replayer.ParseLog(logPath);
+        var clientPackets = replayer.ParseLogByClient(logPath);
 
-        var analyzer = new SequenceAnalyzer();
-        var classified = analyzer.Classify(packets);
-        var groups = analyzer.GroupPackets(classified);
-        Console.Write(analyzer.FormatDiagram(groups));
-
-        var phased = analyzer.AssignPhases(groups, protocol);
-        var mdPath = Path.ChangeExtension(logPath, null) + "_sequence.md";
-        File.WriteAllText(mdPath, $"# Sequence Diagram\n\n{analyzer.FormatMermaid(phased)}");
-        Console.WriteLine($"\nMermaid 다이어그램 저장: {mdPath}");
-
-        // Action Catalog 생성
-        var dynamicFields = analyzer.DetectDynamicFields(packets, protocol.FieldMappings);
-        var catalogBuilder = new ActionCatalogBuilder();
-        var newActions = catalogBuilder.BuildActions(packets, classified, dynamicFields, protocol, logPath);
+        Console.WriteLine($"클라이언트 {clientPackets.Count}개 감지\n");
 
         var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
         var catalogDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions");
         var catalogPath = Path.Combine(catalogDir, $"{protocolName}_actions.json");
-
-        var existing = ActionCatalogBuilder.LoadCatalog(catalogPath);
-        var catalog = catalogBuilder.Merge(existing, newActions, protocol);
-        ActionCatalogBuilder.SaveCatalog(catalogPath, catalog);
-
-        Console.WriteLine($"Action Catalog 저장: {catalogPath} ({catalog.Actions.Count} actions)");
-        if (dynamicFields.Count > 0)
-        {
-            Console.WriteLine($"Dynamic Fields 감지: {dynamicFields.Count}건");
-            foreach (var df in dynamicFields)
-                Console.WriteLine($"  {df.SendPacket}.{df.SendField} ← {df.SourcePacket}.{df.SourceField}");
-        }
-
-        // Recording 추출 + 저장
-        var recording = RecordingStore.ExtractFromCapture(packets, classified, catalog, logPath);
         var recordingsDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings");
         var recordingsPath = Path.Combine(recordingsDir, $"{protocolName}_recordings.json");
-        var store = RecordingStore.Load(recordingsPath);
-        store.Recordings.Add(recording);
-        store.Save(recordingsPath);
-        Console.WriteLine($"Recording 저장: {recordingsPath} ({store.Recordings.Count}건, 이번 {recording.Sequence.Count} steps)");
+
+        ActionCatalog? catalog = null;
+
+        foreach (var (clientPort, packets) in clientPackets)
+        {
+            Console.WriteLine($"--- Client :{clientPort} ({packets.Count} packets) ---\n");
+
+            var analyzer = new SequenceAnalyzer();
+            var classified = analyzer.Classify(packets);
+            var groups = analyzer.GroupPackets(classified);
+            Console.Write(analyzer.FormatDiagram(groups));
+
+            if (clientPort == clientPackets.Keys.First())
+            {
+                var phased = analyzer.AssignPhases(groups, protocol);
+                var mdPath = Path.ChangeExtension(logPath, null) + "_sequence.md";
+                File.WriteAllText(mdPath, $"# Sequence Diagram\n\n{analyzer.FormatMermaid(phased)}");
+                Console.WriteLine($"\nMermaid 다이어그램 저장: {mdPath}");
+            }
+
+            // Action Catalog 생성 (전체 클라이언트에서 머지)
+            var dynamicFields = analyzer.DetectDynamicFields(packets, protocol.FieldMappings);
+            var catalogBuilder = new ActionCatalogBuilder();
+            var newActions = catalogBuilder.BuildActions(packets, classified, dynamicFields, protocol, logPath);
+
+            var existing = catalog ?? ActionCatalogBuilder.LoadCatalog(catalogPath);
+            catalog = catalogBuilder.Merge(existing, newActions, protocol);
+
+            if (dynamicFields.Count > 0)
+            {
+                Console.WriteLine($"Dynamic Fields: {dynamicFields.Count}건");
+                foreach (var df in dynamicFields)
+                    Console.WriteLine($"  {df.SendPacket}.{df.SendField} ← {df.SourcePacket}.{df.SourceField}");
+            }
+
+            // Recording 추출
+            var recording = RecordingStore.ExtractFromCapture(packets, classified, catalog, logPath);
+            var store = RecordingStore.Load(recordingsPath);
+            store.Recordings.Add(recording);
+            store.Save(recordingsPath);
+            Console.WriteLine($"Recording 저장: {store.Recordings.Count}건 (이번 {recording.Sequence.Count} steps)\n");
+        }
+
+        if (catalog != null)
+        {
+            ActionCatalogBuilder.SaveCatalog(catalogPath, catalog);
+            Console.WriteLine($"Action Catalog 저장: {catalogPath} ({catalog.Actions.Count} actions)");
+        }
     }
 
     static void RunReplayMode(string? protocolPath, string replayLog, string? target, ReplayOptions options)
@@ -586,8 +623,11 @@ class Program
 
         Console.WriteLine($"녹화 {store.Recordings.Count}건에서 Behavior Tree 생성...\n");
 
+        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+
         var builder = new BehaviorTreeBuilder();
-        var tree = builder.Build(store, $"{protocolName}_auto");
+        var tree = builder.Build(store, $"{protocolName}_auto", catalog);
 
         var btDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "behaviors");
         var btPath = Path.Combine(btDir, $"{protocolName}_auto.json");
@@ -619,7 +659,7 @@ class Program
                 break;
         }
     }
-    static void RunBehaviorTreeMode(string? protocolPath, string behaviorPath, string? target)
+    static void RunBehaviorTreeMode(string? protocolPath, string behaviorPath, string? target, int? duration = null)
     {
         if (protocolPath == null || !File.Exists(protocolPath))
         { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
@@ -660,7 +700,7 @@ class Program
         };
 
         var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger);
-        executor.Execute(tree, parts[0], port, syncHandler, context, interceptors);
+        executor.Execute(tree, parts[0], port, syncHandler, context, interceptors, durationSec: duration);
     }
 
     /// <summary>응답 처리 시 SessionState를 ReplayContext와 sharedState 양쪽에 동기화.</summary>
