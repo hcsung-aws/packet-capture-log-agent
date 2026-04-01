@@ -25,6 +25,10 @@ public class CatalogAction
     public List<string>? UserInputFields { get; set; }
     [JsonPropertyName("source_log")] public string SourceLog { get; set; } = "";
     [JsonPropertyName("last_observed")] public string LastObserved { get; set; } = "";
+    /// <summary>같은 액션 반복 시 필드값이 다른 경우, 필드별 관측된 값 목록. 실행 시 랜덤 선택.</summary>
+    [JsonPropertyName("field_variants")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, List<JsonElement>>? FieldVariants { get; set; }
 }
 
 public class ActionPacket
@@ -95,8 +99,9 @@ public class ActionCatalogBuilder
 
             if (existing >= 0)
             {
-                // 동일 Action 반복 → repeat_count 증가
+                // 동일 Action 반복 → repeat_count 증가 + 필드 변화 추적
                 actions[existing].RepeatCount++;
+                CollectFieldVariants(actions[existing], group.Send.Fields);
                 continue;
             }
 
@@ -246,5 +251,38 @@ public class ActionCatalogBuilder
             result.Add((responses[i].Name, count));
         }
         return result;
+    }
+
+    /// <summary>같은 액션 반복 시 SEND 필드값이 다르면 variants에 누적.</summary>
+    static void CollectFieldVariants(CatalogAction action, Dictionary<string, object> newFields)
+    {
+        var sendPkt = action.Packets.FirstOrDefault(p => p.Direction == "SEND");
+        if (sendPkt?.Fields == null || newFields.Count == 0) return;
+
+        foreach (var (key, newVal) in newFields)
+        {
+            if (!sendPkt.Fields.TryGetValue(key, out var origVal)) continue;
+
+            var newStr = newVal is JsonElement nje ? nje.GetRawText() : newVal?.ToString() ?? "";
+            var origStr = origVal is JsonElement oje ? oje.GetRawText() : origVal?.ToString() ?? "";
+            if (newStr == origStr) continue;
+
+            // 값이 다름 → variants 초기화 (첫 변화 감지 시 원본값도 포함)
+            action.FieldVariants ??= new();
+            if (!action.FieldVariants.ContainsKey(key))
+            {
+                var origElem = origVal is JsonElement oe ? oe :
+                    JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(origVal));
+                action.FieldVariants[key] = new List<JsonElement> { origElem };
+            }
+
+            var newElem = newVal is JsonElement ne ? ne :
+                JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(newVal));
+
+            // 중복 방지
+            var list = action.FieldVariants[key];
+            if (!list.Any(e => e.GetRawText() == newElem.GetRawText()))
+                list.Add(newElem);
+        }
     }
 }

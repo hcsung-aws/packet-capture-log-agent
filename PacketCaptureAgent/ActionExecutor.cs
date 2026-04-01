@@ -48,6 +48,13 @@ public class ActionExecutor
                 if (ap.Fields != null)
                     foreach (var kv in ap.Fields)
                         fields[kv.Key] = kv.Value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je) : kv.Value;
+
+                // field_variants: 누적된 값 중 랜덤 선택 (overrides보다 먼저, overrides가 우선)
+                if (action.FieldVariants != null)
+                    foreach (var (fk, variants) in action.FieldVariants)
+                        if (variants.Count > 0)
+                            fields[fk] = ScenarioBuilder.ConvertJsonElement(variants[_rng.Next(variants.Count)]);
+
                 if (overrides != null)
                     foreach (var kv in overrides)
                     {

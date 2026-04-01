@@ -53,6 +53,9 @@ PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 # 캡처 로그 분석 → 녹화 + 액션 카탈로그 생성 (멀티 클라이언트 자동 분리)
 PacketCaptureAgent.exe -p protocol.json --analyze capture.log
 
+# 여러 로그 일괄 분석 (디렉토리 또는 파일 목록)
+.\analyze_all.ps1 ..\protocols\mmorpg_simulator.json ..\captures\archive
+
 # 녹화에서 BT 자동 생성 (조건 정제 + 상태 바인딩 + weight + 상호작용 감지)
 PacketCaptureAgent.exe -p protocol.json --build-behavior
 

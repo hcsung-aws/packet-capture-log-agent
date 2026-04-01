@@ -38,3 +38,11 @@ agent-core/poc/jobs/
 # Python
 __pycache__/
 *.pyc
+
+# PyInstaller
+agent-core/client/build/
+agent-core/client/dist/
+agent-core/client/*.spec
+
+# Distribution
+protocol-agent-dist.zip

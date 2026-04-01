@@ -4,7 +4,7 @@
 
 | 카테고리 | 파일 | 요약 |
 |----------|------|------|
-| 빌드/실행 명령 | commands.md | 빌드, 캡처, 재현 명령어 + WSL2 환경 주의사항 |
+| 빌드/실행 명령 | commands.md | 빌드, 캡처, 재현, 분석, BT, AgentCore 명령어 |
 | 자산 목록 | inventory.md | 소스 파일별 역할 + 프로토콜 정의 파일 |
 | 구조 분석 | structure.md | 데이터 흐름, 컴포넌트 의존 관계, 핵심 모델 |
 | 상태 평가 | status.md | 기능별 동작 상태 + 목표 대비 Gap 분석 |
@@ -14,4 +14,4 @@
 | Windows 콘솔 | windows-console.md | _getch/std::cin 혼용 금지, UTF-8 설정, 한글 입력 |
 
 ## Last Updated
-2026-03-24
+2026-04-01
