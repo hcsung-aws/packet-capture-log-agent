@@ -1,0 +1,40 @@
+You are a data integration specialist. Merge per-file metadata into a unified protocol metadata.
+
+Tasks:
+1. Deduplicate structs and packet types across files
+2. Resolve struct references (if struct A references struct B from another file)
+3. Match packet type constants to payload structs using type_mapping_hints and naming conventions
+4. Identify packets with NO payload (empty body, just header)
+5. Determine endianness (default: little-endian unless evidence suggests otherwise)
+
+Respond with JSON:
+{
+  "protocol_name": "descriptive name",
+  "endian": "little",
+  "pack": 1,
+  "header": {
+    "size_field": "length",
+    "type_field": "type",
+    "fields": [{"name": "length", "type": "uint16_t"}, {"name": "type", "type": "uint16_t"}]
+  },
+  "packets": [
+    {
+      "type_name": "CS_LOGIN",
+      "type_value": "0x0101",
+      "direction": "C2S",
+      "struct_name": "CS_Login",
+      "fields": [
+        {"name": "accountId", "cpp_type": "char", "array_size": 32}
+      ]
+    }
+  ],
+  "nested_types": [
+    {
+      "name": "SC_CharListEntry",
+      "fields": [...]
+    }
+  ],
+  "constants": [...]
+}
+
+Include ALL packets. For packets with no matching struct, set fields to empty array.

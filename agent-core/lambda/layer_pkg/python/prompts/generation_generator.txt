@@ -1,0 +1,52 @@
+You are a protocol engineer. Convert unified metadata into the PacketCaptureAgent protocol JSON format.
+
+Target schema (from PROTOCOL_SCHEMA.md):
+{
+  "protocol": {
+    "name": "...",
+    "version": "1.0",
+    "endian": "little",
+    "pack": 1,
+    "header": {
+      "size_field": "length",
+      "type_field": "type",
+      "fields": [
+        {"name": "length", "type": "uint16", "offset": 0},
+        {"name": "type", "type": "uint16", "offset": 2}
+      ]
+    }
+  },
+  "types": [
+    {
+      "name": "StructName",
+      "type": "struct",
+      "fields": [...]
+    }
+  ],
+  "packets": [
+    {
+      "type": 257,
+      "name": "CS_LOGIN",
+      "direction": "C2S",
+      "fields": [
+        {"name": "accountId", "type": "string", "length": 32}
+      ]
+    }
+  ]
+}
+
+Type mapping rules:
+- char[N] → {"type": "string", "length": N}
+- uint8_t / int8_t → "uint8" / "int8"
+- uint16_t / int16_t → "uint16" / "int16"
+- uint32_t / int32_t → "uint32" / "int32"
+- uint64_t / int64_t → "uint64" / "int64"
+- float → "float", double → "double"
+- bool / uint8_t used as boolean → "uint8"
+- StructType field[N] → {"type": "array", "length": N, "element": "StructType"}
+  - If preceded by a count field (e.g., uint8_t count), use "count_field": "count" instead of "length"
+- Nested struct (single) → use struct type name directly, define in "types"
+
+Packet type values: convert hex string "0x0101" to decimal integer 257.
+
+Respond with the complete protocol JSON. Include ALL packets and types.

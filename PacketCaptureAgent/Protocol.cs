@@ -23,6 +23,9 @@ public class ProtocolDefinition
     [JsonPropertyName("field_mappings")]
     public List<FieldMapping>? FieldMappings { get; set; }
 
+    [JsonPropertyName("semantics")]
+    public SemanticsDefinition? Semantics { get; set; }
+
     public PacketDefinition? GetPacketByType(int type) =>
         Packets.FirstOrDefault(p => p.Type == type);
 }
@@ -135,11 +138,23 @@ public class FieldDefinition
     [JsonPropertyName("length")]
     public object? Length { get; set; }  // int or "remaining"
 
+    [JsonPropertyName("length_type")]
+    public string? LengthType { get; set; }  // for string_prefixed: "uint8", "uint16", "uint32"
+
+    [JsonPropertyName("encoding")]
+    public string? Encoding { get; set; }  // "utf8" (default), "utf16", "ascii"
+
     [JsonPropertyName("count_field")]
     public string? CountField { get; set; }
 
     [JsonPropertyName("element")]
     public string? Element { get; set; }  // for array type
+
+    [JsonPropertyName("switch_field")]
+    public string? SwitchField { get; set; }  // for conditional type
+
+    [JsonPropertyName("cases")]
+    public Dictionary<string, List<FieldDefinition>>? Cases { get; set; }  // for conditional type
 
     public int GetLength(int remaining = 0)
     {
@@ -173,4 +188,34 @@ public class FieldMapping
 
     [JsonPropertyName("source")]
     public string Source { get; set; } = "";  // "SC_NPC_SPAWN.npcUid" | "external" | "static"
+}
+
+public class SemanticsDefinition
+{
+    [JsonPropertyName("interaction_sources")]
+    public List<InteractionSource>? InteractionSources { get; set; }
+
+    [JsonPropertyName("state_conditions")]
+    public List<StateCondition>? StateConditions { get; set; }
+}
+
+public class InteractionSource
+{
+    [JsonPropertyName("source_prefix")]
+    public string SourcePrefix { get; set; } = "";
+
+    [JsonPropertyName("condition")]
+    public string Condition { get; set; } = "";
+}
+
+public class StateCondition
+{
+    [JsonPropertyName("action_pattern")]
+    public string ActionPattern { get; set; } = "";
+
+    [JsonPropertyName("state_field")]
+    public string StateField { get; set; } = "";
+
+    [JsonPropertyName("min_value")]
+    public int MinValue { get; set; }
 }

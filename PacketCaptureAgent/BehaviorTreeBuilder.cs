@@ -10,7 +10,7 @@ public class BehaviorTreeBuilder
     private Dictionary<string, HashSet<string>> _fieldValuesPerRecording = new();
 
     /// <summary>녹화 저장소에서 BT 자동 생성.</summary>
-    public BehaviorTreeDefinition Build(RecordingStore store, string name = "auto_generated", ActionCatalog? catalog = null)
+    public BehaviorTreeDefinition Build(RecordingStore store, string name = "auto_generated", ActionCatalog? catalog = null, ProtocolDefinition? protocol = null)
     {
         _dynamicFields = AnalyzeFieldDynamics(store.Recordings);
         _fieldValuesPerRecording = CollectFieldValuesPerRecording(store.Recordings);
@@ -18,7 +18,7 @@ public class BehaviorTreeBuilder
         var root = ConvertToNode(trie);
         if (catalog != null) AnnotateStateBindings(root, catalog);
         var tree = new BehaviorTreeDefinition { Name = name, Root = root };
-        if (catalog != null) AnnotateWeightsAndConditions(tree, store.Recordings, catalog);
+        if (catalog != null) AnnotateWeightsAndConditions(tree, store.Recordings, catalog, protocol?.Semantics);
         return tree;
     }
 
@@ -287,8 +287,9 @@ public class BehaviorTreeBuilder
 
     #region Weight + 상호작용 조건
 
-    /// <summary>액션별 녹화 빈도 → weight, 상호작용 액션 → 조건 자동 부여.</summary>
-    private static void AnnotateWeightsAndConditions(BehaviorTreeDefinition tree, List<Recording> recordings, ActionCatalog catalog)
+    /// <summary>액션별 녹화 빈도 → weight, 상호작용 액션 → 조건 자동 부여.
+    /// semantics가 있으면 설정 기반, 없으면 조건 부여 스킵.</summary>
+    private static void AnnotateWeightsAndConditions(BehaviorTreeDefinition tree, List<Recording> recordings, ActionCatalog catalog, SemanticsDefinition? semantics)
     {
         // 액션별 등장 녹화 수
         var actionRecCount = new Dictionary<string, int>();
@@ -300,39 +301,42 @@ public class BehaviorTreeBuilder
             }
         int total = recordings.Count;
 
-        // 상호작용 액션 감지: dynamic_field source가 SC_OTHER_CHAR 참조
-        var interactionActions = new HashSet<string>();
-        foreach (var action in catalog.Actions)
-            if (action.DynamicFields.Any(df => df.Source.StartsWith("SC_OTHER_CHAR")))
-                interactionActions.Add(action.Id);
+        // semantics 기반 상호작용 감지
+        var interactionConditions = new Dictionary<string, string>(); // actionId → condition
+        if (semantics?.InteractionSources != null)
+            foreach (var action in catalog.Actions)
+                foreach (var src in semantics.InteractionSources)
+                    if (action.DynamicFields.Any(df => df.Source.StartsWith(src.SourcePrefix)))
+                    { interactionConditions[action.Id] = src.Condition; break; }
 
-        // recv_state 패턴: party 액션이 항상 SC_PARTY_UPDATE.memberCount > 1일 때 수행되었는지
-        var partyConditionActions = new HashSet<string>();
-        foreach (var action in catalog.Actions)
-        {
-            if (!action.Id.Contains("party")) continue;
-            bool alwaysInParty = true;
-            bool found = false;
-            foreach (var rec in recordings)
-                foreach (var step in rec.Sequence.Where(s => s.Action == action.Id))
+        // semantics 기반 상태 조건 감지
+        var stateConditions = new Dictionary<string, string>(); // actionId → condition
+        if (semantics?.StateConditions != null)
+            foreach (var sc in semantics.StateConditions)
+                foreach (var action in catalog.Actions)
                 {
-                    found = true;
-                    if (!step.RecvState.TryGetValue("SC_PARTY_UPDATE.memberCount", out var mc))
-                        alwaysInParty = false;
-                    else
-                    {
-                        var val = mc is JsonElement je ? (je.TryGetInt32(out var jv) ? jv : 0) : Convert.ToInt32(mc);
-                        if (val <= 1) alwaysInParty = false;
-                    }
+                    if (!action.Id.Contains(sc.ActionPattern)) continue;
+                    bool always = true, found = false;
+                    foreach (var rec in recordings)
+                        foreach (var step in rec.Sequence.Where(s => s.Action == action.Id))
+                        {
+                            found = true;
+                            if (!step.RecvState.TryGetValue(sc.StateField, out var mv))
+                                always = false;
+                            else
+                            {
+                                var val = mv is JsonElement je ? (je.TryGetInt32(out var jv) ? jv : 0) : Convert.ToInt32(mv);
+                                if (val < sc.MinValue) always = false;
+                            }
+                        }
+                    if (found && always) stateConditions[action.Id] = $"{sc.StateField} >= {sc.MinValue}";
                 }
-            if (found && alwaysInParty) partyConditionActions.Add(action.Id);
-        }
 
-        ApplyAnnotations(tree.Root, total, actionRecCount, interactionActions, partyConditionActions);
+        ApplyAnnotations(tree.Root, total, actionRecCount, interactionConditions, stateConditions);
     }
 
     private static void ApplyAnnotations(BtNode node, int total, Dictionary<string, int> actionRecCount,
-        HashSet<string> interactionActions, HashSet<string> partyConditionActions)
+        Dictionary<string, string> interactionConditions, Dictionary<string, string> stateConditions)
     {
         if (node is BtAction action)
         {
@@ -343,18 +347,18 @@ public class BehaviorTreeBuilder
                 if (w < 1.0f) action.Weight = MathF.Round(w, 2);
             }
 
-            // 상호작용 조건
-            if (interactionActions.Contains(action.Id) && action.Condition == null)
-                action.Condition = "SC_OTHER_CHAR.charUid > 0";
-            else if (partyConditionActions.Contains(action.Id) && action.Condition == null)
-                action.Condition = "SC_PARTY_UPDATE.memberCount > 1";
+            // 조건 부여 (interaction 우선, state 차선)
+            if (action.Condition == null && interactionConditions.TryGetValue(action.Id, out var ic))
+                action.Condition = ic;
+            else if (action.Condition == null && stateConditions.TryGetValue(action.Id, out var sc))
+                action.Condition = sc;
         }
 
         switch (node)
         {
-            case BtSequence s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionActions, partyConditionActions); break;
-            case BtSelector s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionActions, partyConditionActions); break;
-            case BtRepeat r: ApplyAnnotations(r.Child, total, actionRecCount, interactionActions, partyConditionActions); break;
+            case BtSequence s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionConditions, stateConditions); break;
+            case BtSelector s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionConditions, stateConditions); break;
+            case BtRepeat r: ApplyAnnotations(r.Child, total, actionRecCount, interactionConditions, stateConditions); break;
         }
     }
 

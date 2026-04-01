@@ -25,3 +25,16 @@ Thumbs.db
 .kiro/
 logs/
 recordings/
+
+# Terraform
+agent-core/terraform/.terraform/
+agent-core/terraform/.build/
+agent-core/terraform/*.tfstate*
+agent-core/terraform/.terraform.lock.hcl
+
+# PoC jobs (intermediate results)
+agent-core/poc/jobs/
+
+# Python
+__pycache__/
+*.pyc

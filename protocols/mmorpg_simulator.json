@@ -30,6 +30,14 @@
     "Quest": [10],
     "Party": [11]
   },
+  "semantics": {
+    "interaction_sources": [
+      { "source_prefix": "SC_OTHER_CHAR", "condition": "SC_OTHER_CHAR.charUid > 0" }
+    ],
+    "state_conditions": [
+      { "action_pattern": "party", "state_field": "SC_PARTY_UPDATE.memberCount", "min_value": 2 }
+    ]
+  },
   "types": {
     "CharListEntry": {
       "kind": "struct",

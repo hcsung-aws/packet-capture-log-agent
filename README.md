@@ -17,7 +17,8 @@
 - **패킷 재현**: 캡처된 로그를 사용한 패킷 재전송 (타이밍 기반 딜레이)
 - **인터셉터**: 재현 중 패킷을 동적으로 수정 (예: NPC 공격 대상 자동 교체)
 - **Behavior Tree**: 캡처 녹화에서 자동 생성, 확률 기반 실행, 웹 에디터
-- **지원 타입**: 정수, 문자열, 배열, 구조체
+- **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → JSON 프로토콜 자동 생성
+- **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
 
@@ -66,6 +67,17 @@ PacketCaptureAgent.exe --edit-behavior behaviors/auto.json
 
 # 웹 에디터 (브라우저 GUI)
 PacketCaptureAgent.exe --web-editor behaviors/auto.json [--web-port 8080]
+```
+
+### 프로토콜 자동 생성
+
+```bash
+# CLI (소스 → JSON 프로토콜 자동 생성)
+cd agent-core/client
+python3 cli.py generate --source /path/to/game/source --output protocol.json
+
+# 웹 UI
+python3 app.py 8090  # http://localhost:8090
 ```
 
 ### 옵션
@@ -135,9 +147,17 @@ packet-capture-log-agent/
 │   ├── BehaviorTreeWebEditor.cs # BT 웹 에디터 (HttpListener)
 │   ├── IReplayInterceptor.cs   # 인터셉터 인터페이스
 │   └── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
-└── protocols/
-    ├── echoclient.json
-    └── mmorpg_simulator.json
+├── agent-core/                 # 프로토콜 자동 생성 (LLM Agent)
+│   ├── poc/                    # 로컬 PoC (Bedrock 직접 호출)
+│   ├── lambda/                 # AWS Lambda 함수 (5 Phase + Orchestrator)
+│   ├── terraform/              # 인프라 정의 (S3, Lambda, Step Functions, API GW)
+│   └── client/                 # CLI + 웹 프론트엔드
+├── protocols/
+│   ├── echoclient.json
+│   └── mmorpg_simulator.json
+└── docs/
+    ├── BEHAVIOR_TREE_DESIGN.md
+    └── PROTOCOL_SCHEMA.md
 ```
 
 ## 제한사항

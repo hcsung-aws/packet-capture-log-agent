@@ -96,6 +96,19 @@ public class PacketBuilder
 
     private void WriteField(MemoryStream ms, FieldDefinition field, object? value, Dictionary<string, object> allFields)
     {
+        // 조건부 타입
+        if (field.Type == "conditional" && field.SwitchField != null && field.Cases != null)
+        {
+            var switchVal = allFields.TryGetValue(field.SwitchField, out var sv) ? Convert.ToString(sv) ?? "" : "";
+            if (field.Cases.TryGetValue(switchVal, out var caseFields))
+            {
+                var caseData = GetDict(value);
+                foreach (var cf in caseFields)
+                    WriteField(ms, cf, caseData.GetValueOrDefault(cf.Name), caseData);
+            }
+            return;
+        }
+
         // 배열 타입
         if (field.Type == "array" && field.Element != null)
         {
@@ -122,6 +135,7 @@ public class PacketBuilder
             case "double": WriteDouble(ms, Convert.ToDouble(value ?? 0d)); break;
             case "bool": ms.WriteByte((byte)(Convert.ToBoolean(value) ? 1 : 0)); break;
             case "string": WriteString(ms, value?.ToString() ?? "", field.GetLength()); break;
+            case "string_prefixed": WritePrefixedString(ms, value?.ToString() ?? "", field); break;
             case "bytes": WriteBytes(ms, GetBytes(value), field.GetLength()); break;
             default: TryWriteCustomType(ms, field.Type, value, allFields); break;
         }
@@ -174,6 +188,26 @@ public class PacketBuilder
         var buffer = new byte[length];
         Array.Copy(bytes, buffer, Math.Min(bytes.Length, length - 1));
         ms.Write(buffer);
+    }
+
+    private void WritePrefixedString(MemoryStream ms, string value, FieldDefinition field)
+    {
+        var enc = (field.Encoding ?? "utf8") switch
+        {
+            "utf16" => Encoding.Unicode,
+            "ascii" => Encoding.ASCII,
+            _ => Encoding.UTF8
+        };
+        var bytes = enc.GetBytes(value);
+        var lt = field.LengthType ?? "uint16";
+        switch (lt)
+        {
+            case "uint8": ms.WriteByte((byte)bytes.Length); break;
+            case "uint16": WriteUInt16(ms, (ushort)bytes.Length); break;
+            case "uint32": WriteUInt32(ms, (uint)bytes.Length); break;
+            default: WriteUInt16(ms, (ushort)bytes.Length); break;
+        }
+        ms.Write(bytes);
     }
 
     private void WriteBytes(MemoryStream ms, byte[] value, int length)

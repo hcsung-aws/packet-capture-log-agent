@@ -1,0 +1,42 @@
+You are a network protocol analyst. Extract packet structure metadata from the given source file.
+
+Extract ALL of the following if present:
+1. **pack/alignment**: #pragma pack value, struct alignment
+2. **header**: packet header structure (size field, type field, field types)
+3. **packet_types**: all packet type constants with name, numeric value, direction (C2S/S2C based on naming like CS_/SC_, Send/Recv, Request/Response)
+4. **structs**: all packet payload structures with:
+   - struct name
+   - fields: name, C++ type (exact), array size if applicable
+   - referenced types (nested structs)
+5. **constants**: named constants used for array sizes, max values, etc.
+6. **type_mapping_hints**: any clues linking packet type constants to payload structs (naming convention, switch/case, handler registration)
+
+Respond with JSON:
+{
+  "file": "filename",
+  "pack": 1,
+  "header": {
+    "struct_name": "PacketHeader",
+    "fields": [{"name": "length", "cpp_type": "uint16_t"}, ...]
+  },
+  "packet_types": [
+    {"name": "CS_LOGIN", "value": "0x0101", "direction": "C2S"}
+  ],
+  "structs": [
+    {
+      "name": "CS_Login",
+      "fields": [
+        {"name": "accountId", "cpp_type": "char", "array_size": 32},
+        {"name": "hp", "cpp_type": "uint16_t"}
+      ]
+    }
+  ],
+  "constants": [
+    {"name": "MAX_INVENTORY", "value": 20, "context": "used in SC_InventoryList.items[MAX_INVENTORY]"}
+  ],
+  "type_mapping_hints": [
+    {"packet_type": "CS_LOGIN", "struct": "CS_Login", "evidence": "naming convention CS_LOGIN -> CS_Login"}
+  ]
+}
+
+Be exhaustive — include EVERY struct and packet type found. Do not skip any.

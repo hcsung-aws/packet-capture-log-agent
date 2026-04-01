@@ -626,8 +626,9 @@ class Program
         var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
         var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
 
+        var protocol = ProtocolLoader.Load(protocolPath);
         var builder = new BehaviorTreeBuilder();
-        var tree = builder.Build(store, $"{protocolName}_auto", catalog);
+        var tree = builder.Build(store, $"{protocolName}_auto", catalog, protocol);
 
         var btDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "behaviors");
         var btPath = Path.Combine(btDir, $"{protocolName}_auto.json");

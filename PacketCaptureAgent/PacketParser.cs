@@ -104,6 +104,22 @@ public class PacketParser
     {
         if (offset >= data.Length) return ("", 0);
 
+        // 조건부 타입
+        if (field.Type == "conditional" && field.SwitchField != null && field.Cases != null)
+        {
+            var switchVal = parsedFields.TryGetValue(field.SwitchField, out var sv) ? Convert.ToString(sv) ?? "" : "";
+            if (!field.Cases.TryGetValue(switchVal, out var caseFields)) return (new Dictionary<string, object>(), 0);
+            var caseResult = new Dictionary<string, object>();
+            int caseOffset = offset;
+            foreach (var cf in caseFields)
+            {
+                var (v, s) = ReadField(data, caseOffset, cf, caseResult, data.Length - caseOffset);
+                caseResult[cf.Name] = v;
+                caseOffset += s;
+            }
+            return (caseResult, caseOffset - offset);
+        }
+
         // 배열 타입
         if (field.Type == "array" && field.Element != null)
         {
@@ -139,6 +155,7 @@ public class PacketParser
             "double" => (ReadDouble(data, offset), 8),
             "bool" => (data[offset] != 0, 1),
             "string" => ReadString(data, offset, field.GetLength(remaining)),
+            "string_prefixed" => ReadPrefixedString(data, offset, field),
             "bytes" => ReadBytes(data, offset, field.GetLength(remaining)),
             _ => TryReadCustomType(data, offset, field.Type, parsedFields, remaining)
         };
@@ -205,8 +222,8 @@ public class PacketParser
     {
         if (field.Type == "string" || field.Type == "bytes")
             return field.GetLength();
-        if (field.Type == "array")
-            return 0; // 가변 길이 배열은 정적 크기 계산 불가
+        if (field.Type == "string_prefixed" || field.Type == "array" || field.Type == "conditional")
+            return 0; // 가변 길이
         return GetTypeSize(field.Type);
     }
 
@@ -220,6 +237,25 @@ public class PacketParser
         int strLen = end >= 0 ? end - offset : length;
         return (Encoding.UTF8.GetString(data, offset, strLen), length);
     }
+
+    private (string, int) ReadPrefixedString(byte[] data, int offset, FieldDefinition field)
+    {
+        var lt = field.LengthType ?? "uint16";
+        int prefixSize = GetTypeSize(lt);
+        if (offset + prefixSize > data.Length) return ("", 0);
+        int strLen = ReadIntByType(data, offset, lt);
+        int totalSize = prefixSize + strLen;
+        if (offset + totalSize > data.Length) strLen = data.Length - offset - prefixSize;
+        var enc = GetEncoding(field.Encoding);
+        return (enc.GetString(data, offset + prefixSize, strLen), totalSize);
+    }
+
+    private static System.Text.Encoding GetEncoding(string? name) => name switch
+    {
+        "utf16" => Encoding.Unicode,
+        "ascii" => Encoding.ASCII,
+        _ => Encoding.UTF8
+    };
 
     private (byte[], int) ReadBytes(byte[] data, int offset, int length)
     {
