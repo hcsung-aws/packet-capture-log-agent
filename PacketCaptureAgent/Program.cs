@@ -24,7 +24,9 @@ class Program
         string? EditBehaviorPath = null,
         int? Duration = null,
         string? WebEditorPath = null,
-        int WebPort = 8080);
+        int WebPort = 8080,
+        string? FsmPath = null,
+        bool BuildFsm = false);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -46,6 +48,8 @@ class Program
         int? duration = null;
         string? webEditorPath = null;
         int webPort = 8080;
+        string? fsmPath = null;
+        bool buildFsm = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -105,10 +109,16 @@ class Program
                 case "--web-port" when i + 1 < args.Length:
                     int.TryParse(args[++i], out webPort);
                     break;
+                case "--fsm" when i + 1 < args.Length:
+                    fsmPath = args[++i];
+                    break;
+                case "--build-fsm":
+                    buildFsm = true;
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm);
     }
 
     static void Main(string[] args)
@@ -130,6 +140,18 @@ class Program
         if (cli.BuildScenario)
         {
             RunBuildScenarioMode(cli.ProtocolPath);
+            return;
+        }
+
+        if (cli.FsmPath != null)
+        {
+            RunFsmMode(cli.ProtocolPath, cli.FsmPath, cli.Target, cli.Duration);
+            return;
+        }
+
+        if (cli.BuildFsm)
+        {
+            RunBuildFsmMode(cli.ProtocolPath);
             return;
         }
 
@@ -321,7 +343,7 @@ class Program
         var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
         using var logger = new ReplayLogger(logDir, console: Console.Out);
         var handler = new ParsingResponseHandler(protocol, parts[0], port, logger);
-        var interceptors = new List<IReplayInterceptor> { new NpcAttackInterceptor() };
+        var interceptors = new List<IReplayInterceptor> { new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()) };
         replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
     }
 
@@ -601,13 +623,86 @@ class Program
         var interceptors = new List<IReplayInterceptor>();
         if (dynamicFields.Count > 0)
             interceptors.Add(new DynamicFieldInterceptor(dynamicFields, sharedState));
-        interceptors.Add(new NpcAttackInterceptor());
+        interceptors.Add(new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()));
 
         var replayer = new PacketReplayer(protocol);
         replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
     }
 
 
+
+    static void RunBuildFsmMode(string? protocolPath)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var recordingsPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings", $"{protocolName}_recordings.json");
+        var store = RecordingStore.Load(recordingsPath);
+
+        if (store.Recordings.Count == 0)
+        { Console.WriteLine($"녹화 없음: {recordingsPath}\n먼저 --analyze로 캡처 로그를 분석하세요."); return; }
+
+        Console.WriteLine($"녹화 {store.Recordings.Count}건에서 FSM 전이 확률 생성...\n");
+
+        var builder = new FsmBuilder();
+        var fsm = builder.Build(store, $"{protocolName}_fsm");
+
+        var fsmDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "behaviors");
+        var fsmPath = Path.Combine(fsmDir, $"{protocolName}_fsm.json");
+        fsm.Save(fsmPath);
+
+        Console.WriteLine($"FSM 저장: {fsmPath}");
+        Console.WriteLine($"  초기 상태: {fsm.InitialState}");
+        Console.WriteLine($"  상태 수: {fsm.Transitions.Count}");
+        foreach (var (from, targets) in fsm.Transitions)
+        {
+            var top = string.Join(", ", targets.OrderByDescending(kv => kv.Value).Take(3).Select(kv => $"{kv.Key}({kv.Value:P0})"));
+            Console.WriteLine($"  {from} → {top}");
+        }
+    }
+
+    static void RunFsmMode(string? protocolPath, string fsmPath, string? target, int? duration = null)
+    {
+        if (protocolPath == null || !File.Exists(protocolPath))
+        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        if (!File.Exists(fsmPath))
+        { Console.WriteLine($"FSM 파일을 찾을 수 없음: {fsmPath}"); return; }
+
+        var protocol = ProtocolLoader.Load(protocolPath);
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
+        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        if (catalog == null) { Console.WriteLine($"Action Catalog 없음: {catalogPath}"); return; }
+
+        var fsm = FsmDefinition.Load(fsmPath);
+
+        if (target == null)
+        { Console.Write("대상 서버 (host:port): "); target = Console.ReadLine(); }
+        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return; }
+        var parts = target.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
+        { Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000"); return; }
+
+        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        using var logger = new ReplayLogger(logDir, console: Console.Out);
+
+        var context = new ReplayContext();
+        var sharedState = new Dictionary<string, object>();
+        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port, logger);
+        var handler = new TrackingResponseHandler(innerHandler, sharedState);
+        var syncHandler = new BtSyncHandler(handler, context, sharedState);
+
+        var interceptors = new List<IReplayInterceptor>
+        {
+            new DynamicFieldInterceptor(
+                new ScenarioBuilder().CollectAllDynamicFields(catalog), sharedState),
+            new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new())
+        };
+
+        var executor = new FsmExecutor(new ActionExecutor(protocol, catalog), logger);
+        executor.Execute(fsm, parts[0], port, syncHandler, context, interceptors, durationSec: duration);
+    }
 
     static void RunBuildBehaviorMode(string? protocolPath)
     {
@@ -697,10 +792,10 @@ class Program
         {
             new DynamicFieldInterceptor(
                 new ScenarioBuilder().CollectAllDynamicFields(catalog), sharedState),
-            new NpcAttackInterceptor()
+            new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new())
         };
 
-        var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger);
+        var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger, protocol.Semantics);
         executor.Execute(tree, parts[0], port, syncHandler, context, interceptors, durationSec: duration);
     }
 

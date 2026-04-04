@@ -197,6 +197,9 @@ public class SemanticsDefinition
 
     [JsonPropertyName("state_conditions")]
     public List<StateCondition>? StateConditions { get; set; }
+
+    [JsonPropertyName("proximity_actions")]
+    public List<ProximityAction>? ProximityActions { get; set; }
 }
 
 public class InteractionSource
@@ -218,4 +221,16 @@ public class StateCondition
 
     [JsonPropertyName("min_value")]
     public int MinValue { get; set; }
+}
+
+public class ProximityAction
+{
+    [JsonPropertyName("action_pattern")]
+    public string ActionPattern { get; set; } = "";
+
+    [JsonPropertyName("npc_type")]
+    public int NpcType { get; set; }
+
+    [JsonPropertyName("range")]
+    public int Range { get; set; } = 1;
 }

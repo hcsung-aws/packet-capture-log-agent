@@ -193,7 +193,30 @@ public class ActionCatalogBuilder
 
         // 새 Action으로 추가/갱신
         foreach (var a in newActions)
-            merged[a.Id] = a;
+        {
+            if (merged.TryGetValue(a.Id, out var ex))
+            {
+                // field_variants 합치기 (기존 + 새 값)
+                if (a.FieldVariants != null)
+                {
+                    ex.FieldVariants ??= new();
+                    foreach (var (key, newList) in a.FieldVariants)
+                    {
+                        if (!ex.FieldVariants.ContainsKey(key))
+                            ex.FieldVariants[key] = new();
+                        var exList = ex.FieldVariants[key];
+                        foreach (var elem in newList)
+                            if (!exList.Any(e => e.GetRawText() == elem.GetRawText()))
+                                exList.Add(elem);
+                    }
+                }
+                ex.RepeatCount = Math.Max(ex.RepeatCount, a.RepeatCount);
+                ex.LastObserved = a.LastObserved;
+                ex.SourceLog = a.SourceLog;
+            }
+            else
+                merged[a.Id] = a;
+        }
 
         return new ActionCatalog
         {

@@ -30,6 +30,22 @@ public class CaptureSession
         var info = RawPacketParser.TryExtract(buffer, length, _filterPort);
         if (info == null) return;
 
+        // TCP 세션 경계 감지
+        if ((info.TcpFlags & RawPacketParser.FlagSYN) != 0 && info.Payload.Length == 0)
+        {
+            _logBoth($"[{DateTime.Now:HH:mm:ss.fff}] [CONNECT] {info.Connection}");
+            _logFileOnly($"[{DateTime.Now:HH:mm:ss.fff}] [CONNECT] {info.Connection}");
+            return;
+        }
+        if ((info.TcpFlags & (RawPacketParser.FlagFIN | RawPacketParser.FlagRST)) != 0 && info.Payload.Length == 0)
+        {
+            _logBoth($"[{DateTime.Now:HH:mm:ss.fff}] [DISCONNECT] {info.Connection}");
+            _logFileOnly($"[{DateTime.Now:HH:mm:ss.fff}] [DISCONNECT] {info.Connection}");
+            return;
+        }
+
+        if (info.Payload.Length == 0) return;
+
         if (_parser != null && _formatter != null)
         {
             var stream = _streamManager.GetOrCreate(info.Connection);

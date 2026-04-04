@@ -1,29 +1,39 @@
 # Current Status & Gap Analysis
 
-## 동작 확인됨 (기존 로그 기반)
-- mmorpg-simulator 대상 캡처 + 파싱 동작 (2026-01-28 로그)
-- CS_LOGIN → SC_LOGIN_RESULT → SC_CHAR_LIST 시퀀스 정상 파싱
-- 필드 값 + raw hex 로그 모두 정상 기록
+## Phase별 달성도 (PURPOSE-SCENARIO 대비)
 
-## 기능별 상태
+| Phase | 목표 | 상태 | 비고 |
+|-------|------|------|------|
+| 1: 프로토콜 생성 | 게임 소스 → JSON 프로토콜 | ✅ | AgentCore (LLM 5-Phase), AWS 배포, CLI+웹 |
+| 2: 캡처+파싱+로그 | TCP 캡처 → 동적 파싱 → 로그 | ✅ | 정수/문자열/배열/구조체/string_prefixed/conditional + Transform |
+| 3: 시나리오 자동 조립 | 캡처 → 의미 분석 → 시나리오 | ✅ | BT 자동 생성+실행+편집, FSM, ScenarioBuilder, 범용화, explore phase |
+| 4-1: 동기 부하 테스트 | --clients N 동시 재현 | ✅ | LoadTestRunner, E2E 검증 완료 |
+| 4-2: async 전환 | 수천 동시 클라이언트 | ❌ | 미구현 |
+| 4-3: 멀티 에이전트 | 수만 동시 클라이언트 | ❌ | 미구현 |
 
-| 기능 | 상태 | 상세 |
-|------|------|------|
-| TCP 캡처 | ✅ | Raw Socket, 포트 필터, 자동 로그 파일 |
-| 프로토콜 파싱 | ✅ | 기본타입 + array + struct + enum |
-| 로그 생성 | ✅ | 텍스트 형식 (콘솔 + 파일) |
-| 단일 재현 | ✅ | timing/response/hybrid, 응답 파싱 |
-| Transform | ✅ | RSA + XTEA 파이프라인 |
-| 시퀀스 분석 | ✅ | Core/DataSource/Conditional/Noise 분류 + ASCII/Mermaid + Phase 구분 |
-| Dynamic Field 감지 | ✅ | suffix 타입 필터 + 시간 순서 + 수동 오버라이드 (field_mappings) |
-| Action Catalog | ✅ | 의미 단위 분할 + merge 저장 (actions/{protocol}_actions.json) |
-| 시나리오 조립 | ✅ | ScenarioBuilder — 카탈로그에서 Action 선택 → 시나리오 JSON 생성 → 재현 (E2E 미검증) |
-| 다중 클라이언트 | ❌ | 단일 TCP 연결만 |
-| 부하/회귀 테스트 | ❌ | 미구현 |
-| Kiro context | ❌ | 미구현 |
+## Acceptance Criteria: 2/2 충족
 
-## 목표까지의 단계
-1. E2E 검증 (캡처→재현 파이프라인 실제 동작 확인)
-2. 시나리오 자동 조립 (의미론적 패킷 시퀀스 분석)
-3. 다중 클라이언트 동시 재현
-4. 부하/회귀 테스트 프레임워크
+## 코드 규모
+
+| 영역 | 파일 | 라인 | 테스트 |
+|------|------|------|--------|
+| C# 소스 | 32 | 5,613 | 119개 (11파일, 2,445줄) |
+| AgentCore Python | ~15 | 1,477 | 수동 E2E |
+| AgentCore Terraform | 2 | 374 | — |
+
+## 컴포넌트별 테스트 커버리지
+
+| 컴포넌트 | 단위 테스트 | E2E |
+|----------|-----------|-----|
+| PacketParser/Builder/Formatter | ✅ | ✅ |
+| PacketReplayer (ParseLog) | ✅ | ✅ |
+| SequenceAnalyzer | ✅ | ✅ |
+| ActionCatalogBuilder | ✅ | ✅ |
+| ScenarioBuilder | ✅ | ✅ |
+| BehaviorTreeBuilder/Executor | ❌ | ✅ (수동) |
+| FsmBuilder/Executor | ❌ | ✅ (수동) |
+| LoadTestRunner | ❌ | ✅ (수동) |
+| AgentCore | ❌ | ✅ (수동) |
+
+## Last Updated
+2026-04-04, Mickey 18

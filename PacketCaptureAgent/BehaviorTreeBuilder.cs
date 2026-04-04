@@ -19,6 +19,7 @@ public class BehaviorTreeBuilder
         if (catalog != null) AnnotateStateBindings(root, catalog);
         var tree = new BehaviorTreeDefinition { Name = name, Root = root };
         if (catalog != null) AnnotateWeightsAndConditions(tree, store.Recordings, catalog, protocol?.Semantics);
+        if (catalog != null) InjectExplorePhases(tree, catalog, protocol?.Semantics);
         return tree;
     }
 
@@ -359,6 +360,58 @@ public class BehaviorTreeBuilder
             case BtSequence s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionConditions, stateConditions); break;
             case BtSelector s: foreach (var c in s.Children) ApplyAnnotations(c, total, actionRecCount, interactionConditions, stateConditions); break;
             case BtRepeat r: ApplyAnnotations(r.Child, total, actionRecCount, interactionConditions, stateConditions); break;
+        }
+    }
+
+    #endregion
+
+    #region Explore Phase 자동 삽입
+
+    /// <summary>field_variants가 있고 상호작용이 아닌 액션에 대해 explore repeat 노드를 삽입.</summary>
+    private static void InjectExplorePhases(BehaviorTreeDefinition tree, ActionCatalog catalog, SemanticsDefinition? semantics)
+    {
+        var interactionIds = new HashSet<string>();
+        if (semantics?.InteractionSources != null)
+            foreach (var action in catalog.Actions)
+                foreach (var src in semantics.InteractionSources)
+                    if (action.DynamicFields.Any(df => df.Source.StartsWith(src.SourcePrefix)))
+                    { interactionIds.Add(action.Id); break; }
+
+        foreach (var action in catalog.Actions)
+        {
+            if (action.FieldVariants == null || interactionIds.Contains(action.Id)) continue;
+            int maxVariants = action.FieldVariants.Values.Max(v => v.Count);
+            if (maxVariants < 2) continue;
+
+            var exploreNode = new BtRepeat
+            {
+                Count = Math.Min(maxVariants * 2, 10),
+                Child = new BtAction { Id = action.Id }
+            };
+            InsertExploreNode(tree.Root, action.Id, exploreNode);
+        }
+    }
+
+    /// <summary>actionId를 직접 자식으로 가진 최초의 sequence를 찾아 선두에 explore 노드 삽입.</summary>
+    private static bool InsertExploreNode(BtNode node, string actionId, BtRepeat exploreNode)
+    {
+        switch (node)
+        {
+            case BtSequence seq:
+                if (seq.Children.Any(c =>
+                    (c is BtAction a && a.Id == actionId) ||
+                    (c is BtRepeat r && r.Child is BtAction ra && ra.Id == actionId)))
+                {
+                    seq.Children.Insert(0, exploreNode);
+                    return true;
+                }
+                return seq.Children.Any(c => InsertExploreNode(c, actionId, exploreNode));
+            case BtSelector sel:
+                return sel.Children.Any(c => InsertExploreNode(c, actionId, exploreNode));
+            case BtRepeat rep:
+                return InsertExploreNode(rep.Child, actionId, exploreNode);
+            default:
+                return false;
         }
     }
 

@@ -28,7 +28,7 @@ public class ReplayContext
     public TimeSpan Elapsed { get; set; }
     /// <summary>응답값 저장 → 다음 패킷 Overrides에 동적 주입 가능.</summary>
     public Dictionary<string, object> SessionState { get; } = new();
-    public GameWorldState World { get; } = new();
+    public GameWorldState World { get; set; } = new();
 }
 
 /// <summary>바이트 크기만 출력하는 기본 핸들러.</summary>

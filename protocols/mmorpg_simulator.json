@@ -23,19 +23,53 @@
     }
   },
   "phases": {
-    "Login": [1],
-    "Enter Game": [2],
-    "Gameplay": [4, 5, 6, 7],
-    "Shop": [8],
-    "Quest": [10],
-    "Party": [11]
+    "Login": [
+      1
+    ],
+    "Enter Game": [
+      2
+    ],
+    "Gameplay": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "Shop": [
+      8
+    ],
+    "Quest": [
+      10
+    ],
+    "Party": [
+      11
+    ]
   },
   "semantics": {
     "interaction_sources": [
-      { "source_prefix": "SC_OTHER_CHAR", "condition": "SC_OTHER_CHAR.charUid > 0" }
+      {
+        "source_prefix": "SC_OTHER_CHAR",
+        "condition": "SC_OTHER_CHAR.charUid > 0"
+      }
     ],
     "state_conditions": [
-      { "action_pattern": "party", "state_field": "SC_PARTY_UPDATE.memberCount", "min_value": 2 }
+      {
+        "action_pattern": "party",
+        "state_field": "SC_PARTY_UPDATE.memberCount",
+        "min_value": 2
+      }
+    ],
+    "proximity_actions": [
+      {
+        "action_pattern": "attack",
+        "npc_type": 0,
+        "range": 1
+      },
+      {
+        "action_pattern": "quest",
+        "npc_type": 1,
+        "range": 1
+      }
     ]
   },
   "types": {
@@ -64,38 +98,93 @@
     "ShopEntry": {
       "kind": "struct",
       "fields": [
-        {"name": "itemId", "type": "uint16"},
-        {"name": "itemName", "type": "string", "length": 32},
-        {"name": "price", "type": "uint32"}
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "itemName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "price",
+          "type": "uint32"
+        }
       ]
     },
     "InventoryEntry": {
       "kind": "struct",
       "fields": [
-        {"name": "slot", "type": "uint8"},
-        {"name": "itemId", "type": "uint16"},
-        {"name": "itemName", "type": "string", "length": 32}
+        {
+          "name": "slot",
+          "type": "uint8"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "itemName",
+          "type": "string",
+          "length": 32
+        }
       ]
     },
     "QuestEntry": {
       "kind": "struct",
       "fields": [
-        {"name": "questId", "type": "uint16"},
-        {"name": "name", "type": "string", "length": 32},
-        {"name": "status", "type": "uint8"},
-        {"name": "progress", "type": "uint16"},
-        {"name": "target", "type": "uint16"}
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "name": "progress",
+          "type": "uint16"
+        },
+        {
+          "name": "target",
+          "type": "uint16"
+        }
       ]
     },
     "PartyMember": {
       "kind": "struct",
       "fields": [
-        {"name": "charUid", "type": "uint64"},
-        {"name": "name", "type": "string", "length": 20},
-        {"name": "hp", "type": "uint16"},
-        {"name": "maxHp", "type": "uint16"},
-        {"name": "posX", "type": "int16"},
-        {"name": "posY", "type": "int16"}
+        {
+          "name": "charUid",
+          "type": "uint64"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "length": 20
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "maxHp",
+          "type": "uint16"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
       ]
     }
   },
@@ -414,6 +503,10 @@
         {
           "name": "maxHp",
           "type": "uint16"
+        },
+        {
+          "name": "npcType",
+          "type": "uint8"
         }
       ]
     },
@@ -483,9 +576,20 @@
       "name": "CS_CHAT",
       "direction": "C2S",
       "fields": [
-        {"name": "channel", "type": "uint8"},
-        {"name": "targetName", "type": "string", "length": 20},
-        {"name": "message", "type": "string", "length": 128}
+        {
+          "name": "channel",
+          "type": "uint8"
+        },
+        {
+          "name": "targetName",
+          "type": "string",
+          "length": 20
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 128
+        }
       ]
     },
     {
@@ -493,9 +597,20 @@
       "name": "SC_CHAT",
       "direction": "S2C",
       "fields": [
-        {"name": "channel", "type": "uint8"},
-        {"name": "senderName", "type": "string", "length": 20},
-        {"name": "message", "type": "string", "length": 128}
+        {
+          "name": "channel",
+          "type": "uint8"
+        },
+        {
+          "name": "senderName",
+          "type": "string",
+          "length": 20
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 128
+        }
       ]
     },
     {
@@ -503,9 +618,19 @@
       "name": "SC_ITEM_DROP",
       "direction": "S2C",
       "fields": [
-        {"name": "slot", "type": "uint8"},
-        {"name": "itemId", "type": "uint16"},
-        {"name": "itemName", "type": "string", "length": 32}
+        {
+          "name": "slot",
+          "type": "uint8"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "itemName",
+          "type": "string",
+          "length": 32
+        }
       ]
     },
     {
@@ -513,7 +638,10 @@
       "name": "CS_ITEM_USE",
       "direction": "C2S",
       "fields": [
-        {"name": "slot", "type": "uint8"}
+        {
+          "name": "slot",
+          "type": "uint8"
+        }
       ]
     },
     {
@@ -521,11 +649,28 @@
       "name": "SC_ITEM_USE_RESULT",
       "direction": "S2C",
       "fields": [
-        {"name": "charUid", "type": "uint64"},
-        {"name": "charName", "type": "string", "length": 20},
-        {"name": "itemName", "type": "string", "length": 32},
-        {"name": "effectType", "type": "uint8"},
-        {"name": "effectValue", "type": "uint16"}
+        {
+          "name": "charUid",
+          "type": "uint64"
+        },
+        {
+          "name": "charName",
+          "type": "string",
+          "length": 20
+        },
+        {
+          "name": "itemName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "effectType",
+          "type": "uint8"
+        },
+        {
+          "name": "effectValue",
+          "type": "uint16"
+        }
       ]
     },
     {
@@ -533,7 +678,10 @@
       "name": "CS_ITEM_EQUIP",
       "direction": "C2S",
       "fields": [
-        {"name": "slot", "type": "uint8"}
+        {
+          "name": "slot",
+          "type": "uint8"
+        }
       ]
     },
     {
@@ -541,13 +689,37 @@
       "name": "SC_EQUIP_RESULT",
       "direction": "S2C",
       "fields": [
-        {"name": "success", "type": "uint8"},
-        {"name": "slot", "type": "uint8"},
-        {"name": "atk", "type": "uint16"},
-        {"name": "def", "type": "uint16"},
-        {"name": "weaponName", "type": "string", "length": 32},
-        {"name": "armorName", "type": "string", "length": 32},
-        {"name": "message", "type": "string", "length": 32}
+        {
+          "name": "success",
+          "type": "uint8"
+        },
+        {
+          "name": "slot",
+          "type": "uint8"
+        },
+        {
+          "name": "atk",
+          "type": "uint16"
+        },
+        {
+          "name": "def",
+          "type": "uint16"
+        },
+        {
+          "name": "weaponName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "armorName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 32
+        }
       ]
     },
     {
@@ -555,9 +727,19 @@
       "name": "SC_INVENTORY_UPDATE",
       "direction": "S2C",
       "fields": [
-        {"name": "slot", "type": "uint8"},
-        {"name": "itemId", "type": "uint16"},
-        {"name": "itemName", "type": "string", "length": 32}
+        {
+          "name": "slot",
+          "type": "uint8"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "itemName",
+          "type": "string",
+          "length": 32
+        }
       ]
     },
     {
@@ -565,8 +747,16 @@
       "name": "SC_INVENTORY_LIST",
       "direction": "S2C",
       "fields": [
-        {"name": "count", "type": "uint8"},
-        {"name": "items", "type": "array", "count_field": "count", "element": "InventoryEntry"}
+        {
+          "name": "count",
+          "type": "uint8"
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "count_field": "count",
+          "element": "InventoryEntry"
+        }
       ]
     },
     {
@@ -580,8 +770,16 @@
       "name": "SC_SHOP_LIST",
       "direction": "S2C",
       "fields": [
-        {"name": "count", "type": "uint8"},
-        {"name": "items", "type": "array", "count_field": "count", "element": "ShopEntry"}
+        {
+          "name": "count",
+          "type": "uint8"
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "count_field": "count",
+          "element": "ShopEntry"
+        }
       ]
     },
     {
@@ -589,7 +787,10 @@
       "name": "CS_SHOP_BUY",
       "direction": "C2S",
       "fields": [
-        {"name": "itemId", "type": "uint16"}
+        {
+          "name": "itemId",
+          "type": "uint16"
+        }
       ]
     },
     {
@@ -597,10 +798,23 @@
       "name": "SC_SHOP_RESULT",
       "direction": "S2C",
       "fields": [
-        {"name": "success", "type": "uint8"},
-        {"name": "itemId", "type": "uint16"},
-        {"name": "remainGold", "type": "uint64"},
-        {"name": "message", "type": "string", "length": 32}
+        {
+          "name": "success",
+          "type": "uint8"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "remainGold",
+          "type": "uint64"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 32
+        }
       ]
     },
     {
@@ -608,7 +822,10 @@
       "name": "CS_SHOP_SELL",
       "direction": "C2S",
       "fields": [
-        {"name": "slot", "type": "uint8"}
+        {
+          "name": "slot",
+          "type": "uint8"
+        }
       ]
     },
     {
@@ -616,7 +833,10 @@
       "name": "CS_QUEST_LIST",
       "direction": "C2S",
       "fields": [
-        {"name": "npcUid", "type": "uint64"}
+        {
+          "name": "npcUid",
+          "type": "uint64"
+        }
       ]
     },
     {
@@ -624,8 +844,16 @@
       "name": "SC_QUEST_LIST",
       "direction": "S2C",
       "fields": [
-        {"name": "count", "type": "uint8"},
-        {"name": "quests", "type": "array", "count_field": "count", "element": "QuestEntry"}
+        {
+          "name": "count",
+          "type": "uint8"
+        },
+        {
+          "name": "quests",
+          "type": "array",
+          "count_field": "count",
+          "element": "QuestEntry"
+        }
       ]
     },
     {
@@ -633,7 +861,10 @@
       "name": "CS_QUEST_ACCEPT",
       "direction": "C2S",
       "fields": [
-        {"name": "questId", "type": "uint16"}
+        {
+          "name": "questId",
+          "type": "uint16"
+        }
       ]
     },
     {
@@ -641,9 +872,19 @@
       "name": "SC_QUEST_ACCEPT_RESULT",
       "direction": "S2C",
       "fields": [
-        {"name": "success", "type": "uint8"},
-        {"name": "questId", "type": "uint16"},
-        {"name": "message", "type": "string", "length": 64}
+        {
+          "name": "success",
+          "type": "uint8"
+        },
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 64
+        }
       ]
     },
     {
@@ -651,9 +892,18 @@
       "name": "SC_QUEST_PROGRESS",
       "direction": "S2C",
       "fields": [
-        {"name": "questId", "type": "uint16"},
-        {"name": "progress", "type": "uint16"},
-        {"name": "target", "type": "uint16"}
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "progress",
+          "type": "uint16"
+        },
+        {
+          "name": "target",
+          "type": "uint16"
+        }
       ]
     },
     {
@@ -661,7 +911,10 @@
       "name": "CS_QUEST_COMPLETE",
       "direction": "C2S",
       "fields": [
-        {"name": "questId", "type": "uint16"}
+        {
+          "name": "questId",
+          "type": "uint16"
+        }
       ]
     },
     {
@@ -669,12 +922,31 @@
       "name": "SC_QUEST_REWARD",
       "direction": "S2C",
       "fields": [
-        {"name": "success", "type": "uint8"},
-        {"name": "questId", "type": "uint16"},
-        {"name": "rewardGold", "type": "uint32"},
-        {"name": "rewardExp", "type": "uint32"},
-        {"name": "rewardItemId", "type": "uint16"},
-        {"name": "message", "type": "string", "length": 64}
+        {
+          "name": "success",
+          "type": "uint8"
+        },
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "rewardGold",
+          "type": "uint32"
+        },
+        {
+          "name": "rewardExp",
+          "type": "uint32"
+        },
+        {
+          "name": "rewardItemId",
+          "type": "uint16"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 64
+        }
       ]
     },
     {
@@ -682,7 +954,11 @@
       "name": "CS_PARTY_INVITE",
       "direction": "C2S",
       "fields": [
-        {"name": "targetName", "type": "string", "length": 20}
+        {
+          "name": "targetName",
+          "type": "string",
+          "length": 20
+        }
       ]
     },
     {
@@ -690,7 +966,11 @@
       "name": "SC_PARTY_INVITE",
       "direction": "S2C",
       "fields": [
-        {"name": "inviterName", "type": "string", "length": 20}
+        {
+          "name": "inviterName",
+          "type": "string",
+          "length": 20
+        }
       ]
     },
     {
@@ -698,7 +978,10 @@
       "name": "CS_PARTY_ACCEPT",
       "direction": "C2S",
       "fields": [
-        {"name": "accept", "type": "uint8"}
+        {
+          "name": "accept",
+          "type": "uint8"
+        }
       ]
     },
     {
@@ -706,8 +989,16 @@
       "name": "SC_PARTY_UPDATE",
       "direction": "S2C",
       "fields": [
-        {"name": "memberCount", "type": "uint8"},
-        {"name": "members", "type": "array", "count_field": "memberCount", "element": "PartyMember"}
+        {
+          "name": "memberCount",
+          "type": "uint8"
+        },
+        {
+          "name": "members",
+          "type": "array",
+          "count_field": "memberCount",
+          "element": "PartyMember"
+        }
       ]
     },
     {
@@ -721,7 +1012,10 @@
       "name": "SC_PARTY_LEAVE",
       "direction": "S2C",
       "fields": [
-        {"name": "charUid", "type": "uint64"}
+        {
+          "name": "charUid",
+          "type": "uint64"
+        }
       ]
     },
     {

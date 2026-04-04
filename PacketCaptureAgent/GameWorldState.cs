@@ -6,6 +6,7 @@ public class GameWorldState
     public ulong PlayerCharUid { get; private set; }
     public (int x, int y) PlayerPos { get; set; }
     public Dictionary<ulong, (int x, int y)> Npcs { get; } = new();
+    public Dictionary<ulong, int> NpcTypes { get; } = new();
 
     /// <summary>서버 응답 패킷으로 상태 갱신.</summary>
     public void Update(string packetName, Dictionary<string, object> fields)
@@ -28,26 +29,33 @@ public class GameWorldState
             case "SC_NPC_SPAWN":
                 if (fields.TryGetValue("npcUid", out var su) &&
                     fields.TryGetValue("posX", out var sx) && fields.TryGetValue("posY", out var sy))
+                {
                     Npcs[ToUlong(su)] = (ToInt(sx), ToInt(sy));
+                    if (fields.TryGetValue("npcType", out var nt))
+                        NpcTypes[ToUlong(su)] = ToInt(nt);
+                }
                 break;
             case "SC_NPC_DEATH":
                 if (fields.TryGetValue("npcUid", out var du))
-                    Npcs.Remove(ToUlong(du));
+                { Npcs.Remove(ToUlong(du)); NpcTypes.Remove(ToUlong(du)); }
                 break;
         }
     }
 
     /// <summary>플레이어에서 가장 가까운 NPC의 uid와 위치. 없으면 null.</summary>
-    public (ulong uid, int x, int y)? FindNearestNpc()
+    public (ulong uid, int x, int y)? FindNearestNpc(int? npcType = null)
     {
         if (Npcs.Count == 0) return null;
         ulong bestUid = 0;
         int bestDist = int.MaxValue;
         foreach (var (uid, pos) in Npcs)
         {
+            if (npcType.HasValue && (!NpcTypes.TryGetValue(uid, out var t) || t != npcType.Value))
+                continue;
             int dist = Math.Abs(pos.x - PlayerPos.x) + Math.Abs(pos.y - PlayerPos.y);
             if (dist < bestDist) { bestDist = dist; bestUid = uid; }
         }
+        if (bestDist == int.MaxValue) return null;
         var best = Npcs[bestUid];
         return (bestUid, best.x, best.y);
     }
