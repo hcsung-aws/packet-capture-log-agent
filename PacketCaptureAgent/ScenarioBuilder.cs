@@ -99,8 +99,6 @@ public class ScenarioBuilder
         return packets;
     }
 
-    private static readonly Random _rng = new();
-
     /// <summary>{random:N} 패턴 해석. 동일 패턴은 같은 실행 내에서 동일 값 반환.</summary>
     internal static object ResolveValue(object value, Dictionary<string, string> cache)
     {
@@ -110,7 +108,7 @@ public class ScenarioBuilder
         if (cache.TryGetValue(s, out var cached)) return cached;
         int len = int.Parse(m.Groups[1].Value);
         const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        var result = new string(Enumerable.Range(0, len).Select(_ => chars[_rng.Next(chars.Length)]).ToArray());
+        var result = new string(Enumerable.Range(0, len).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
         cache[s] = result;
         return result;
     }

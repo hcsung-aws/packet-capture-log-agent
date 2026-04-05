@@ -36,4 +36,4 @@
 | AgentCore | ❌ | ✅ (수동) |
 
 ## Last Updated
-2026-04-04, Mickey 18
+2026-04-05, Mickey 19 (검증 완료 — 변경 없음)

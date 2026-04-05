@@ -12,8 +12,6 @@ public class ActionExecutor
     private readonly ActionCatalog _catalog;
     private readonly Dictionary<string, string> _randomCache = new();
 
-    private static readonly Random _rng = new();
-
     public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog)
     {
         _protocol = protocol;
@@ -53,7 +51,7 @@ public class ActionExecutor
                 if (action.FieldVariants != null)
                     foreach (var (fk, variants) in action.FieldVariants)
                         if (variants.Count > 0)
-                            fields[fk] = ScenarioBuilder.ConvertJsonElement(variants[_rng.Next(variants.Count)]);
+                            fields[fk] = ScenarioBuilder.ConvertJsonElement(variants[Random.Shared.Next(variants.Count)]);
 
                 if (overrides != null)
                     foreach (var kv in overrides)
@@ -80,31 +78,19 @@ public class ActionExecutor
                 // SEND 후 응답 대기
                 if (ap.Direction == "SEND")
                 {
-                    for (int c = 0; c < count; c++) // drain expected recv count after send
+                    var startTime = DateTime.Now;
+                    for (int c = 0; c < count; c++)
                     {
-                        if (WaitForResponse(stream, recvBuffer, timeoutMs, out var len))
+                        if (PacketReplayer.WaitForData(stream, recvBuffer, timeoutMs, out var len))
                             handler.OnResponse(recvBuffer, len, context);
                     }
-                    // drain additional
-                    Thread.Sleep(50);
-                    while (stream.DataAvailable)
-                    {
-                        try { stream.ReadTimeout = 100; int len = stream.Read(recvBuffer); if (len > 0) handler.OnResponse(recvBuffer, len, context); }
-                        catch (IOException) { break; }
-                    }
+                    int received = 0;
+                    PacketReplayer.DrainPendingData(stream, recvBuffer, handler, context, ref received, startTime);
                 }
             }
         }
 
         return true;
-    }
-
-    private static bool WaitForResponse(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
-    {
-        length = 0;
-        stream.ReadTimeout = timeoutMs;
-        try { length = stream.Read(buffer); return length > 0; }
-        catch (IOException) { return false; }
     }
 
     /// <summary>{state_random:key} 표현식 해석.
@@ -127,7 +113,7 @@ public class ActionExecutor
                 long l => (int)l,
                 _ => 0
             };
-            return bound > 0 ? _rng.Next(bound) : 0;
+            return bound > 0 ? Random.Shared.Next(bound) : 0;
         }
 
         // array.field 패턴: 배열에서 랜덤 원소의 필드값
@@ -138,7 +124,7 @@ public class ActionExecutor
             var fieldName = key[(lastDot + 1)..];
             if (sessionState.TryGetValue(arrayKey, out var arrVal) && arrVal is List<object> list && list.Count > 0)
             {
-                var idx = _rng.Next(list.Count);
+                var idx = Random.Shared.Next(list.Count);
                 var elemKey = $"{arrayKey}[{idx}].{fieldName}";
                 if (sessionState.TryGetValue(elemKey, out var fieldVal))
                     return fieldVal;

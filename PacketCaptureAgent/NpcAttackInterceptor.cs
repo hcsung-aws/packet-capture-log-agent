@@ -35,7 +35,7 @@ public class NpcAttackInterceptor : IReplayInterceptor
             }
 
             // 공격 가능 위치 계산 (NPC 상하좌우 중 가장 가까운 칸)
-            var (tx, ty) = FindBestAttackPos(px, py, npcX, npcY);
+            var (tx, ty) = ProximityInterceptor.FindBestPos(px, py, npcX, npcY);
             output.WriteLine($"[Interceptor] Moving toward NPC {npcUid}: ({px},{py}) -> ({tx},{ty})");
 
             // 한 칸 이동
@@ -51,18 +51,4 @@ public class NpcAttackInterceptor : IReplayInterceptor
         return original;
     }
 
-    /// <summary>NPC 인접 4칸 중 플레이어에 가장 가까운 위치.</summary>
-    private static (int x, int y) FindBestAttackPos(int px, int py, int npcX, int npcY)
-    {
-        ReadOnlySpan<(int dx, int dy)> dirs = [(0, -1), (0, 1), (-1, 0), (1, 0)];
-        int bestDist = int.MaxValue;
-        (int x, int y) best = (npcX, npcY - 1);
-        foreach (var (dx, dy) in dirs)
-        {
-            int ax = npcX + dx, ay = npcY + dy;
-            int dist = Math.Abs(ax - px) + Math.Abs(ay - py);
-            if (dist < bestDist) { bestDist = dist; best = (ax, ay); }
-        }
-        return best;
-    }
 }

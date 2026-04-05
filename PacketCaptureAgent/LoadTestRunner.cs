@@ -37,7 +37,7 @@ public class LoadTestRunner
                 var interceptors = new List<IReplayInterceptor>();
                 if (dynamicFields.Count > 0)
                     interceptors.Add(new DynamicFieldInterceptor(dynamicFields, sharedState));
-                interceptors.Add(new NpcAttackInterceptor());
+                interceptors.Add(new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()));
 
                 Interlocked.Increment(ref connected);
                 Console.WriteLine($"  [{connected}/{clientCount}] Client {idx + 1} 시작");

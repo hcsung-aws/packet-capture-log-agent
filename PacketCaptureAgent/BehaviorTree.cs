@@ -26,7 +26,7 @@ public class BehaviorTreeDefinition
     };
 }
 
-/// <summary>BT 노드 基底. type フィールドで派生型を判別.</summary>
+/// <summary>BT node base class. Derived type determined by 'type' field.</summary>
 [JsonConverter(typeof(BtNodeConverter))]
 public abstract class BtNode
 {
@@ -67,7 +67,7 @@ public class BtRepeat : BtNode
     [JsonPropertyName("child")] public BtNode Child { get; set; } = new BtAction();
 }
 
-/// <summary>type フィールドで BtNode 派生型を判別する JSON コンバーター.</summary>
+/// <summary>JSON converter that determines BtNode derived type by 'type' field.</summary>
 public class BtNodeConverter : JsonConverter<BtNode>
 {
     public override BtNode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

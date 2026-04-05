@@ -70,26 +70,7 @@ public class RecordingStore
     private static void FlattenFields(Dictionary<string, object> state, string prefix, Dictionary<string, object> fields)
     {
         foreach (var (key, value) in fields)
-            Flatten(state, $"{prefix}.{key}", value);
-    }
-
-    private static void Flatten(Dictionary<string, object> state, string key, object value)
-    {
-        if (value is List<object> list)
-        {
-            state[key] = list; // count 등 접근용
-            for (int i = 0; i < list.Count; i++)
-                if (list[i] is Dictionary<string, object> s)
-                    foreach (var (fn, fv) in s)
-                        Flatten(state, $"{key}[{i}].{fn}", fv);
-                else
-                    state[$"{key}[{i}]"] = list[i];
-        }
-        else if (value is Dictionary<string, object> dict)
-            foreach (var (fn, fv) in dict)
-                Flatten(state, $"{key}.{fn}", fv);
-        else
-            state[key] = value;
+            FieldFlattener.Flatten(state, $"{prefix}.{key}", value);
     }
 }
 

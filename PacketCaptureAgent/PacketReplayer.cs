@@ -99,24 +99,7 @@ public class ParsingResponseHandler : IResponseHandler
         => value is string s ? $"\"{s}\"" : value?.ToString() ?? "null";
 
     private static void FlattenToState(Dictionary<string, object> state, string key, object value)
-    {
-        if (value is List<object> list)
-        {
-            for (int i = 0; i < list.Count; i++)
-                if (list[i] is Dictionary<string, object> s)
-                    foreach (var (fn, fv) in s)
-                        FlattenToState(state, $"{key}[{i}].{fn}", fv);
-                else
-                    state[$"{key}[{i}]"] = list[i];
-        }
-        else if (value is Dictionary<string, object> fields)
-        {
-            foreach (var (fn, fv) in fields)
-                FlattenToState(state, $"{key}.{fn}", fv);
-        }
-        else
-            state[key] = value;
-    }
+        => FieldFlattener.Flatten(state, key, value);
 }
 
 public record ReplayResult(int Sent, int Received, TimeSpan Duration, string? Error = null);
@@ -285,11 +268,11 @@ public class PacketReplayer
             if (options.Mode != ReplayMode.Timing)
             {
                 bool expectResponse = packets.Skip(i + 1).Any(p => p.Direction == "RECV");
-                if (expectResponse && WaitForResponse(stream, recvBuffer, options.TimeoutMs, out var recvLen))
+                if (expectResponse && WaitForData(stream, recvBuffer, options.TimeoutMs, out var recvLen))
                 {
                     context.Elapsed = DateTime.Now - startTime;
                     received += handler.OnResponse(recvBuffer, recvLen, context);
-                    DrainPendingData(stream, recvBuffer, handler, context, ref received);
+                    DrainPendingData(stream, recvBuffer, handler, context, ref received, startTime);
                 }
                 else if (expectResponse)
                 {
@@ -310,7 +293,27 @@ public class PacketReplayer
         }
     }
 
-    private bool WaitForResponse(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
+    /// <summary>DataAvailable인 동안 추가 데이터를 읽어 handler에 전달.</summary>
+    internal static void DrainPendingData(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, ref int received, DateTime startTime)
+    {
+        Thread.Sleep(50); // 서버 응답 도착 대기
+        while (stream.DataAvailable)
+        {
+            try
+            {
+                stream.ReadTimeout = 100;
+                int len = stream.Read(buffer);
+                if (len > 0)
+                {
+                    context.Elapsed = DateTime.Now - startTime;
+                    received += handler.OnResponse(buffer, len, context);
+                }
+            }
+            catch (IOException) { break; }
+        }
+    }
+
+    internal static bool WaitForData(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
     {
         length = 0;
         stream.ReadTimeout = timeoutMs;
@@ -322,26 +325,6 @@ public class PacketReplayer
         catch (IOException)
         {
             return false;
-        }
-    }
-
-    /// <summary>DataAvailable인 동안 추가 데이터를 읽어 handler에 전달.</summary>
-    private void DrainPendingData(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, ref int received)
-    {
-        Thread.Sleep(50); // 서버 응답 도착 대기
-        while (stream.DataAvailable)
-        {
-            try
-            {
-                stream.ReadTimeout = 100;
-                int len = stream.Read(buffer);
-                if (len > 0)
-                {
-                    context.Elapsed = DateTime.Now - DateTime.Now; // updated by caller
-                    received += handler.OnResponse(buffer, len, context);
-                }
-            }
-            catch (IOException) { break; }
         }
     }
 }

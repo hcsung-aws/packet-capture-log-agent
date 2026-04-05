@@ -118,7 +118,7 @@ public class BehaviorTreeWebEditor
         var nodes = IndexNodes(_tree.Root);
         if (idx < 0 || idx >= nodes.Count) { res.StatusCode = 404; res.Close(); return; }
 
-        _tree.Root = RemoveFromTree(_tree.Root, nodes[idx]) ?? new BtSequence();
+        _tree.Root = BehaviorTreeEditor.RemoveFromTree(_tree.Root, nodes[idx]) ?? new BtSequence();
         Json(res, new { ok = true });
     }
 
@@ -144,24 +144,6 @@ public class BehaviorTreeWebEditor
             case BtSequence s: foreach (var c in s.Children) Collect(c, list); break;
             case BtSelector s: foreach (var c in s.Children) Collect(c, list); break;
             case BtRepeat r: Collect(r.Child, list); break;
-        }
-    }
-
-    private static BtNode? RemoveFromTree(BtNode node, BtNode target)
-    {
-        if (node == target) return null;
-        switch (node)
-        {
-            case BtSequence s:
-                s.Children = s.Children.Select(c => RemoveFromTree(c, target)).Where(c => c != null).ToList()!;
-                return s.Children.Count == 0 ? null : s;
-            case BtSelector s:
-                s.Children = s.Children.Select(c => RemoveFromTree(c, target)).Where(c => c != null).ToList()!;
-                return s.Children.Count == 0 ? null : s;
-            case BtRepeat r:
-                var child = RemoveFromTree(r.Child, target);
-                return child == null ? null : (r.Child = child, r).r;
-            default: return node;
         }
     }
 

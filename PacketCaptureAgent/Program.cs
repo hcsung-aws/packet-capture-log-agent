@@ -6,6 +6,40 @@ namespace PacketCaptureAgent;
 
 class Program
 {
+    // ── 공통 헬퍼 ──
+
+    static ProtocolDefinition? LoadProtocol(string? path)
+    {
+        if (path == null || !File.Exists(path))
+        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return null; }
+        return ProtocolLoader.Load(path);
+    }
+
+    static (string host, int port)? ParseTarget(string? target)
+    {
+        if (string.IsNullOrEmpty(target))
+        {
+            Console.Write("\n대상 서버 (host:port): ");
+            target = Console.ReadLine();
+        }
+        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return null; }
+        var parts = target.Split(':');
+        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
+        { Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000"); return null; }
+        return (parts[0], port);
+    }
+
+    static string CatalogPath(string protocolPath) =>
+        Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions",
+            $"{Path.GetFileNameWithoutExtension(protocolPath)}_actions.json");
+
+    static string RecordingsPath(string protocolPath) =>
+        Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings",
+            $"{Path.GetFileNameWithoutExtension(protocolPath)}_recordings.json");
+
+    static string LogDir(string protocolPath) =>
+        Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+
     public record CliOptions(
         string? ProtocolPath = null,
         string? ReplayLog = null,
@@ -221,28 +255,21 @@ class Program
 
     static void RunAnalyzeMode(string? protocolPath, string logPath)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        {
-            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
-            return;
-        }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
         if (!File.Exists(logPath))
         {
             Console.WriteLine($"로그 파일을 찾을 수 없음: {logPath}");
             return;
         }
-
-        var protocol = ProtocolLoader.Load(protocolPath);
         var replayer = new PacketReplayer(protocol);
         var clientPackets = replayer.ParseLogByClient(logPath);
 
         Console.WriteLine($"클라이언트 {clientPackets.Count}개 감지\n");
 
         var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var catalogDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions");
-        var catalogPath = Path.Combine(catalogDir, $"{protocolName}_actions.json");
-        var recordingsDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings");
-        var recordingsPath = Path.Combine(recordingsDir, $"{protocolName}_recordings.json");
+        var catalogPath = CatalogPath(protocolPath!);
+        var recordingsPath = RecordingsPath(protocolPath!);
 
         ActionCatalog? catalog = null;
 
@@ -297,11 +324,8 @@ class Program
     {
         Console.WriteLine("=== Packet Replay Mode ===\n");
 
-        if (protocolPath == null || !File.Exists(protocolPath))
-        {
-            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
-            return;
-        }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
 
         if (!File.Exists(replayLog))
         {
@@ -309,7 +333,6 @@ class Program
             return;
         }
 
-        var protocol = ProtocolLoader.Load(protocolPath);
         var replayer = new PacketReplayer(protocol);
 
         Console.WriteLine($"프로토콜: {protocol.Protocol.Name}");
@@ -320,31 +343,16 @@ class Program
         Console.WriteLine($"  SEND: {packets.Count(p => p.Direction == "SEND")}개");
         Console.WriteLine($"  RECV: {packets.Count(p => p.Direction == "RECV")}개");
 
-        if (target == null)
-        {
-            Console.Write("\n대상 서버 (host:port): ");
-            target = Console.ReadLine();
-        }
+        var ep = ParseTarget(target);
+        if (ep == null) return;
+        var (host, port) = ep.Value;
 
-        if (string.IsNullOrEmpty(target))
-        {
-            Console.WriteLine("대상 서버가 필요합니다.");
-            return;
-        }
-
-        var parts = target.Split(':');
-        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
-        {
-            Console.WriteLine("잘못된 형식. 예: 172.29.160.1:1239");
-            return;
-        }
-
-        Console.WriteLine($"\n{parts[0]}:{port}로 재현 시작...\n");
-        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        Console.WriteLine($"\n{host}:{port}로 재현 시작...\n");
+        var logDir = LogDir(protocolPath!);
         using var logger = new ReplayLogger(logDir, console: Console.Out);
-        var handler = new ParsingResponseHandler(protocol, parts[0], port, logger);
+        var handler = new ParsingResponseHandler(protocol, host, port, logger);
         var interceptors = new List<IReplayInterceptor> { new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()) };
-        replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
+        replayer.Replay(host, port, packets, handler, options, interceptors, logger);
     }
 
     static void RunCaptureMode(string? protocolPath, int? filterPort)
@@ -488,14 +496,9 @@ class Program
 
     static void RunBuildScenarioMode(string? protocolPath)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        {
-            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
-            return;
-        }
+        if (LoadProtocol(protocolPath) == null) return;
 
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalogPath = CatalogPath(protocolPath!);
         var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
         if (catalog == null || catalog.Actions.Count == 0)
         {
@@ -547,20 +550,15 @@ class Program
         if (clients <= 1)
             Console.WriteLine("=== Scenario Replay Mode ===\n");
 
-        if (protocolPath == null || !File.Exists(protocolPath))
-        {
-            Console.WriteLine("프로토콜 파일 필요: -p protocol.json");
-            return;
-        }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
         if (!File.Exists(scenarioPath))
         {
             Console.WriteLine($"시나리오 파일을 찾을 수 없음: {scenarioPath}");
             return;
         }
 
-        var protocol = ProtocolLoader.Load(protocolPath);
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
+        var catalogPath = CatalogPath(protocolPath!);
         var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
         if (catalog == null)
         {
@@ -633,11 +631,9 @@ class Program
 
     static void RunBuildFsmMode(string? protocolPath)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        if (LoadProtocol(protocolPath) == null) return;
 
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var recordingsPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings", $"{protocolName}_recordings.json");
+        var recordingsPath = RecordingsPath(protocolPath!);
         var store = RecordingStore.Load(recordingsPath);
 
         if (store.Recordings.Count == 0)
@@ -645,6 +641,7 @@ class Program
 
         Console.WriteLine($"녹화 {store.Recordings.Count}건에서 FSM 전이 확률 생성...\n");
 
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
         var builder = new FsmBuilder();
         var fsm = builder.Build(store, $"{protocolName}_fsm");
 
@@ -664,32 +661,26 @@ class Program
 
     static void RunFsmMode(string? protocolPath, string fsmPath, string? target, int? duration = null)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
         if (!File.Exists(fsmPath))
         { Console.WriteLine($"FSM 파일을 찾을 수 없음: {fsmPath}"); return; }
 
-        var protocol = ProtocolLoader.Load(protocolPath);
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
-        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
-        if (catalog == null) { Console.WriteLine($"Action Catalog 없음: {catalogPath}"); return; }
+        var catalog = ActionCatalogBuilder.LoadCatalog(CatalogPath(protocolPath!));
+        if (catalog == null) { Console.WriteLine($"Action Catalog 없음"); return; }
 
         var fsm = FsmDefinition.Load(fsmPath);
 
-        if (target == null)
-        { Console.Write("대상 서버 (host:port): "); target = Console.ReadLine(); }
-        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return; }
-        var parts = target.Split(':');
-        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
-        { Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000"); return; }
+        var ep = ParseTarget(target);
+        if (ep == null) return;
+        var (host, port) = ep.Value;
 
-        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        var logDir = LogDir(protocolPath!);
         using var logger = new ReplayLogger(logDir, console: Console.Out);
 
         var context = new ReplayContext();
         var sharedState = new Dictionary<string, object>();
-        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port, logger);
+        var innerHandler = new ParsingResponseHandler(protocol, host, port, logger);
         var handler = new TrackingResponseHandler(innerHandler, sharedState);
         var syncHandler = new BtSyncHandler(handler, context, sharedState);
 
@@ -701,16 +692,15 @@ class Program
         };
 
         var executor = new FsmExecutor(new ActionExecutor(protocol, catalog), logger);
-        executor.Execute(fsm, parts[0], port, syncHandler, context, interceptors, durationSec: duration);
+        executor.Execute(fsm, host, port, syncHandler, context, interceptors, durationSec: duration);
     }
 
     static void RunBuildBehaviorMode(string? protocolPath)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
 
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var recordingsPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "recordings", $"{protocolName}_recordings.json");
+        var recordingsPath = RecordingsPath(protocolPath!);
         var store = RecordingStore.Load(recordingsPath);
 
         if (store.Recordings.Count == 0)
@@ -718,10 +708,9 @@ class Program
 
         Console.WriteLine($"녹화 {store.Recordings.Count}건에서 Behavior Tree 생성...\n");
 
-        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
-        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
+        var catalog = ActionCatalogBuilder.LoadCatalog(CatalogPath(protocolPath!));
 
-        var protocol = ProtocolLoader.Load(protocolPath);
+        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
         var builder = new BehaviorTreeBuilder();
         var tree = builder.Build(store, $"{protocolName}_auto", catalog, protocol);
 
@@ -757,35 +746,27 @@ class Program
     }
     static void RunBehaviorTreeMode(string? protocolPath, string behaviorPath, string? target, int? duration = null)
     {
-        if (protocolPath == null || !File.Exists(protocolPath))
-        { Console.WriteLine("프로토콜 파일 필요: -p protocol.json"); return; }
+        var protocol = LoadProtocol(protocolPath);
+        if (protocol == null) return;
         if (!File.Exists(behaviorPath))
         { Console.WriteLine($"BT 파일을 찾을 수 없음: {behaviorPath}"); return; }
 
-        var protocol = ProtocolLoader.Load(protocolPath);
-        var protocolName = Path.GetFileNameWithoutExtension(protocolPath);
-        var catalogPath = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "actions", $"{protocolName}_actions.json");
-        var catalog = ActionCatalogBuilder.LoadCatalog(catalogPath);
-        if (catalog == null) { Console.WriteLine($"Action Catalog 없음: {catalogPath}"); return; }
+        var catalog = ActionCatalogBuilder.LoadCatalog(CatalogPath(protocolPath!));
+        if (catalog == null) { Console.WriteLine("Action Catalog 없음"); return; }
 
         var tree = BehaviorTreeDefinition.Load(behaviorPath);
 
-        if (target == null)
-        { Console.Write("대상 서버 (host:port): "); target = Console.ReadLine(); }
-        if (string.IsNullOrEmpty(target)) { Console.WriteLine("대상 서버가 필요합니다."); return; }
-        var parts = target.Split(':');
-        if (parts.Length != 2 || !int.TryParse(parts[1], out var port))
-        { Console.WriteLine("잘못된 형식. 예: 172.29.160.1:9000"); return; }
+        var ep = ParseTarget(target);
+        if (ep == null) return;
+        var (host, port) = ep.Value;
 
-        var logDir = Path.Combine(Path.GetDirectoryName(protocolPath) ?? ".", "..", "logs");
+        var logDir = LogDir(protocolPath!);
         using var logger = new ReplayLogger(logDir, console: Console.Out);
 
         var context = new ReplayContext();
         var sharedState = new Dictionary<string, object>();
-        var innerHandler = new ParsingResponseHandler(protocol, parts[0], port, logger);
+        var innerHandler = new ParsingResponseHandler(protocol, host, port, logger);
         var handler = new TrackingResponseHandler(innerHandler, sharedState);
-
-        // TrackingResponseHandler → SessionState 동기화
         var syncHandler = new BtSyncHandler(handler, context, sharedState);
 
         var interceptors = new List<IReplayInterceptor>
@@ -796,7 +777,7 @@ class Program
         };
 
         var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger, protocol.Semantics);
-        executor.Execute(tree, parts[0], port, syncHandler, context, interceptors, durationSec: duration);
+        executor.Execute(tree, host, port, syncHandler, context, interceptors, durationSec: duration);
     }
 
     /// <summary>응답 처리 시 SessionState를 ReplayContext와 sharedState 양쪽에 동기화.</summary>

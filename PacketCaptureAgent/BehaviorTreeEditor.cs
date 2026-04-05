@@ -96,7 +96,7 @@ public class BehaviorTreeEditor
         tree.Root = RemoveFromTree(tree.Root, target) ?? new BtSequence();
     }
 
-    private static BtNode? RemoveFromTree(BtNode node, BtNode target)
+    internal static BtNode? RemoveFromTree(BtNode node, BtNode target)
     {
         if (node == target) return null;
         switch (node)

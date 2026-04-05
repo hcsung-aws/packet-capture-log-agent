@@ -34,7 +34,7 @@ public class BehaviorTreeBuilder
             foreach (var step in rec.Sequence)
                 foreach (var (key, value) in step.RecvState)
                 {
-                    var sv = value is JsonElement je ? ConvertJson(je).ToString()! : value?.ToString() ?? "";
+                    var sv = value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je).ToString()! : value?.ToString() ?? "";
                     if (!firstValues.TryGetValue(key, out var first))
                         firstValues[key] = sv;
                     else if (first != sv)
@@ -56,7 +56,7 @@ public class BehaviorTreeBuilder
             foreach (var step in rec.Sequence)
                 foreach (var (key, value) in step.RecvState)
                 {
-                    var sv = value is JsonElement je ? ConvertJson(je).ToString()! : value?.ToString() ?? "";
+                    var sv = value is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je).ToString()! : value?.ToString() ?? "";
                     if (!counts.ContainsKey(key)) counts[key] = new();
                     counts[key].TryGetValue(sv, out var c);
                     counts[key][sv] = c + 1;
@@ -217,8 +217,8 @@ public class BehaviorTreeBuilder
 
             var bv = branchState[key];
             var ov = otherState[key];
-            if (bv is JsonElement bje) bv = ConvertJson(bje);
-            if (ov is JsonElement oje) ov = ConvertJson(oje);
+            if (bv is JsonElement bje) bv = ScenarioBuilder.ConvertJsonElement(bje);
+            if (ov is JsonElement oje) ov = ScenarioBuilder.ConvertJsonElement(oje);
 
             if (bv is int bi && ov is int oi && bi != oi)
                 return $"{key} == {bi}";
@@ -228,13 +228,6 @@ public class BehaviorTreeBuilder
 
         return null;
     }
-
-    private static object ConvertJson(JsonElement je) => je.ValueKind switch
-    {
-        JsonValueKind.Number => je.TryGetInt32(out var i) ? i : je.GetInt64(),
-        JsonValueKind.String => je.GetString()!,
-        _ => je.ToString()
-    };
 
     #endregion
 
@@ -260,7 +253,7 @@ public class BehaviorTreeBuilder
                     // SEND 필드값 가져오기
                     var sendPkt = catAction.Packets.FirstOrDefault(p => p.Direction == "SEND");
                     if (sendPkt?.Fields == null || !sendPkt.Fields.TryGetValue(df.Field, out var sendValObj)) continue;
-                    var sendVal = sendValObj is JsonElement je ? ConvertJson(je).ToString() : sendValObj?.ToString();
+                    var sendVal = sendValObj is JsonElement je ? ScenarioBuilder.ConvertJsonElement(je).ToString() : sendValObj?.ToString();
 
                     string binding;
                     if (sendVal == idx)

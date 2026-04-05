@@ -63,7 +63,7 @@ public class ProximityInterceptor : IReplayInterceptor
         return _rules.FirstOrDefault(r => actionId.Contains(r.ActionPattern));
     }
 
-    private static (int x, int y) FindBestPos(int px, int py, int npcX, int npcY)
+    internal static (int x, int y) FindBestPos(int px, int py, int npcX, int npcY)
     {
         ReadOnlySpan<(int dx, int dy)> dirs = [(0, -1), (0, 1), (-1, 0), (1, 0)];
         int bestDist = int.MaxValue;

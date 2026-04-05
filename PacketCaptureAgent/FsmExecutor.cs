@@ -7,7 +7,6 @@ public class FsmExecutor
 {
     private readonly ActionExecutor _actionExecutor;
     private readonly TextWriter _output;
-    private static readonly Random _rng = new();
 
     public FsmExecutor(ActionExecutor actionExecutor, TextWriter? output = null)
     {
@@ -102,7 +101,7 @@ public class FsmExecutor
         if (!fsm.Transitions.TryGetValue(currentState, out var targets) || targets.Count == 0)
             return null;
 
-        float roll = _rng.NextSingle();
+        float roll = Random.Shared.NextSingle();
         float cumulative = 0;
         foreach (var (state, prob) in targets)
         {
