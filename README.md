@@ -191,6 +191,18 @@ packet-capture-log-agent/
     └── PROTOCOL_SCHEMA.md
 ```
 
+## E2E 테스트 (전체 파이프라인)
+
+캡처 → 분석 → BT/FSM 생성 → 기능 검증/부하 테스트까지의 전체 파이프라인 실행 방법은 **[E2E 테스트 가이드](docs/E2E_TEST_GUIDE.md)** 를 참조하세요.
+
+```
+실제 플레이 캡처 → 분석(녹화+카탈로그) → BT/FSM 자동 생성
+                                              ├─ BT → Build Validation (기능 검증)
+                                              └─ FSM → 부하 테스트
+                                                   ├─ 단일 머신 (~200 클라이언트)
+                                                   └─ 멀티 에이전트 (수만 클라이언트)
+```
+
 ## 제한사항
 
 - TCP만 지원 (UDP 미지원)
@@ -249,6 +261,10 @@ PacketCaptureAgent.exe -p protocol.json --port 9000
 ```bash
 PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 ```
+
+## E2E Testing (Full Pipeline)
+
+See **[E2E Test Guide](docs/E2E_TEST_GUIDE.md)** for the complete pipeline: Capture → Analyze → BT/FSM generation → Build Validation / Load Testing.
 
 ## Limitations
 
