@@ -218,7 +218,7 @@ public class ScenarioBuilderTests
 
         Assert.True(interceptor.ShouldIntercept(packet, new GameWorldState()));
 
-        var modified = interceptor.Prepare(null!, packet);
+        var modified = interceptor.PrepareAsync(null!, packet).GetAwaiter().GetResult();
         Assert.Equal(9999, modified.Fields["charUid"]);
     }
 

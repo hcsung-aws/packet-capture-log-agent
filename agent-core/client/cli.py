@@ -1,137 +1,158 @@
-"""Protocol Agent CLI — Upload source, run pipeline, download result."""
+"""Protocol Agent CLI — Generate protocol JSON via API Gateway."""
 
 import argparse
 import json
 import os
 import sys
+import tempfile
 import time
-import boto3
+import zipfile
 
-DEFAULT_REGION = "us-east-1"
-DEFAULT_BUCKET = "protocol-agent-jobs-965037532757"
-DEFAULT_SFN_ARN = "arn:aws:states:us-east-1:965037532757:stateMachine:protocol-agent-pipeline"
+import requests
 
 CODE_EXT = {".h", ".hpp", ".c", ".cpp", ".cc", ".cxx", ".cs", ".java", ".py", ".go", ".rs", ".proto", ".fbs"}
 SKIP_DIRS = {".git", "build", "out", "bin", "obj", "Debug", "Release", "x64", ".vs", "node_modules"}
 
 
-def _collect_source_files(source_dir):
-    files = []
-    for root, dirs, filenames in os.walk(source_dir):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for fname in filenames:
-            ext = os.path.splitext(fname)[1].lower()
-            if ext in CODE_EXT:
-                fpath = os.path.join(root, fname)
-                rel = os.path.relpath(fpath, source_dir)
-                files.append((fpath, rel))
-    return files
+def _get_config(args):
+    """Resolve API URL and key from args or environment."""
+    url = args.api_url or os.environ.get("PROTOCOL_AGENT_URL", "")
+    key = args.api_key or os.environ.get("PROTOCOL_AGENT_KEY", "")
+    if not url or not key:
+        print("Error: API URL and API Key required.")
+        print("  Set PROTOCOL_AGENT_URL and PROTOCOL_AGENT_KEY environment variables,")
+        print("  or use --api-url and --api-key flags.")
+        sys.exit(1)
+    return url.rstrip("/"), key
 
 
-def upload(source_dir, job_id, bucket, region):
-    s3 = boto3.client("s3", region_name=region)
-    files = _collect_source_files(source_dir)
-    print(f"Uploading {len(files)} source files to s3://{bucket}/jobs/{job_id}/source/")
-    for fpath, rel in files:
-        key = f"jobs/{job_id}/source/{rel}"
-        s3.upload_file(fpath, bucket, key)
-        print(f"  {rel}")
-    print("Upload complete.")
-    return len(files)
+def _headers(api_key):
+    return {"x-api-key": api_key, "Content-Type": "application/json"}
 
 
-def start_pipeline(job_id, sfn_arn, region, model_id=None):
-    sfn = boto3.client("stepfunctions", region_name=region)
-    inp = {"job_id": job_id}
-    if model_id:
-        inp["model_id"] = model_id
-    resp = sfn.start_execution(
-        stateMachineArn=sfn_arn,
-        name=f"{job_id}-{int(time.time())}",
-        input=json.dumps(inp),
-    )
-    return resp["executionArn"]
-
-
-def wait_for_completion(exec_arn, region, poll_interval=30):
-    sfn = boto3.client("stepfunctions", region_name=region)
-    start = time.time()
-    while True:
-        desc = sfn.describe_execution(executionArn=exec_arn)
-        status = desc["status"]
-        elapsed = int(time.time() - start)
-        print(f"\r  [{elapsed}s] {status}", end="", flush=True)
-        if status in ("SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"):
-            print()
-            return status, desc
-        time.sleep(poll_interval)
-
-
-def download_result(job_id, output_path, bucket, region):
-    s3 = boto3.client("s3", region_name=region)
-    key = f"jobs/{job_id}/protocol.json"
-    s3.download_file(bucket, key, output_path)
-    with open(output_path) as f:
-        data = json.load(f)
-    return data
+def _zip_source(source_dir):
+    """Zip source directory, filtering by CODE_EXT."""
+    tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+    tmp.close()
+    count = 0
+    with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(source_dir):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for fname in files:
+                ext = os.path.splitext(fname)[1].lower()
+                if ext in CODE_EXT:
+                    fpath = os.path.join(root, fname)
+                    arcname = os.path.relpath(fpath, source_dir)
+                    zf.write(fpath, arcname)
+                    count += 1
+    return tmp.name, count
 
 
 def cmd_generate(args):
-    job_id = args.job_id or f"job-{int(time.time())}"
-    print(f"Job ID: {job_id}")
+    api_url, api_key = _get_config(args)
 
-    # Upload
-    upload(args.source, job_id, args.bucket, args.region)
+    # 1. Zip source
+    print(f"Zipping source: {args.source}")
+    zip_path, file_count = _zip_source(args.source)
+    zip_size = os.path.getsize(zip_path)
+    print(f"  {file_count} files, {zip_size / 1024:.0f} KB")
 
-    # Start pipeline
-    print("Starting pipeline...")
-    exec_arn = start_pipeline(job_id, args.sfn_arn, args.region, args.model)
-    print(f"Execution: {exec_arn}")
+    try:
+        # 2. Create job
+        resp = requests.post(f"{api_url}/jobs", headers=_headers(api_key))
+        resp.raise_for_status()
+        data = resp.json()
+        job_id = data["job_id"]
+        upload_url = data["upload_url"]
+        print(f"Job ID: {job_id}")
 
-    # Wait
-    print("Waiting for completion...")
-    status, desc = wait_for_completion(exec_arn, args.region)
+        # 3. Upload zip via presigned URL
+        print("Uploading...")
+        with open(zip_path, "rb") as f:
+            put_resp = requests.put(upload_url, data=f)
+            put_resp.raise_for_status()
+        print("Upload complete.")
 
-    if status != "SUCCEEDED":
-        print(f"Pipeline {status}")
-        if desc.get("error"):
-            print(f"Error: {desc['error']}")
-        sys.exit(1)
+        # 4. Start pipeline
+        body = {}
+        if args.model:
+            body["model_id"] = args.model
+        resp = requests.post(
+            f"{api_url}/jobs/{job_id}/pipeline",
+            headers=_headers(api_key),
+            json=body,
+        )
+        resp.raise_for_status()
+        print("Pipeline started.")
 
-    # Download
-    output = args.output or f"protocol_{job_id}.json"
-    data = download_result(job_id, output, args.bucket, args.region)
-    packets = data.get("packets", [])
-    types = data.get("types", [])
-    print(f"\n✓ Generated: {len(packets)} packets, {len(types)} types")
-    print(f"Output: {output}")
+        # 5. Poll status
+        print("Waiting for completion...")
+        start = time.time()
+        while True:
+            resp = requests.get(f"{api_url}/jobs/{job_id}/status", headers=_headers(api_key))
+            resp.raise_for_status()
+            status_data = resp.json()
+            status = status_data.get("status", "UNKNOWN")
+            elapsed = int(time.time() - start)
+            print(f"\r  [{elapsed}s] {status}", end="", flush=True)
+            if status in ("SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"):
+                print()
+                break
+            time.sleep(30)
+
+        if status != "SUCCEEDED":
+            print(f"Pipeline {status}")
+            sys.exit(1)
+
+        # 6. Download result
+        resp = requests.get(f"{api_url}/jobs/{job_id}/result", headers=_headers(api_key))
+        resp.raise_for_status()
+        result = resp.json()
+
+        output = args.output or f"protocol_{job_id}.json"
+        with open(output, "w") as f:
+            json.dump(result, f, indent=2)
+
+        packets = result.get("packets", [])
+        types = result.get("types", [])
+        print(f"\n✓ Generated: {len(packets)} packets, {len(types)} types")
+        print(f"Output: {output}")
+
+    finally:
+        os.unlink(zip_path)
 
 
 def cmd_status(args):
-    sfn = boto3.client("stepfunctions", region_name=args.region)
-    execs = sfn.list_executions(stateMachineArn=args.sfn_arn, maxResults=10)
-    for e in execs.get("executions", []):
-        name = e["name"]
-        status = e["status"]
-        start = e["startDate"].strftime("%Y-%m-%d %H:%M")
-        print(f"  {name}: {status} ({start})")
+    api_url, api_key = _get_config(args)
+    resp = requests.get(f"{api_url}/jobs/{args.job_id}/status", headers=_headers(api_key))
+    resp.raise_for_status()
+    print(json.dumps(resp.json(), indent=2))
+
+
+def cmd_download(args):
+    api_url, api_key = _get_config(args)
+    resp = requests.get(f"{api_url}/jobs/{args.job_id}/result", headers=_headers(api_key))
+    resp.raise_for_status()
+    data = resp.json()
+    with open(args.output, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Downloaded: {len(data.get('packets', []))} packets → {args.output}")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Protocol Agent CLI")
-    parser.add_argument("--region", default=DEFAULT_REGION)
-    parser.add_argument("--bucket", default=DEFAULT_BUCKET)
-    parser.add_argument("--sfn-arn", default=DEFAULT_SFN_ARN)
+    parser.add_argument("--api-url", help="API Gateway endpoint URL")
+    parser.add_argument("--api-key", help="API Key for authentication")
 
     sub = parser.add_subparsers(dest="command")
 
     gen = sub.add_parser("generate", help="Generate protocol from source")
     gen.add_argument("--source", required=True, help="Source directory")
     gen.add_argument("--output", help="Output JSON path")
-    gen.add_argument("--job-id", help="Custom job ID")
     gen.add_argument("--model", help="Bedrock model ID override")
 
-    sub.add_parser("status", help="List recent executions")
+    st = sub.add_parser("status", help="Check job status")
+    st.add_argument("--job-id", required=True)
 
     dl = sub.add_parser("download", help="Download result")
     dl.add_argument("--job-id", required=True)
@@ -143,8 +164,7 @@ def main():
     elif args.command == "status":
         cmd_status(args)
     elif args.command == "download":
-        data = download_result(args.job_id, args.output, args.bucket, args.region)
-        print(f"Downloaded: {len(data.get('packets', []))} packets → {args.output}")
+        cmd_download(args)
     else:
         parser.print_help()
 

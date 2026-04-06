@@ -16,7 +16,7 @@ public class ProximityInterceptor : IReplayInterceptor
     public bool ShouldIntercept(ReplayPacket packet, GameWorldState world)
         => FindRule(packet.Name) != null && world.Npcs.Count > 0;
 
-    public ReplayPacket Prepare(ReplaySession session, ReplayPacket original)
+    public async Task<ReplayPacket> PrepareAsync(ReplaySession session, ReplayPacket original)
     {
         var rule = FindRule(original.Name)!;
         var output = session.Output;
@@ -36,7 +36,6 @@ public class ProximityInterceptor : IReplayInterceptor
             if (Math.Abs(px - npcX) + Math.Abs(py - npcY) <= rule.Range)
             {
                 output.WriteLine($"[Interceptor] In range of NPC {npcUid} at ({npcX},{npcY})");
-                // attack 패턴이면 targetUid 교체
                 if (original.Fields.ContainsKey("targetUid"))
                     return original with { Fields = new Dictionary<string, object>(original.Fields) { ["targetUid"] = npcUid } };
                 return original;
@@ -47,9 +46,9 @@ public class ProximityInterceptor : IReplayInterceptor
 
             int dx = Math.Sign(tx - px);
             int dy = (dx == 0) ? Math.Sign(ty - py) : 0;
-            session.SendPacket("CS_MOVE", new Dictionary<string, object> { ["dirX"] = dx, ["dirY"] = dy });
-            session.ReceiveAndProcess();
-            Thread.Sleep(MoveIntervalMs);
+            await session.SendPacketAsync("CS_MOVE", new Dictionary<string, object> { ["dirX"] = dx, ["dirY"] = dy });
+            await session.ReceiveAndProcessAsync();
+            await Task.Delay(MoveIntervalMs);
         }
 
         output.WriteLine("[Interceptor] Max move attempts reached");

@@ -2,7 +2,7 @@ You are a code review expert. Verify the Discovery phase output.
 
 Given the original file list with samples and the generated discovery result, check:
 1. Are all packet/protocol-related files identified? Any missed?
-2. Are non-related files incorrectly included?
+2. Are non-related files incorrectly included? Watch for: code generators, DB code, TCP/socket infrastructure, build/deploy scripts
 3. Is the language detection correct?
 4. Is the framework detection reasonable?
 

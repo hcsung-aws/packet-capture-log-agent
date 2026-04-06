@@ -215,7 +215,7 @@ public class PacketReplayer
     }
 
     /// <summary>코어 리플레이 루프. 타이밍·송수신 시퀀싱을 담당하고, 응답 처리는 handler에 위임.</summary>
-    public ReplayResult Replay(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null, List<IReplayInterceptor>? interceptors = null, TextWriter? output = null)
+    public async Task<ReplayResult> ReplayAsync(string host, int port, List<ReplayPacket> packets, IResponseHandler handler, ReplayOptions? options = null, List<IReplayInterceptor>? interceptors = null, TextWriter? output = null)
     {
         output ??= Console.Out;
         options ??= new ReplayOptions();
@@ -249,17 +249,17 @@ public class PacketReplayer
                 {
                     var delay = (pkt.Timestamp - prev.Timestamp) / options.Speed;
                     if (delay > TimeSpan.Zero)
-                        Thread.Sleep(delay);
+                        await Task.Delay(delay);
                 }
             }
 
             // 인터셉터: Priority 순으로 체이닝 (낮을수록 먼저 실행)
             if (interceptors != null)
                 foreach (var ic in interceptors.OrderBy(ic => ic.Priority).Where(ic => ic.ShouldIntercept(pkt, context.World)))
-                    pkt = ic.Prepare(session, pkt);
+                    pkt = await ic.PrepareAsync(session, pkt);
 
             var data = _builder.Build(pkt.Name, pkt.Fields, options.Overrides);
-            stream.Write(data);
+            await stream.WriteAsync(data);
             sent++;
             context.Elapsed = DateTime.Now - startTime;
             output.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] SEND {pkt.Name} ({data.Length} bytes)");
@@ -272,7 +272,7 @@ public class PacketReplayer
                 {
                     context.Elapsed = DateTime.Now - startTime;
                     received += handler.OnResponse(recvBuffer, recvLen, context);
-                    DrainPendingData(stream, recvBuffer, handler, context, ref received, startTime);
+                    await DrainPendingDataAsync(stream, recvBuffer, handler, context, received, startTime);
                 }
                 else if (expectResponse)
                 {
@@ -294,9 +294,9 @@ public class PacketReplayer
     }
 
     /// <summary>DataAvailable인 동안 추가 데이터를 읽어 handler에 전달.</summary>
-    internal static void DrainPendingData(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, ref int received, DateTime startTime)
+    internal static async Task DrainPendingDataAsync(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, int received, DateTime startTime)
     {
-        Thread.Sleep(50); // 서버 응답 도착 대기
+        await Task.Delay(50); // 서버 응답 도착 대기
         while (stream.DataAvailable)
         {
             try

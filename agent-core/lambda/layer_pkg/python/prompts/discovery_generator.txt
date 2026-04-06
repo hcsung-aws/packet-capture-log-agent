@@ -10,6 +10,13 @@ Look for:
 - Network byte order / endian handling
 - #pragma pack or alignment directives
 
+Exclude these — they are NOT protocol definitions even if they contain packet-related keywords:
+- Code generators / utility scripts that produce or transform protocol files
+- Database connection / query code
+- TCP/UDP socket infrastructure (server accept loops, client connect wrappers)
+- Session management infrastructure (connection lifecycle, not packet dispatch)
+- Build scripts, test harnesses, deployment tools
+
 Respond with JSON:
 {
   "language": "C++",

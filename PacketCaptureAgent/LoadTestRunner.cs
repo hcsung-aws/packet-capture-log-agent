@@ -25,7 +25,7 @@ public class LoadTestRunner
         for (int i = 0; i < clientCount; i++)
         {
             int idx = i;
-            tasks[i] = Task.Run(() =>
+            tasks[i] = Task.Run(async () =>
             {
                 using var logger = logDir != null ? new ReplayLogger(logDir, idx + 1) : null;
                 var output = (TextWriter?)logger ?? TextWriter.Null;
@@ -43,7 +43,7 @@ public class LoadTestRunner
                 Console.WriteLine($"  [{connected}/{clientCount}] Client {idx + 1} 시작");
 
                 var replayer = new PacketReplayer(protocol);
-                results[idx] = replayer.Replay(host, port, packets, handler, options, interceptors, output);
+                results[idx] = await replayer.ReplayAsync(host, port, packets, handler, options, interceptors, output);
 
                 if (results[idx].Error != null)
                     Interlocked.Increment(ref failed);

@@ -352,7 +352,7 @@ class Program
         using var logger = new ReplayLogger(logDir, console: Console.Out);
         var handler = new ParsingResponseHandler(protocol, host, port, logger);
         var interceptors = new List<IReplayInterceptor> { new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()) };
-        replayer.Replay(host, port, packets, handler, options, interceptors, logger);
+        replayer.ReplayAsync(host, port, packets, handler, options, interceptors, logger).GetAwaiter().GetResult();
     }
 
     static void RunCaptureMode(string? protocolPath, int? filterPort)
@@ -624,7 +624,7 @@ class Program
         interceptors.Add(new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()));
 
         var replayer = new PacketReplayer(protocol);
-        replayer.Replay(parts[0], port, packets, handler, options, interceptors, logger);
+        replayer.ReplayAsync(parts[0], port, packets, handler, options, interceptors, logger).GetAwaiter().GetResult();
     }
 
 
@@ -692,7 +692,7 @@ class Program
         };
 
         var executor = new FsmExecutor(new ActionExecutor(protocol, catalog), logger);
-        executor.Execute(fsm, host, port, syncHandler, context, interceptors, durationSec: duration);
+        executor.ExecuteAsync(fsm, host, port, syncHandler, context, interceptors, durationSec: duration).GetAwaiter().GetResult();
     }
 
     static void RunBuildBehaviorMode(string? protocolPath)
@@ -777,7 +777,7 @@ class Program
         };
 
         var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger, protocol.Semantics);
-        executor.Execute(tree, host, port, syncHandler, context, interceptors, durationSec: duration);
+        executor.ExecuteAsync(tree, host, port, syncHandler, context, interceptors, durationSec: duration).GetAwaiter().GetResult();
     }
 
     /// <summary>응답 처리 시 SessionState를 ReplayContext와 sharedState 양쪽에 동기화.</summary>

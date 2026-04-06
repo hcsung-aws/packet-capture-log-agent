@@ -13,7 +13,8 @@ h1 { color: #00d4ff; margin-bottom: 20px; font-size: 1.5em; }
 .card h2 { color: #00d4ff; font-size: 1.1em; margin-bottom: 12px; }
 label { display: block; margin-bottom: 4px; font-size: 0.9em; color: #a0a0a0; }
 input, select { width: 100%; padding: 8px 12px; background: #0f3460; border: 1px solid #1a4080; border-radius: 4px; color: #e0e0e0; font-size: 0.95em; margin-bottom: 12px; }
-button { padding: 10px 24px; background: #00d4ff; color: #1a1a2e; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.95em; }
+input[type="file"] { padding: 6px; }
+button { padding: 10px 24px; background: #00d4ff; color: #1a1a2e; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.95em; margin-right: 8px; }
 button:hover { background: #00b8d4; }
 button:disabled { background: #555; cursor: not-allowed; }
 .status { padding: 8px 12px; border-radius: 4px; margin-top: 8px; font-size: 0.9em; }
@@ -25,9 +26,10 @@ button:disabled { background: #555; cursor: not-allowed; }
 .result-summary .stat .num { font-size: 2em; color: #00d4ff; font-weight: bold; }
 .result-summary .stat .label { font-size: 0.8em; color: #a0a0a0; }
 pre { background: #0a0a1a; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.85em; max-height: 400px; overflow-y: auto; margin-top: 8px; }
-.history { font-size: 0.85em; }
-.history table { width: 100%; border-collapse: collapse; }
-.history th, .history td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #0f3460; }
+.config-row { display: flex; gap: 12px; }
+.config-row > div { flex: 1; }
+.saved { color: #00ff88; font-size: 0.8em; opacity: 0; transition: opacity 0.3s; }
+.saved.show { opacity: 1; }
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #00d4ff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -37,9 +39,25 @@ pre { background: #0a0a1a; padding: 12px; border-radius: 4px; overflow-x: auto; 
   <h1>⚡ Protocol Agent</h1>
 
   <div class="card">
+    <h2>API Configuration</h2>
+    <div class="config-row">
+      <div>
+        <label>API URL</label>
+        <input type="text" id="apiUrl" placeholder="https://xxx.execute-api.us-east-1.amazonaws.com">
+      </div>
+      <div>
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="Your API key">
+      </div>
+    </div>
+    <button onclick="saveConfig()">Save</button>
+    <span class="saved" id="savedMsg">✓ Saved</span>
+  </div>
+
+  <div class="card">
     <h2>Generate Protocol</h2>
-    <label>Source Directory (server-local path)</label>
-    <input type="text" id="sourceDir" placeholder="/path/to/game/source">
+    <label>Source ZIP file</label>
+    <input type="file" id="sourceZip" accept=".zip">
     <label>Model (optional)</label>
     <select id="modelId">
       <option value="">Default (Sonnet 4)</option>
@@ -54,104 +72,132 @@ pre { background: #0a0a1a; padding: 12px; border-radius: 4px; overflow-x: auto; 
   <div class="card" id="resultCard" style="display:none">
     <h2>Result</h2>
     <div class="result-summary" id="resultSummary"></div>
-    <button onclick="showJson()">Show JSON</button>
+    <button onclick="toggleJson()">Show JSON</button>
     <button onclick="downloadJson()">Download</button>
     <pre id="jsonOutput" style="display:none"></pre>
-  </div>
-
-  <div class="card history">
-    <h2>Recent Jobs</h2>
-    <table><thead><tr><th>Job</th><th>Status</th><th>Result</th></tr></thead>
-    <tbody id="jobsTable"></tbody></table>
   </div>
 </div>
 
 <script>
 let currentJobId = null;
+let currentResult = null;
 let pollTimer = null;
 
-async function generate() {
-  const sourceDir = document.getElementById('sourceDir').value.trim();
-  if (!sourceDir) return alert('Enter source directory');
-
-  document.getElementById('btnGenerate').disabled = true;
-  setStatus('running', '<span class="spinner"></span>Uploading source files...');
-
-  const resp = await fetch('/api/generate', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({source_dir: sourceDir, model_id: document.getElementById('modelId').value})
-  });
-  const data = await resp.json();
-  if (data.error) { setStatus('error', data.error); document.getElementById('btnGenerate').disabled = false; return; }
-
-  currentJobId = data.job_id;
-  setStatus('running', '<span class="spinner"></span>Pipeline running... (this takes ~7 minutes)');
-  pollTimer = setInterval(pollStatus, 5000);
+// Config persistence
+function loadConfig() {
+  document.getElementById('apiUrl').value = localStorage.getItem('pa_api_url') || '';
+  document.getElementById('apiKey').value = localStorage.getItem('pa_api_key') || '';
+}
+function saveConfig() {
+  localStorage.setItem('pa_api_url', document.getElementById('apiUrl').value.trim());
+  localStorage.setItem('pa_api_key', document.getElementById('apiKey').value.trim());
+  const msg = document.getElementById('savedMsg');
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+}
+function getConfig() {
+  const url = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('apiKey').value.trim();
+  if (!url || !key) { alert('Configure API URL and API Key first.'); return null; }
+  return { url, key };
+}
+function apiHeaders(key) {
+  return { 'x-api-key': key, 'Content-Type': 'application/json' };
 }
 
-async function pollStatus() {
-  if (!currentJobId) return;
-  const resp = await fetch(`/api/jobs/${currentJobId}`);
-  const data = await resp.json();
+async function generate() {
+  const cfg = getConfig();
+  if (!cfg) return;
+  const fileInput = document.getElementById('sourceZip');
+  if (!fileInput.files.length) return alert('Select a source ZIP file.');
 
-  if (data.status === 'SUCCEEDED') {
-    clearInterval(pollTimer);
-    setStatus('success', `✓ Complete!`);
-    showResult(data.result);
+  const zipFile = fileInput.files[0];
+  document.getElementById('btnGenerate').disabled = true;
+  setStatus('running', '<span class="spinner"></span>Creating job...');
+
+  try {
+    // 1. Create job
+    let resp = await fetch(`${cfg.url}/jobs`, { method: 'POST', headers: apiHeaders(cfg.key) });
+    if (!resp.ok) throw new Error(`Create job failed: ${resp.status}`);
+    const job = await resp.json();
+    currentJobId = job.job_id;
+
+    // 2. Upload zip via presigned URL
+    setStatus('running', '<span class="spinner"></span>Uploading source...');
+    resp = await fetch(job.upload_url, { method: 'PUT', body: zipFile });
+    if (!resp.ok) throw new Error(`Upload failed: ${resp.status}`);
+
+    // 3. Start pipeline
+    setStatus('running', '<span class="spinner"></span>Starting pipeline...');
+    const body = {};
+    const model = document.getElementById('modelId').value;
+    if (model) body.model_id = model;
+    resp = await fetch(`${cfg.url}/jobs/${currentJobId}/pipeline`, {
+      method: 'POST', headers: apiHeaders(cfg.key), body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error(`Start pipeline failed: ${resp.status}`);
+
+    // 4. Poll
+    setStatus('running', '<span class="spinner"></span>Pipeline running... (~7 minutes)');
+    pollTimer = setInterval(() => pollStatus(cfg), 10000);
+  } catch (e) {
+    setStatus('error', `✗ ${e.message}`);
     document.getElementById('btnGenerate').disabled = false;
-    refreshJobs();
-  } else if (data.status === 'FAILED' || data.status === 'ERROR') {
-    clearInterval(pollTimer);
-    setStatus('error', `✗ ${data.status}: ${data.error || 'Check AWS console'}`);
-    document.getElementById('btnGenerate').disabled = false;
-  } else {
-    setStatus('running', `<span class="spinner"></span>${data.status}...`);
   }
+}
+
+async function pollStatus(cfg) {
+  try {
+    const resp = await fetch(`${cfg.url}/jobs/${currentJobId}/status`, { headers: apiHeaders(cfg.key) });
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    if (data.status === 'SUCCEEDED') {
+      clearInterval(pollTimer);
+      setStatus('success', '✓ Complete!');
+      await fetchResult(cfg);
+      document.getElementById('btnGenerate').disabled = false;
+    } else if (['FAILED', 'TIMED_OUT', 'ABORTED'].includes(data.status)) {
+      clearInterval(pollTimer);
+      setStatus('error', `✗ ${data.status}`);
+      document.getElementById('btnGenerate').disabled = false;
+    }
+  } catch (e) { /* ignore transient errors */ }
+}
+
+async function fetchResult(cfg) {
+  const resp = await fetch(`${cfg.url}/jobs/${currentJobId}/result`, { headers: apiHeaders(cfg.key) });
+  if (!resp.ok) return;
+  currentResult = await resp.json();
+  const packets = currentResult.packets || [];
+  const types = currentResult.types || [];
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('resultSummary').innerHTML = `
+    <div class="stat"><div class="num">${packets.length}</div><div class="label">Packets</div></div>
+    <div class="stat"><div class="num">${types.length}</div><div class="label">Types</div></div>`;
 }
 
 function setStatus(type, html) {
   document.getElementById('statusArea').innerHTML = `<div class="status ${type}">${html}</div>`;
 }
 
-function showResult(result) {
-  const card = document.getElementById('resultCard');
-  card.style.display = 'block';
-  document.getElementById('resultSummary').innerHTML = `
-    <div class="stat"><div class="num">${result.packet_count}</div><div class="label">Packets</div></div>
-    <div class="stat"><div class="num">${result.type_count}</div><div class="label">Types</div></div>`;
-}
-
-async function showJson() {
+function toggleJson() {
   const pre = document.getElementById('jsonOutput');
   if (pre.style.display !== 'none') { pre.style.display = 'none'; return; }
-  const resp = await fetch(`/api/jobs/${currentJobId}/result`);
-  const data = await resp.json();
-  pre.textContent = JSON.stringify(data, null, 2);
+  pre.textContent = JSON.stringify(currentResult, null, 2);
   pre.style.display = 'block';
 }
 
 function downloadJson() {
-  if (!currentJobId) return;
-  fetch(`/api/jobs/${currentJobId}/result`)
-    .then(r => r.json())
-    .then(data => {
-      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = `protocol_${currentJobId}.json`; a.click();
-    });
+  if (!currentResult) return;
+  const blob = new Blob([JSON.stringify(currentResult, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `protocol_${currentJobId}.json`;
+  a.click();
 }
 
-async function refreshJobs() {
-  const resp = await fetch('/api/jobs');
-  const jobs = await resp.json();
-  const tbody = document.getElementById('jobsTable');
-  tbody.innerHTML = Object.entries(jobs).map(([id, j]) =>
-    `<tr><td>${id}</td><td>${j.status}</td><td>${j.result ? j.result.packet_count + ' packets' : '-'}</td></tr>`
-  ).join('');
-}
-
-refreshJobs();
+loadConfig();
 </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ public class NpcAttackInterceptor : IReplayInterceptor
     public bool ShouldIntercept(ReplayPacket packet, GameWorldState world)
         => packet.Name == "CS_ATTACK" && world.Npcs.Count > 0;
 
-    public ReplayPacket Prepare(ReplaySession session, ReplayPacket original)
+    public async Task<ReplayPacket> PrepareAsync(ReplaySession session, ReplayPacket original)
     {
         var output = session.Output;
         for (int attempt = 0; attempt < MaxMoveAttempts; attempt++)
@@ -26,7 +26,6 @@ public class NpcAttackInterceptor : IReplayInterceptor
             var (npcUid, npcX, npcY) = nearest.Value;
             var (px, py) = session.World.PlayerPos;
 
-            // 공격 가능: 맨해튼 거리 1 이하
             if (Math.Abs(px - npcX) + Math.Abs(py - npcY) <= 1)
             {
                 output.WriteLine($"[Interceptor] In range of NPC {npcUid} at ({npcX},{npcY}), replacing targetUid");
@@ -34,21 +33,18 @@ public class NpcAttackInterceptor : IReplayInterceptor
                 return original with { Fields = fields };
             }
 
-            // 공격 가능 위치 계산 (NPC 상하좌우 중 가장 가까운 칸)
             var (tx, ty) = ProximityInterceptor.FindBestPos(px, py, npcX, npcY);
             output.WriteLine($"[Interceptor] Moving toward NPC {npcUid}: ({px},{py}) -> ({tx},{ty})");
 
-            // 한 칸 이동
             int dx = Math.Sign(tx - px);
             int dy = (dx == 0) ? Math.Sign(ty - py) : 0;
 
-            session.SendPacket("CS_MOVE", new Dictionary<string, object> { ["dirX"] = dx, ["dirY"] = dy });
-            session.ReceiveAndProcess();
-            Thread.Sleep(MoveIntervalMs);
+            await session.SendPacketAsync("CS_MOVE", new Dictionary<string, object> { ["dirX"] = dx, ["dirY"] = dy });
+            await session.ReceiveAndProcessAsync();
+            await Task.Delay(MoveIntervalMs);
         }
 
         output.WriteLine("[Interceptor] Max move attempts reached");
         return original;
     }
-
 }

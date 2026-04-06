@@ -15,7 +15,7 @@ public class FsmExecutor
     }
 
     /// <param name="durationSec">실행 시간(초). null=1회(전이 불가까지), 0=무한, >0=해당 시간.</param>
-    public void Execute(
+    public async Task ExecuteAsync(
         FsmDefinition fsm,
         string host, int port,
         IResponseHandler handler,
@@ -67,7 +67,7 @@ public class FsmExecutor
                         continue;
                     }
                     _output.WriteLine($"[FSM] Step {step}: {currentState}");
-                    _actionExecutor.Execute(currentState, stream, handler, context, interceptors, _output, timeoutMs: timeoutMs);
+                    await _actionExecutor.ExecuteAsync(currentState, stream, handler, context, interceptors, _output, timeoutMs: timeoutMs);
                 }
 
                 // 시간 체크

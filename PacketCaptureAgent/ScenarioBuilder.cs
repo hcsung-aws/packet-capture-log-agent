@@ -267,17 +267,17 @@ public class DynamicFieldInterceptor : IReplayInterceptor
     public bool ShouldIntercept(ReplayPacket packet, GameWorldState world)
         => packet.Direction == "SEND" && _fieldsByPacket.ContainsKey(packet.Name);
 
-    public ReplayPacket Prepare(ReplaySession session, ReplayPacket original)
+    public Task<ReplayPacket> PrepareAsync(ReplaySession session, ReplayPacket original)
     {
         if (!_fieldsByPacket.TryGetValue(original.Name, out var mappings))
-            return original;
+            return Task.FromResult(original);
 
         var fields = new Dictionary<string, object>(original.Fields);
         foreach (var m in mappings)
             if (_sharedState.TryGetValue(m.Source, out var value))
                 fields[m.Field] = value;
 
-        return original with { Fields = fields };
+        return Task.FromResult(original with { Fields = fields });
     }
 }
 

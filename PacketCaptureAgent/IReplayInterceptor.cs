@@ -9,7 +9,7 @@ public interface IReplayInterceptor
     int Priority { get; }
     bool ShouldIntercept(ReplayPacket packet, GameWorldState world);
     /// <summary>사전 작업(이동 등) 수행 후 수정된 패킷 반환. 원래 루프가 이 패킷을 전송.</summary>
-    ReplayPacket Prepare(ReplaySession session, ReplayPacket original);
+    Task<ReplayPacket> PrepareAsync(ReplaySession session, ReplayPacket original);
 }
 
 /// <summary>인터셉터가 패킷 송수신에 사용하는 세션 헬퍼.</summary>
@@ -36,20 +36,20 @@ public class ReplaySession
         Output = output ?? Console.Out;
     }
 
-    public void SendPacket(string name, Dictionary<string, object> fields)
+    public async Task SendPacketAsync(string name, Dictionary<string, object> fields)
     {
         var data = _builder.Build(name, fields);
-        _stream.Write(data);
+        await _stream.WriteAsync(data);
         _context.Elapsed = DateTime.Now - _startTime;
         Output.WriteLine($"[{_context.Elapsed:mm\\:ss\\.fff}] SEND {name} (interceptor)");
     }
 
-    public void ReceiveAndProcess(int timeoutMs = 5000)
+    public async Task ReceiveAndProcessAsync(int timeoutMs = 5000)
     {
         _stream.ReadTimeout = timeoutMs;
         try
         {
-            int len = _stream.Read(_recvBuffer);
+            int len = await _stream.ReadAsync(_recvBuffer);
             if (len > 0)
             {
                 _context.Elapsed = DateTime.Now - _startTime;

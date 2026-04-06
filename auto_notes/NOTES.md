@@ -15,4 +15,4 @@
 | Windows 콘솔 | windows-console.md | _getch/std::cin 혼용 금지, UTF-8 설정, 한글 입력 |
 
 ## Last Updated
-2026-04-05
+2026-04-06

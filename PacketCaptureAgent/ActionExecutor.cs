@@ -20,7 +20,7 @@ public class ActionExecutor
     }
 
     /// <summary>단일 액션의 패킷을 전송하고 응답을 처리. SessionState 업데이트 포함.</summary>
-    public bool Execute(
+    public async Task<bool> ExecuteAsync(
         string actionId,
         NetworkStream stream,
         IResponseHandler handler,
@@ -65,10 +65,10 @@ public class ActionExecutor
 
                 // 인터셉터 체이닝
                 foreach (var ic in interceptors.OrderBy(ic => ic.Priority).Where(ic => ic.ShouldIntercept(pkt, context.World)))
-                    pkt = ic.Prepare(session, pkt);
+                    pkt = await ic.PrepareAsync(session, pkt);
 
                 var data = _builder.Build(pkt.Name, pkt.Fields);
-                stream.Write(data);
+                await stream.WriteAsync(data);
                 context.Elapsed = TimeSpan.Zero;
                 output.WriteLine($"[BT] SEND {pkt.Name} ({data.Length} bytes)");
             }
@@ -85,7 +85,7 @@ public class ActionExecutor
                             handler.OnResponse(recvBuffer, len, context);
                     }
                     int received = 0;
-                    PacketReplayer.DrainPendingData(stream, recvBuffer, handler, context, ref received, startTime);
+                    await PacketReplayer.DrainPendingDataAsync(stream, recvBuffer, handler, context, received, startTime);
                 }
             }
         }

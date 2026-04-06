@@ -1,7 +1,8 @@
 terraform {
   required_version = ">= 1.5"
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws    = { source = "hashicorp/aws", version = "~> 5.0" }
+    random = { source = "hashicorp/random", version = "~> 3.0" }
   }
 }
 
@@ -220,8 +221,8 @@ resource "aws_lambda_function" "orchestrator" {
   source_code_hash = data.archive_file.orchestrator.output_base64sha256
   handler          = "handler.handler"
   runtime          = "python3.12"
-  timeout          = 30
-  memory_size      = 128
+  timeout          = 120
+  memory_size      = 512
   role             = aws_iam_role.orchestrator.arn
 
   environment {
@@ -307,6 +308,51 @@ resource "aws_sfn_state_machine" "pipeline" {
   })
 }
 
+# API Key
+resource "random_password" "api_key" {
+  length  = 32
+  special = false
+}
+
+# API Key Authorizer Lambda
+data "archive_file" "authorizer" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambda/authorizer"
+  output_path = "${path.module}/.build/authorizer.zip"
+}
+
+resource "aws_iam_role" "authorizer" {
+  name = "${var.project_name}-authorizer"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "authorizer_logs" {
+  role       = aws_iam_role.authorizer.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "authorizer" {
+  function_name    = "${var.project_name}-authorizer"
+  filename         = data.archive_file.authorizer.output_path
+  source_code_hash = data.archive_file.authorizer.output_base64sha256
+  handler          = "handler.handler"
+  runtime          = "python3.12"
+  timeout          = 5
+  memory_size      = 128
+  role             = aws_iam_role.authorizer.arn
+
+  environment {
+    variables = { API_KEY = random_password.api_key.result }
+  }
+}
+
 # API Gateway
 resource "aws_apigatewayv2_api" "api" {
   name          = "${var.project_name}-api"
@@ -324,6 +370,25 @@ resource "aws_apigatewayv2_stage" "default" {
   auto_deploy = true
 }
 
+resource "aws_apigatewayv2_authorizer" "api_key" {
+  api_id                            = aws_apigatewayv2_api.api.id
+  authorizer_type                   = "REQUEST"
+  authorizer_uri                    = aws_lambda_function.authorizer.invoke_arn
+  authorizer_payload_format_version = "2.0"
+  name                              = "api-key-authorizer"
+  enable_simple_responses           = true
+  identity_sources                  = ["$request.header.x-api-key"]
+  authorizer_result_ttl_in_seconds  = 300
+}
+
+resource "aws_lambda_permission" "authorizer" {
+  statement_id  = "AllowAPIGatewayAuthorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.authorizer.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*"
+}
+
 resource "aws_apigatewayv2_integration" "orchestrator" {
   api_id                 = aws_apigatewayv2_api.api.id
   integration_type       = "AWS_PROXY"
@@ -338,9 +403,11 @@ resource "aws_apigatewayv2_route" "routes" {
     "GET /jobs/{id}/status",
     "GET /jobs/{id}/result",
   ])
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = each.value
-  target    = "integrations/${aws_apigatewayv2_integration.orchestrator.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = each.value
+  target             = "integrations/${aws_apigatewayv2_integration.orchestrator.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.api_key.id
 }
 
 resource "aws_lambda_permission" "apigw" {

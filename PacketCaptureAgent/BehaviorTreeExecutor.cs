@@ -27,7 +27,7 @@ public class BehaviorTreeExecutor
                 _interactionActions.Add(sc.ActionPattern);
     }
 
-    public void Execute(
+    public async Task ExecuteAsync(
         BehaviorTreeDefinition tree,
         string host, int port,
         IResponseHandler handler,
@@ -47,7 +47,7 @@ public class BehaviorTreeExecutor
         _failures.Clear();
         _validatedActions.Clear();
 
-        RunNode(tree.Root, stream, handler, context, interceptors, timeoutMs);
+        await RunNodeAsync(tree.Root, stream, handler, context, interceptors, timeoutMs);
 
         // 결과 요약
         _output.WriteLine($"\n=== Validation Summary ===");
@@ -60,7 +60,7 @@ public class BehaviorTreeExecutor
         }
     }
 
-    private bool RunNode(
+    private async Task<bool> RunNodeAsync(
         BtNode node,
         NetworkStream stream,
         IResponseHandler handler,
@@ -68,25 +68,19 @@ public class BehaviorTreeExecutor
         List<IReplayInterceptor> interceptors,
         int timeoutMs)
     {
-        // validation: 조건 무시 — 모든 분기 강제 실행
-        // (조건은 녹화 당시 세션 고유값이므로 다른 세션에서는 매칭 안 됨)
-
-        // weight 스킵 제거 — 모든 액션 실행
-
         return node switch
         {
-            BtAction action => RunAction(action, stream, handler, context, interceptors, timeoutMs),
-            BtSequence seq => RunSequence(seq, stream, handler, context, interceptors, timeoutMs),
-            BtSelector sel => RunSelector(sel, stream, handler, context, interceptors, timeoutMs),
-            BtRepeat rep => RunRepeat(rep, stream, handler, context, interceptors, timeoutMs),
+            BtAction action => await RunActionAsync(action, stream, handler, context, interceptors, timeoutMs),
+            BtSequence seq => await RunSequenceAsync(seq, stream, handler, context, interceptors, timeoutMs),
+            BtSelector sel => await RunSelectorAsync(sel, stream, handler, context, interceptors, timeoutMs),
+            BtRepeat rep => await RunRepeatAsync(rep, stream, handler, context, interceptors, timeoutMs),
             _ => false
         };
     }
 
-    private bool RunAction(BtAction node, NetworkStream stream, IResponseHandler handler,
+    private async Task<bool> RunActionAsync(BtAction node, NetworkStream stream, IResponseHandler handler,
         ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
     {
-        // 이미 검증한 액션은 스킵 (같은 액션 63번 실행 불필요)
         if (!_validatedActions.Add(node.Id))
         {
             _skippedCount++;
@@ -94,7 +88,7 @@ public class BehaviorTreeExecutor
         }
 
         _totalActions++;
-        bool ok = _actionExecutor.Execute(node.Id, stream, handler, context, interceptors, _output, node.Overrides, timeoutMs);
+        bool ok = await _actionExecutor.ExecuteAsync(node.Id, stream, handler, context, interceptors, _output, node.Overrides, timeoutMs);
         bool isInteraction = _interactionActions.Any(p => node.Id.Contains(p));
 
         if (ok)
@@ -104,31 +98,29 @@ public class BehaviorTreeExecutor
         else
         { _failCount++; _failures.Add((node.Id, "execution failed")); _output.WriteLine($"  [FAIL] {node.Id}"); }
 
-        return true; // validation: 실패해도 계속 진행
-    }
-
-    private bool RunSequence(BtSequence node, NetworkStream stream, IResponseHandler handler,
-        ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
-    {
-        foreach (var child in node.Children)
-            RunNode(child, stream, handler, context, interceptors, timeoutMs);
-        return true; // validation: 항상 계속
-    }
-
-    private bool RunSelector(BtSelector node, NetworkStream stream, IResponseHandler handler,
-        ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
-    {
-        // validation: 조건 맞는 모든 자식 실행
-        foreach (var child in node.Children)
-            RunNode(child, stream, handler, context, interceptors, timeoutMs);
         return true;
     }
 
-    private bool RunRepeat(BtRepeat node, NetworkStream stream, IResponseHandler handler,
+    private async Task<bool> RunSequenceAsync(BtSequence node, NetworkStream stream, IResponseHandler handler,
         ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
     {
-        // validation: 1회만 실행 (같은 액션 N번 반복은 검증 불필요)
-        RunNode(node.Child, stream, handler, context, interceptors, timeoutMs);
+        foreach (var child in node.Children)
+            await RunNodeAsync(child, stream, handler, context, interceptors, timeoutMs);
+        return true;
+    }
+
+    private async Task<bool> RunSelectorAsync(BtSelector node, NetworkStream stream, IResponseHandler handler,
+        ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
+    {
+        foreach (var child in node.Children)
+            await RunNodeAsync(child, stream, handler, context, interceptors, timeoutMs);
+        return true;
+    }
+
+    private async Task<bool> RunRepeatAsync(BtRepeat node, NetworkStream stream, IResponseHandler handler,
+        ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
+    {
+        await RunNodeAsync(node.Child, stream, handler, context, interceptors, timeoutMs);
         return true;
     }
 }
