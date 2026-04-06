@@ -4,26 +4,43 @@
 ```
 packet-capture-log-agent/
 ├── PacketCaptureAgent/            # 메인 소스 (C# .NET 9.0)
-│   ├── Program.cs                 # 진입점 (캡처/재현/분석/BT 모드 분기)
+│   ├── Program.cs                 # 진입점 (캡처/재현/분석/BT/FSM 모드 분기)
 │   ├── Protocol.cs                # JSON 프로토콜 정의 모델 (semantics 포함)
-│   ├── PacketParser.cs            # TCP 스트림 → 동적 패킷 파싱 (string_prefixed, conditional 포함)
+│   ├── PacketParser.cs            # TCP 스트림 → 동적 패킷 파싱 (string_prefixed, conditional)
 │   ├── PacketBuilder.cs           # 파싱 데이터 → 바이너리 패킷 재구성
 │   ├── PacketReplayer.cs          # 로그 파싱 + TCP 재전송
 │   ├── PacketFormatter.cs         # 콘솔/파일 출력 포맷
+│   ├── RawPacketParser.cs         # 원시 패킷 파싱
 │   ├── TcpStream.cs               # TCP 스트림 재조립 + 연결 관리
+│   ├── CaptureSession.cs          # 캡처 세션 관리
 │   ├── GameWorldState.cs          # 리플레이 중 게임 상태 추적
+│   ├── ReplayLogger.cs            # 리플레이 로깅
+│   ├── SequenceAnalyzer.cs        # 요청-응답 시퀀스 매칭 (이름 패턴 + 위치 폴백)
+│   ├── ScenarioBuilder.cs         # 녹화 → 시나리오 빌드
+│   ├── RecordingStore.cs          # 녹화 저장소
+│   ├── FieldFlattener.cs          # 중첩 필드 평탄화 유틸리티
 │   ├── BehaviorTree.cs            # BT 노드 모델 + JSON 직렬화
 │   ├── BehaviorTreeBuilder.cs     # 녹화 → BT 자동 생성 (조건 정제 + 상태 바인딩 + weight)
 │   ├── BehaviorTreeExecutor.cs    # BT 런타임 실행 (duration 루프)
 │   ├── BehaviorTreeEditor.cs      # BT CLI 편집기
 │   ├── BehaviorTreeWebEditor.cs   # BT 웹 에디터 (HttpListener + 바닐라 JS)
+│   ├── ConditionEvaluator.cs      # BT 조건 평가
 │   ├── ActionExecutor.cs          # BT 리프 노드 실행 (field_variants 랜덤 선택)
 │   ├── ActionCatalogBuilder.cs    # 캡처 로그 → 액션 카탈로그 (field_variants 수집)
+│   ├── FsmDefinition.cs           # FSM 전이 확률 모델
+│   ├── FsmBuilder.cs              # 녹화 → FSM 전이 확률 생성
+│   ├── FsmExecutor.cs             # FSM 런타임 실행
+│   ├── LoadTestRunner.cs          # 부하 테스트 실행 (멀티 클라이언트)
 │   ├── IReplayInterceptor.cs      # 인터셉터 인터페이스 + ReplayContext
 │   ├── NpcAttackInterceptor.cs    # NPC 공격 동적 대상 교체
+│   ├── ProximityInterceptor.cs    # 근접 기반 인터셉터
 │   ├── IPacketTransform.cs        # 패킷 변환 인터페이스 + 팩토리
-│   └── analyze_all.ps1            # 다중 로그 일괄 분석 스크립트
-├── PacketCaptureAgent.Tests/      # 단위 테스트 (119개)
+│   ├── RsaDecryptor.cs            # RSA 복호화
+│   ├── XteaDecryptor.cs           # XTEA 복호화
+│   ├── wwwroot/                   # 웹 에디터 정적 파일
+│   ├── analyze_all.ps1            # 다중 로그 일괄 분석 (PowerShell)
+│   └── analyze_all.bat            # 다중 로그 일괄 분석 (Batch)
+├── PacketCaptureAgent.Tests/      # 단위 테스트 (14파일, 162개)
 ├── agent-core/                    # 프로토콜 자동 생성 (LLM Agent)
 │   ├── poc/                       # 로컬 PoC (Bedrock 직접 호출)
 │   │   ├── discovery.py           # Phase 1: 패킷 관련 파일 식별
@@ -33,16 +50,18 @@ packet-capture-log-agent/
 │   │   ├── validation.py          # Phase 5: 스키마 검증 + 자동 수정
 │   │   ├── pipeline.py            # 전체 파이프라인 래핑
 │   │   ├── llm_client.py          # Bedrock 호출 (Generator+Reviewer 2-agent)
+│   │   ├── config.py              # 설정 (리전, 모델 ID)
 │   │   └── prompts/               # Phase별 프롬프트 템플릿 (8개)
 │   ├── lambda/                    # AWS Lambda 함수
-│   │   ├── common/                # 공통 모듈 (llm_client, s3_helper, prompts)
-│   │   ├── layer_pkg/             # Lambda Layer 패키지 (python/ prefix)
+│   │   ├── common/                # 공통 모듈 (llm_client, s3_helper, prompt_loader, prompts/)
 │   │   ├── discovery/             # Phase 1 Lambda
 │   │   ├── analysis/              # Phase 2 Lambda (Map state 병렬)
 │   │   ├── merge/                 # Phase 3 Lambda
 │   │   ├── generation/            # Phase 4 Lambda
 │   │   ├── validation/            # Phase 5 Lambda
-│   │   └── orchestrator/          # API Gateway → Step Functions
+│   │   ├── orchestrator/          # API Gateway → Step Functions 연동
+│   │   ├── authorizer/            # API Gateway Lambda Authorizer
+│   │   └── layer_pkg/             # Lambda Layer 패키지 (python/ prefix)
 │   ├── terraform/                 # 인프라 정의
 │   │   ├── main.tf                # S3, IAM, Lambda, Step Functions, API Gateway
 │   │   ├── variables.tf           # 설정 변수 (리전, 모델 ID)
@@ -50,18 +69,23 @@ packet-capture-log-agent/
 │   └── client/                    # 클라이언트
 │       ├── cli.py                 # CLI (generate, status, download)
 │       ├── app.py                 # 웹 UI (Flask)
-│       └── web/index.html         # 프론트엔드 (바닐라 HTML/JS)
+│       ├── web/index.html         # 프론트엔드 (바닐라 HTML/JS)
+│       └── dist/                  # 빌드 산출물 (exe)
 ├── protocols/                     # 프로토콜 정의 JSON
 │   └── mmorpg_simulator.json      # MMORPG 시뮬레이터 (51 packets)
 ├── recordings/                    # 녹화 데이터
 ├── actions/                       # 액션 카탈로그
-├── behaviors/                     # BT JSON
+├── behaviors/                     # BT/FSM JSON
+├── captures/                      # 캡처 로그 아카이브
+├── scenarios/                     # 시나리오 데이터
+├── logs/                          # 실행 로그
+├── sessions/                      # 아카이빙된 세션 파일
 ├── docs/
 │   ├── BEHAVIOR_TREE_DESIGN.md    # BT 아키텍처 설계
 │   └── PROTOCOL_SCHEMA.md         # 프로토콜 JSON 스키마 가이드
-├── context_rule/                  # 프로젝트 특화 규칙
-├── common_knowledge/              # 범용 재사용 패턴
-└── auto_notes/                    # 자동 관찰 메모
+├── context_rule/                  # 프로젝트 특화 규칙 (5개)
+├── common_knowledge/              # 범용 재사용 패턴 (8개)
+└── auto_notes/                    # 자동 관찰 메모 (9개)
 ```
 
 ## Key Files
@@ -71,14 +95,15 @@ packet-capture-log-agent/
 - Docs: docs/PROTOCOL_SCHEMA.md, docs/BEHAVIOR_TREE_DESIGN.md, README.md
 
 ## File Statistics
-- C# source: ~20 files
-- Python (AgentCore): ~15 files
-- Terraform: 3 files
+- C# source: 33 files / 5,515 lines
+- C# tests: 14 files / 2,863 lines / 162 tests
+- Python (AgentCore): ~20 files (PoC 8 + Lambda 10 + Client 2)
+- AgentCore Lambda: 674 lines, Client: cli.py 173 + app.py 26 + index.html 203
+- Terraform: 3 files / 446 lines
 - Protocol definitions: 1 active (.json)
-- Tests: 119
 
 ## Project Structure Pattern
-C# 콘솔 앱 (패킷 캡처/재현/BT) + Python AgentCore (프로토콜 자동 생성, AWS 배포)
+C# 콘솔 앱 (패킷 캡처/재현/BT/FSM) + Python AgentCore (프로토콜 자동 생성, AWS 배포)
 
 ## Last Updated
-2026-04-01
+2026-04-06

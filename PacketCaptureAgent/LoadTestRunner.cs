@@ -1,8 +1,31 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace PacketCaptureAgent;
+
+public record LoadTestResult(
+    int Total, int Success, int Failed,
+    long TotalSent, long TotalReceived,
+    double AvgDurationSec, double MinDurationSec, double MaxDurationSec,
+    string[] Errors)
+{
+    public string ToJson() => JsonSerializer.Serialize(this, LoadTestResultContext.Default.LoadTestResult);
+    public static LoadTestResult FromJson(string json) => JsonSerializer.Deserialize(json, LoadTestResultContext.Default.LoadTestResult)!;
+}
+
+[JsonSerializable(typeof(LoadTestResult))]
+internal partial class LoadTestResultContext : JsonSerializerContext { }
 
 public class LoadTestRunner
 {
-    public static void Run(
+    // 진행 상황 (에이전트 모드에서 폴링용)
+    public int Connected;
+    public int Completed;
+    public int FailedCount;
+    public int TotalClients;
+    public bool IsRunning;
+
+    public async Task<LoadTestResult> RunAsync(
         ProtocolDefinition protocol,
         ScenarioDefinition scenario,
         ActionCatalog catalog,
@@ -11,6 +34,9 @@ public class LoadTestRunner
         ReplayOptions options,
         string? logDir = null)
     {
+        TotalClients = clientCount;
+        IsRunning = true;
+
         Console.WriteLine($"=== Load Test ===\n");
         Console.WriteLine($"시나리오: {scenario.Name}");
         Console.WriteLine($"클라이언트: {clientCount}개");
@@ -19,7 +45,6 @@ public class LoadTestRunner
         var builder = new ScenarioBuilder();
         var dynamicFields = builder.CollectDynamicFields(scenario, catalog);
         var results = new ReplayResult[clientCount];
-        int connected = 0, completed = 0, failed = 0;
 
         var tasks = new Task[clientCount];
         for (int i = 0; i < clientCount; i++)
@@ -39,24 +64,24 @@ public class LoadTestRunner
                     interceptors.Add(new DynamicFieldInterceptor(dynamicFields, sharedState));
                 interceptors.Add(new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()));
 
-                Interlocked.Increment(ref connected);
-                Console.WriteLine($"  [{connected}/{clientCount}] Client {idx + 1} 시작");
+                Interlocked.Increment(ref Connected);
+                Console.WriteLine($"  [{Connected}/{clientCount}] Client {idx + 1} 시작");
 
                 var replayer = new PacketReplayer(protocol);
                 results[idx] = await replayer.ReplayAsync(host, port, packets, handler, options, interceptors, output);
 
                 if (results[idx].Error != null)
-                    Interlocked.Increment(ref failed);
+                    Interlocked.Increment(ref FailedCount);
                 else
-                    Interlocked.Increment(ref completed);
+                    Interlocked.Increment(ref Completed);
 
-                Console.WriteLine($"  [{completed + failed}/{clientCount}] Client {idx + 1} {(results[idx].Error != null ? "실패" : "완료")}");
+                Console.WriteLine($"  [{Completed + FailedCount}/{clientCount}] Client {idx + 1} {(results[idx].Error != null ? "실패" : "완료")}");
             });
         }
 
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
+        IsRunning = false;
 
-        // 요약
         var success = results.Where(r => r.Error == null).ToArray();
         var errors = results.Where(r => r.Error != null).ToArray();
 
@@ -73,5 +98,22 @@ public class LoadTestRunner
 
         foreach (var e in errors)
             Console.WriteLine($"  ❌ {e.Error}");
+
+        return new LoadTestResult(
+            clientCount, success.Length, errors.Length,
+            success.Sum(r => r.Sent), success.Sum(r => r.Received),
+            success.Length > 0 ? success.Average(r => r.Duration.TotalSeconds) : 0,
+            success.Length > 0 ? success.Min(r => r.Duration.TotalSeconds) : 0,
+            success.Length > 0 ? success.Max(r => r.Duration.TotalSeconds) : 0,
+            errors.Select(r => r.Error!).ToArray());
+    }
+
+    /// <summary>기존 동기 호출 호환용</summary>
+    public static LoadTestResult Run(
+        ProtocolDefinition protocol, ScenarioDefinition scenario, ActionCatalog catalog,
+        string host, int port, int clientCount, ReplayOptions options, string? logDir = null)
+    {
+        var runner = new LoadTestRunner();
+        return runner.RunAsync(protocol, scenario, catalog, host, port, clientCount, options, logDir).GetAwaiter().GetResult();
     }
 }

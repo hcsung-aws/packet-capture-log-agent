@@ -22,33 +22,71 @@
     → 응답 수신 → PacketParser.TryParse() → 콘솔 출력
 ```
 
-### 분석 모드
+### 분석 → BT/FSM 생성
 ```
 로그 파일 → PacketReplayer.ParseLog() → List<ReplayPacket>
-  → SequenceAnalyzer.Analyze() → 분류 + Phase + ASCII/Mermaid
-  → DetectDynamicFields() → suffix 타입 필터 + 시간 순서
-  → ActionCatalogBuilder.Build() → Action 단위 분할
-  → ActionCatalogBuilder.MergeAndSave() → actions/{protocol}_actions.json
+  → SequenceAnalyzer.Analyze() → 분류 + Phase + DynamicField
+  → ActionCatalogBuilder.Build() → Action 단위 분할 + merge
+  → RecordingStore.Save() → recordings/{protocol}_{client}.json
+
+녹화 → BehaviorTreeBuilder.Build() → BT JSON (explore phase 포함)
+녹화 → FsmBuilder.Build() → FSM 전이 확률 JSON
+```
+
+### BT 실행
+```
+BT JSON → BehaviorTreeExecutor.Execute()
+  → 노드 순회 (Sequence/Selector/Repeat/Condition/Action)
+  → ConditionEvaluator: state expression 평가
+  → ActionExecutor: PacketBuilder.Build() → 전송 → 응답 수신/파싱
+  → GameWorldState 업데이트
+```
+
+### FSM 실행 (부하 테스트)
+```
+FSM JSON → FsmExecutor.RunAsync()
+  → 상태 전이 (확률 기반 랜덤)
+  → 각 상태에서 액션 실행 (ActionExecutor)
+  → 접속/종료 사이클 반복
+
+LoadTestRunner: N개 클라이언트 × FsmExecutor (Task.Run, async)
+```
+
+### 프로토콜 자동 생성 (AgentCore)
+```
+소스 코드 → CLI/웹 UI → API Gateway (API Key 인증)
+  → Orchestrator Lambda
+    → source.zip 언팩 → S3 개별 파일 업로드
+    → Step Functions 실행 (5 Phase 파이프라인)
+      → Discovery → Analysis → Generation → Merge → Validation
+      → 각 Phase: Generator + Reviewer (멀티 에이전트 검증)
+  → 결과 JSON 다운로드 (presigned URL)
 ```
 
 ## 컴포넌트 의존 관계
 ```
-Program.cs
-  ├── PacketParser ← Protocol, TcpStream, IPacketTransform
-  ├── PacketFormatter ← Protocol
-  ├── PacketReplayer ← Protocol, PacketBuilder, PacketParser
-  │     └── PacketBuilder ← Protocol
-  ├── SequenceAnalyzer ← Protocol (분석 모드)
-  │     └── ActionCatalogBuilder (카탈로그 빌드 + merge)
-  ├── ScenarioBuilder ← ActionCatalog (시나리오 모드, 기존 코드와 완전 분리)
-  │     ├── DynamicFieldInterceptor ← IReplayInterceptor
-  │     └── TrackingResponseHandler ← IResponseHandler (래핑)
-  └── TcpStreamManager → TcpStream
+Program.cs (Composition Root)
+  ├── 캡처: CaptureSession ← PacketParser, PacketFormatter, TcpStreamManager
+  ├── 재현: PacketReplayer ← PacketBuilder, PacketParser, IReplayInterceptor
+  ├── 분석: SequenceAnalyzer → ActionCatalogBuilder → RecordingStore
+  ├── BT: BehaviorTreeBuilder → BehaviorTreeExecutor ← ConditionEvaluator, ActionExecutor
+  │     └── BehaviorTreeEditor / BehaviorTreeWebEditor (편집)
+  ├── FSM: FsmBuilder → FsmExecutor ← ActionExecutor
+  │     └── LoadTestRunner (다중 클라이언트)
+  └── 공통: Protocol, GameWorldState, FieldFlattener, ReplayLogger
 
-IPacketTransform (인터페이스)
-  ├── RsaDecryptor
-  └── XteaDecryptor
+IReplayInterceptor
+  ├── NpcAttackInterceptor ← ProximityInterceptor (FindBestPos)
+  └── ScenarioBuilder.DynamicFieldInterceptor
+
+IPacketTransform
+  ├── RsaDecryptor, XteaDecryptor
   └── TransformFactory (생성)
+
+AgentCore (독립 — AWS 클라우드)
+  ├── Orchestrator → Step Functions → 5 Phase Lambda
+  ├── Authorizer (API Key)
+  └── Client: cli.py / web/index.html → API Gateway
 ```
 
 ## 핵심 모델
@@ -57,11 +95,8 @@ IPacketTransform (인터페이스)
 - **FieldDefinition**: 필드 (name, type, length, count_field, element)
 - **ParsedPacket**: 파싱 결과 (Name, Type, Fields dict, RawData)
 - **ReplayPacket**: 로그 파싱 결과 (Name, Direction, Fields, Timestamp)
-- **ConnectionKey**: TCP 연결 식별 (SrcIP:Port → DstIP:Port)
+- **BtNode**: BT 노드 (Type, Name, Children, Condition, Action 등)
+- **FsmState/FsmTransition**: FSM 상태/전이 확률
 
-## 프로토콜 JSON 지원 기능
-- 헤더: 동적 필드 오프셋 기반 + 자동 크기 계산
-- 타입: int8~64, uint8~64, float, double, bool, string, bytes
-- 고급: array (count_field/length), struct (커스텀 타입), enum
-- 엔디안: little/big
-- Transform: RSA, XTEA (파이프라인 체이닝)
+## Last Updated
+2026-04-06, Mickey 21

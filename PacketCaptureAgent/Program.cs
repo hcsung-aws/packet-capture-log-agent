@@ -60,7 +60,10 @@ class Program
         string? WebEditorPath = null,
         int WebPort = 8080,
         string? FsmPath = null,
-        bool BuildFsm = false);
+        bool BuildFsm = false,
+        bool AgentMode = false,
+        int AgentPort = 8090,
+        string? ManagerPath = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -84,6 +87,9 @@ class Program
         int webPort = 8080;
         string? fsmPath = null;
         bool buildFsm = false;
+        bool agentMode = false;
+        int agentPort = 8090;
+        string? managerPath = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -149,10 +155,19 @@ class Program
                 case "--build-fsm":
                     buildFsm = true;
                     break;
+                case "--agent-mode":
+                    agentMode = true;
+                    break;
+                case "--agent-port" when i + 1 < args.Length:
+                    int.TryParse(args[++i], out agentPort);
+                    break;
+                case "--manager" when i + 1 < args.Length:
+                    managerPath = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath);
     }
 
     static void Main(string[] args)
@@ -162,6 +177,22 @@ class Program
         if (cli.ShowHelp)
         {
             ShowUsage();
+            return;
+        }
+
+        if (cli.AgentMode)
+        {
+            var protocol = LoadProtocol(cli.ProtocolPath);
+            if (protocol == null) return;
+            new AgentServer(protocol, cli.ProtocolPath!).Run(cli.AgentPort);
+            return;
+        }
+
+        if (cli.ManagerPath != null)
+        {
+            if (string.IsNullOrEmpty(cli.Target)) { Console.WriteLine("대상 서버 필요: -t host:port"); return; }
+            if (cli.ScenarioPath == null) { Console.WriteLine("시나리오 필요: -s scenario.json"); return; }
+            ManagerRunner.RunAsync(cli.ManagerPath, cli.Target, cli.ScenarioPath, cli.Clients, cli.Mode, cli.Speed).GetAwaiter().GetResult();
             return;
         }
 

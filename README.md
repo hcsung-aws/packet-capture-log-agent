@@ -18,6 +18,7 @@
 - **인터셉터**: 재현 중 패킷을 동적으로 수정 (예: NPC 공격 대상 자동 교체)
 - **Behavior Tree**: 캡처 녹화에서 자동 생성, Build Validation 실행, 웹 에디터
 - **FSM (부하 테스트)**: 녹화에서 전이 확률 추출, 확률 기반 랜덤 행동, 접속/종료 사이클
+- **멀티 에이전트 매니저**: 여러 머신에 에이전트 분산 배치, 수만 동시 클라이언트 부하 테스트
 - **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → JSON 프로토콜 자동 생성
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
@@ -80,6 +81,17 @@ PacketCaptureAgent.exe -p protocol.json --build-fsm
 PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t host:port --duration 120
 ```
 
+### 멀티 에이전트 매니저 (대규모 부하 테스트)
+
+```bash
+# 1. 각 머신에서 에이전트 시작 (프로토콜+시나리오 파일이 로컬에 있어야 함)
+PacketCaptureAgent.exe --agent-mode -p protocol.json --agent-port 8090
+
+# 2. 제어 머신에서 매니저 실행
+#    agents.json: [{"url":"http://10.0.1.1:8090"}, {"url":"http://10.0.1.2:8090"}]
+PacketCaptureAgent.exe --manager agents.json -t host:port -s behaviors/auto.json --clients 2000
+```
+
 ### 프로토콜 자동 생성
 
 ```bash
@@ -110,6 +122,9 @@ python3 app.py 8090  # http://localhost:8090
 | `--edit-behavior` | BT CLI 편집 |
 | `--web-editor` | BT 웹 에디터 |
 | `--web-port` | 웹 에디터 포트 (기본: 8080) |
+| `--agent-mode` | 에이전트 모드 (HTTP API 서버) |
+| `--agent-port` | 에이전트 포트 (기본: 8090) |
+| `--manager` | 매니저 모드 (agents.json 경로) |
 
 ## 프로토콜 JSON 형식
 

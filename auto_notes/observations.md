@@ -24,3 +24,9 @@
 ### mmorpg_simulator MAX_INVENTORY 통합
 - Protocol.h에 MAX_INVENTORY 정의 통합 (GameServer/GameClient 로컬 정의 제거, Mickey 11)
 - SC_INVENTORY_LIST 추가로 초기 인벤토리 1회 전송 (기존 개별 SC_INVENTORY_UPDATE ×N → 1패킷)
+
+### AgentCore 아키텍처 관찰 (Mickey 20)
+- HTTP API v2 payload format 2.0은 v1과 이벤트 구조가 다름 (httpMethod→requestContext.http.method 등)
+- HTTP API v2는 네이티브 API Key 미지원 → Lambda authorizer로 구현
+- Orchestrator가 source.zip을 언팩하여 개별 파일로 S3 업로드하는 구조
+- Program.cs 호출부는 .GetAwaiter().GetResult()로 동기 래핑 중 — Main async 전환 시 제거 가능
