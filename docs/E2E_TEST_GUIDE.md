@@ -30,6 +30,70 @@
 4. `attendance_system.sql`
 5. `gold_system.sql`
 
+## Step 0: 프로토콜 JSON 생성 (신규 게임)
+
+새 게임을 테스트하려면 먼저 패킷 구조를 정의한 프로토콜 JSON이 필요합니다. 두 가지 방법이 있습니다.
+
+### 방법 A: 자동 생성 (LLM 에이전트)
+
+게임 소스코드에서 패킷 구조를 자동 분석하여 JSON을 생성합니다.
+
+```powershell
+# 환경 변수 설정 (API Gateway + API Key)
+$env:PROTOCOL_AGENT_URL = "https://your-api-gw.execute-api.region.amazonaws.com/prod"
+$env:PROTOCOL_AGENT_KEY = "your-api-key"
+
+# CLI로 생성
+cd agent-core\client
+python cli.py generate --source C:\path\to\game\source --output protocol.json
+
+# 또는 웹 UI
+python app.py 8090
+# → http://localhost:8090 에서 소스 업로드 + 결과 확인
+```
+
+인프라 배포가 필요한 경우 `agent-core/terraform/`의 Terraform으로 AWS 리소스(S3, Lambda, Step Functions, API Gateway)를 프로비저닝합니다.
+
+### 방법 B: 수동 작성
+
+게임 소스의 패킷 구조체를 보고 직접 JSON을 작성합니다. 상세 스키마는 **[Protocol Schema Guide](PROTOCOL_SCHEMA.md)** 를 참조하세요.
+
+핵심 체크리스트:
+- **endian**: little(대부분) / big
+- **header**: `size_field`/`type_field`가 실제 헤더 필드명과 일치해야 함
+- **pack**: 소스의 `#pragma pack` 확인 (1이면 패딩 없음)
+- **packets**: 각 패킷의 type(숫자), direction(C2S/S2C), fields 정의
+
+```json
+{
+  "protocol": {
+    "name": "Game Name",
+    "endian": "little",
+    "pack": 1,
+    "header": {
+      "size_field": "length",
+      "type_field": "type",
+      "fields": [
+        {"name": "length", "type": "uint16", "offset": 0},
+        {"name": "type", "type": "uint16", "offset": 2}
+      ]
+    }
+  },
+  "packets": [
+    {
+      "type": 257,
+      "name": "CS_LOGIN",
+      "direction": "C2S",
+      "fields": [
+        {"name": "accountId", "type": "string", "length": 32}
+      ]
+    }
+  ]
+}
+```
+
+> 이미 `protocols/` 디렉토리에 프로토콜 JSON이 있는 게임(예: mmorpg_simulator)은 이 단계를 건너뛰세요.
+
 ## Step 1: 빌드
 
 ```powershell
@@ -144,6 +208,7 @@ cd bin\Release\net9.0
 
 | 단계 | 커맨드 | 용도 |
 |------|--------|------|
+| 프로토콜 생성 | `cli.py generate --source ... --output ...` | 소스 → JSON 프로토콜 |
 | 캡처 | `--port 9000` | 실제 플레이 녹화 |
 | 분석 | `--analyze capture.log` | 녹화 + 카탈로그 생성 |
 | BT 생성 | `--build-behavior` | 기능 검증용 BT 생성 |
