@@ -94,7 +94,7 @@ PacketCaptureAgent.exe --manager agents.json -t host:port -s behaviors/auto.json
 
 ### 프로토콜 자동 생성
 
-게임 소스코드에서 패킷 구조를 자동 분석하여 프로토콜 JSON을 생성합니다. 소스 경로는 패킷 정의(enum/struct)가 포함된 디렉토리를 지정해야 합니다.
+게임 소스코드에서 패킷 구조를 자동 분석하여 프로토콜 JSON을 생성합니다. 다른 AWS 계정에 배포하려면 **[배포 가이드](docs/DEPLOYMENT_GUIDE.md)** 를 참조하세요.
 
 ```bash
 # 환경 변수 설정 (API Gateway)
@@ -273,6 +273,10 @@ PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 ## E2E Testing (Full Pipeline)
 
 See **[E2E Test Guide](docs/E2E_TEST_GUIDE.md)** for the complete pipeline: Capture → Analyze → BT/FSM generation → Build Validation / Load Testing.
+
+## Protocol Auto-Generation (Deploy to Your AWS Account)
+
+See **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** to deploy the LLM agent pipeline (Terraform) that auto-generates protocol JSON from game source code.
 
 ## Limitations
 
