@@ -19,7 +19,7 @@
 - **Behavior Tree**: 캡처 녹화에서 자동 생성, Build Validation 실행, 웹 에디터
 - **FSM (부하 테스트)**: 녹화에서 전이 확률 추출, 확률 기반 랜덤 행동, 접속/종료 사이클
 - **멀티 에이전트 매니저**: 여러 머신에 에이전트 분산 배치, 수만 동시 클라이언트 부하 테스트
-- **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → JSON 프로토콜 자동 생성
+- **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → 결정론적 변환 → JSON 프로토콜 자동 생성
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
@@ -94,14 +94,22 @@ PacketCaptureAgent.exe --manager agents.json -t host:port -s behaviors/auto.json
 
 ### 프로토콜 자동 생성
 
+게임 소스코드에서 패킷 구조를 자동 분석하여 프로토콜 JSON을 생성합니다. 소스 경로는 패킷 정의(enum/struct)가 포함된 디렉토리를 지정해야 합니다.
+
 ```bash
+# 환경 변수 설정 (API Gateway)
+export PROTOCOL_AGENT_URL="https://your-api.execute-api.region.amazonaws.com"
+export PROTOCOL_AGENT_KEY="your-api-key"
+
 # CLI (소스 → JSON 프로토콜 자동 생성)
 cd agent-core/client
-python3 cli.py generate --source /path/to/game/source --output protocol.json
+python3 cli.py generate --source /path/to/game/project --output protocol.json
 
 # 웹 UI
 python3 app.py 8090  # http://localhost:8090
 ```
+
+파이프라인: Discovery(파일 식별) → Analysis(구조체/enum 추출, LLM) → Merge(통합, LLM) → Generation(결정론적 변환) → Validation(스키마 검증)
 
 ### 옵션
 

@@ -16,23 +16,10 @@ Target schema (from PROTOCOL_SCHEMA.md):
       ]
     }
   },
-  "types": [
-    {
-      "name": "StructName",
-      "type": "struct",
-      "fields": [...]
-    }
-  ],
-  "packets": [
-    {
-      "type": 257,
-      "name": "CS_LOGIN",
-      "direction": "C2S",
-      "fields": [
-        {"name": "accountId", "type": "string", "length": 32}
-      ]
-    }
-  ]
+  "phases": { ... },
+  "semantics": { ... },
+  "types": [ ... ],
+  "packets": [ ... ]
 }
 
 Type mapping rules:
@@ -47,6 +34,62 @@ Type mapping rules:
   - If preceded by a count field (e.g., uint8_t count), use "count_field": "count" instead of "length"
 - Nested struct (single) → use struct type name directly, define in "types"
 
+Array rule: when a struct has a count field (e.g., uint8 count) immediately followed by an array, use "count_field" referencing that field, NOT a fixed "length".
+
 Packet type values: convert hex string "0x0101" to decimal integer 257.
 
-Respond with the complete protocol JSON. Include ALL packets and types.
+## phases section (REQUIRED)
+
+Group C2S packets by gameplay phase based on the packet type category (high byte of type value).
+Each phase maps to a list of category numbers.
+
+Example:
+"phases": {
+  "Login": [1],
+  "Enter Game": [2],
+  "Gameplay": [4, 5, 6, 7],
+  "Shop": [8],
+  "Quest": [10],
+  "Party": [11]
+}
+
+Category number = high byte of packet type (e.g., 0x0101 → category 1, 0x0801 → category 8).
+Only include categories that have C2S packets.
+
+## semantics section (REQUIRED)
+
+Provide hints for automated test scenario generation:
+
+"semantics": {
+  "interaction_sources": [
+    {
+      "source_prefix": "SC_OTHER_CHAR",
+      "condition": "SC_OTHER_CHAR.charUid > 0"
+    }
+  ],
+  "state_conditions": [
+    {
+      "action_pattern": "party",
+      "state_field": "SC_PARTY_UPDATE.memberCount",
+      "min_value": 2
+    }
+  ],
+  "proximity_actions": [
+    {
+      "action_pattern": "attack",
+      "npc_type": 0,
+      "range": 1
+    },
+    {
+      "action_pattern": "quest",
+      "npc_type": 1,
+      "range": 1
+    }
+  ]
+}
+
+- interaction_sources: S2C packets that provide other entity data usable as action targets
+- state_conditions: actions that require a specific game state
+- proximity_actions: actions that require proximity to NPCs (infer npc_type from handler logic)
+
+Respond with the complete protocol JSON. Include ALL packets, types, phases, and semantics.

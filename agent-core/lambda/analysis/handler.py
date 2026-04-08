@@ -5,7 +5,7 @@ import s3_helper
 import llm_client
 import prompt_loader
 
-ANALYSIS_ROLES = {"packet_definitions", "constants", "serialization"}
+ANALYSIS_ROLES = {"packet_definitions", "constants", "serialization", "packet_handler"}
 
 
 def handler(event, context):
@@ -18,7 +18,20 @@ def handler(event, context):
         return {"job_id": job_id, "path": path, "skipped": True, "reason": f"role '{role}' not analyzed"}
 
     source = s3_helper.read_text(f"jobs/{job_id}/source/{path}")
-    user_msg = f"File: {path}\nRole: {role}\n\n```\n{source}\n```"
+
+    # Load discovery result for related file context
+    related_ctx = ""
+    try:
+        discovery = s3_helper.read_json(f"jobs/{job_id}/discovery.json")
+        others = [f for f in discovery.get("relevant_files", []) if f["path"] != path]
+        if others:
+            related_ctx = "\n\nRelated files in project:\n" + "\n".join(
+                f"- {f['path']} ({f['role']}): {f.get('reason', '')}" for f in others
+            )
+    except Exception:
+        pass
+
+    user_msg = f"File: {path}\nRole: {role}{related_ctx}\n\n```\n{source}\n```"
 
     gen_prompt = prompt_loader.load("analysis_generator.txt")
     rev_prompt = prompt_loader.load("analysis_reviewer.txt")

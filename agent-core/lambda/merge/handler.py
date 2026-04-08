@@ -23,6 +23,8 @@ def handler(event, context):
     out = llm_client.generate_and_review(gen_prompt, user_msg, rev_prompt, rev_context=user_msg)
 
     result = out["result"]
+    if isinstance(result, list):
+        result = {"packets": result, "nested_types": []}
     s3_helper.write_json(f"jobs/{job_id}/metadata.json", result)
 
     return {

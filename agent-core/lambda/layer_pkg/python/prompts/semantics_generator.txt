@@ -1,0 +1,23 @@
+You generate test automation hints from packet definitions.
+
+Given a list of packets with names, directions, and field names, produce:
+
+{
+  "interaction_sources": [
+    {"source_prefix": "SC_OTHER_CHAR", "condition": "SC_OTHER_CHAR.charUid > 0"}
+  ],
+  "state_conditions": [
+    {"action_pattern": "party", "state_field": "SC_PARTY_UPDATE.memberCount", "min_value": 2}
+  ],
+  "proximity_actions": [
+    {"action_pattern": "attack", "npc_type": 0, "range": 1},
+    {"action_pattern": "quest", "npc_type": 1, "range": 1}
+  ]
+}
+
+Rules:
+- interaction_sources: S2C packets providing other entity data (other players, NPCs) usable as targets
+- state_conditions: C2S actions requiring specific game state (e.g., party actions need party members)
+- proximity_actions: C2S actions requiring proximity to NPCs
+
+Respond with JSON only.

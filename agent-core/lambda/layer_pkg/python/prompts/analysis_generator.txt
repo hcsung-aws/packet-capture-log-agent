@@ -1,33 +1,50 @@
 You are a network protocol analyst. Extract packet structure metadata from the given source file.
 
+CRITICAL RULES:
+- packet_types.value MUST be the EXACT numeric value from the source code enum/const definition.
+- Do NOT infer, guess, or assign sequential numbers (1, 2, 3... or 0x0101, 0x0102, 0x0103...).
+- If the source says `CS_LOGIN = 0x0101`, the value MUST be "0x0101".
+- If the source says `PacketType.Login = 257`, the value MUST be "257".
+- If a value is computed (e.g., `Category << 8 | 1`), compute it and write the hex result.
+- If the value is not explicitly defined (implicit enum ordinal), state "IMPLICIT:N" where N is the 0-based position.
+- source_expression MUST be the exact code snippet from the source (e.g., "CS_LOGIN = 0x0101" or "Login = 1 << 8 | 1").
+- For field types, extract the EXACT type as written in source code.
+- For struct fields, the field name and type MUST match the source declaration exactly.
+
+Language-specific type examples:
+- C/C++: uint16_t, int8_t, char[32], #pragma pack(push, 1)
+- C#: ushort, byte, short, int, long, ulong, string, bool, [StructLayout(LayoutKind.Sequential, Pack=1)]
+- Java: short, int, byte[], long
+
 Extract ALL of the following if present:
-1. **pack/alignment**: #pragma pack value, struct alignment
+1. **pack/alignment**: #pragma pack, StructLayout Pack value, struct alignment
 2. **header**: packet header structure (size field, type field, field types)
-3. **packet_types**: all packet type constants with name, numeric value, direction (C2S/S2C based on naming like CS_/SC_, Send/Recv, Request/Response)
-4. **structs**: all packet payload structures with:
-   - struct name
-   - fields: name, C++ type (exact), array size if applicable
+3. **packet_types**: ALL packet type constants with name, exact numeric value, direction (C2S/S2C based on naming like CS_/SC_, Send/Recv, Request/Response)
+4. **structs**: ALL packet payload structures with:
+   - struct/class name
+   - fields: name, source type (exact as written), array size if applicable
    - referenced types (nested structs)
 5. **constants**: named constants used for array sizes, max values, etc.
-6. **type_mapping_hints**: any clues linking packet type constants to payload structs (naming convention, switch/case, handler registration)
+6. **type_mapping_hints**: clues linking packet type constants to payload structs (naming convention, switch/case, handler registration, generic type parameters)
 
 Respond with JSON:
 {
   "file": "filename",
+  "language": "C#",
   "pack": 1,
   "header": {
     "struct_name": "PacketHeader",
-    "fields": [{"name": "length", "cpp_type": "uint16_t"}, ...]
+    "fields": [{"name": "length", "source_type": "ushort"}, ...]
   },
   "packet_types": [
-    {"name": "CS_LOGIN", "value": "0x0101", "direction": "C2S"}
+    {"name": "CS_LOGIN", "value": "0x0101", "direction": "C2S", "source_expression": "the exact code expression"}
   ],
   "structs": [
     {
       "name": "CS_Login",
       "fields": [
-        {"name": "accountId", "cpp_type": "char", "array_size": 32},
-        {"name": "hp", "cpp_type": "uint16_t"}
+        {"name": "accountId", "source_type": "char", "array_size": 32},
+        {"name": "hp", "source_type": "ushort"}
       ]
     }
   ],
@@ -35,8 +52,17 @@ Respond with JSON:
     {"name": "MAX_INVENTORY", "value": 20, "context": "used in SC_InventoryList.items[MAX_INVENTORY]"}
   ],
   "type_mapping_hints": [
-    {"packet_type": "CS_LOGIN", "struct": "CS_Login", "evidence": "naming convention CS_LOGIN -> CS_Login"}
+    {"packet_type": "CS_LOGIN", "struct": "CS_Login", "evidence": "naming convention / switch case / handler registration"}
   ]
 }
 
 Be exhaustive — include EVERY struct and packet type found. Do not skip any.
+
+For packet_handler files: also extract fields read/written WITHOUT a named struct.
+If a handler reads fields directly (e.g., ReadUInt64(), ReadInt8(), buffer.GetUInt16()), create an inline struct entry:
+{
+  "name": "_CS_QuestList_inline",
+  "fields": [{"name": "npcUid", "source_type": "uint64_t"}],
+  "evidence": "handler reads uint64_t directly for CS_QUEST_LIST"
+}
+Add a type_mapping_hint linking the packet type to this inline struct.

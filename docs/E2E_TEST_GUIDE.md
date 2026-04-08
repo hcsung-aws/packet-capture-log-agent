@@ -38,14 +38,16 @@
 
 게임 소스코드에서 패킷 구조를 자동 분석하여 JSON을 생성합니다.
 
+> **중요**: 소스 경로는 패킷 정의(enum/struct)가 포함된 최상위 디렉토리를 지정하세요. 예를 들어 `GameServer/`만 지정하면 `Common/Protocol.h` 같은 공유 헤더가 누락될 수 있습니다. 프로젝트 루트를 지정하는 것을 권장합니다.
+
 ```powershell
 # 환경 변수 설정 (API Gateway + API Key)
 $env:PROTOCOL_AGENT_URL = "https://your-api-gw.execute-api.region.amazonaws.com/prod"
 $env:PROTOCOL_AGENT_KEY = "your-api-key"
 
-# CLI로 생성
+# CLI로 생성 (프로젝트 루트 지정 권장)
 cd agent-core\client
-python cli.py generate --source C:\path\to\game\source --output protocol.json
+python cli.py generate --source C:\path\to\game\project --output protocol.json
 
 # 또는 웹 UI
 python app.py 8090

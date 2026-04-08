@@ -1,4 +1,4 @@
-"""Validation Lambda — Schema validation + LLM auto-correction."""
+"""Validation Lambda — Schema validation + pattern check + metadata cross-ref."""
 
 import json
 import s3_helper
@@ -10,7 +10,7 @@ VALID_TYPES = {
 }
 
 
-def _validate(protocol):
+def _validate(protocol, metadata=None):
     errors = []
     if "protocol" not in protocol or "packets" not in protocol:
         return ["Missing 'protocol' or 'packets' section"]
@@ -39,6 +39,14 @@ def _validate(protocol):
     for td in protocol.get("types", []):
         for f in td.get("fields", []):
             _check_field(f, f"type:{td['name']}", defined, errors)
+
+    # Pattern check: detect suspicious sequential type values
+    _check_type_pattern(protocol["packets"], errors)
+
+    # Cross-reference with metadata if available
+    if metadata:
+        _cross_check_metadata(protocol, metadata, errors)
+
     return errors
 
 
@@ -58,14 +66,71 @@ def _check_field(field, ctx, defined, errors):
         errors.append(f"{ctx}.{fn}: unknown type '{ft}'")
 
 
+def _check_type_pattern(packets, errors):
+    """Detect fabricated sequential type values."""
+    types = sorted(p["type"] for p in packets if isinstance(p.get("type"), int))
+    if len(types) < 3:
+        return
+
+    # Check if all types are perfectly sequential (1,2,3... or N,N+1,N+2...)
+    if types == list(range(types[0], types[0] + len(types))):
+        errors.append(
+            f"SUSPICIOUS: all {len(types)} packet types are sequential "
+            f"({types[0]}..{types[-1]}). Likely fabricated, not from source."
+        )
+        return
+
+    # Check C2S and S2C separately
+    c2s = sorted(p["type"] for p in packets if p.get("direction") == "C2S" and isinstance(p.get("type"), int))
+    s2c = sorted(p["type"] for p in packets if p.get("direction") == "S2C" and isinstance(p.get("type"), int))
+    for label, vals in [("C2S", c2s), ("S2C", s2c)]:
+        if len(vals) >= 5 and vals == list(range(vals[0], vals[0] + len(vals))):
+            errors.append(
+                f"SUSPICIOUS: {label} types are sequential ({vals[0]}..{vals[-1]}). "
+                f"Likely fabricated — real protocols have gaps between categories."
+            )
+
+
+def _cross_check_metadata(protocol, metadata, errors):
+    """Cross-reference protocol type values against merge metadata."""
+    meta_packets = {p.get("type_name"): p for p in metadata.get("packets", [])}
+    for pkt in protocol["packets"]:
+        name = pkt.get("name")
+        mp = meta_packets.get(name)
+        if not mp:
+            continue
+        meta_val = mp.get("type_value", "")
+        if not meta_val:
+            continue
+        # Convert metadata hex to int for comparison
+        try:
+            if isinstance(meta_val, str) and meta_val.startswith("0x"):
+                expected = int(meta_val, 16)
+            else:
+                expected = int(meta_val)
+            if pkt["type"] != expected:
+                errors.append(
+                    f"{name}: type {pkt['type']} doesn't match metadata {meta_val} ({expected})"
+                )
+        except (ValueError, TypeError):
+            pass
+
+
 def handler(event, context):
     job_id = event["job_id"]
     max_fixes = event.get("max_fix_rounds", 2)
 
     protocol = s3_helper.read_json(f"jobs/{job_id}/protocol.json")
 
+    # Load metadata for cross-reference
+    metadata = None
+    try:
+        metadata = s3_helper.read_json(f"jobs/{job_id}/metadata.json")
+    except Exception:
+        pass
+
     for i in range(max_fixes + 1):
-        errors = _validate(protocol)
+        errors = _validate(protocol, metadata)
         if not errors:
             s3_helper.write_json(f"jobs/{job_id}/protocol.json", protocol)
             return {
@@ -82,8 +147,10 @@ def handler(event, context):
             f"Errors:\n" + "\n".join(f"- {e}" for e in errors) +
             f"\n\nProtocol JSON:\n```json\n{json.dumps(protocol, ensure_ascii=False, indent=2)}\n```"
         )
+        if metadata:
+            fix_msg += f"\n\nSource metadata for reference:\n```json\n{json.dumps(metadata, ensure_ascii=False, indent=2)}\n```"
         protocol = llm_client.invoke_json(
-            "Fix the errors in this protocol JSON. Return the COMPLETE fixed JSON.",
+            "Fix the errors in this protocol JSON. Use the source metadata to correct type values. Return the COMPLETE fixed JSON.",
             fix_msg,
         )
 
