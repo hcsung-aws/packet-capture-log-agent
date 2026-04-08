@@ -11,4 +11,4 @@
 | AgentCore, 프로토콜 자동 생성, Lambda, Step Functions, Terraform | agentcore-architecture.md | 5 Phase 파이프라인, 멀티 에이전트 검증, AWS 인프라, CLI/웹 |
 
 ## Last Updated
-2026-04-01
+2026-04-08

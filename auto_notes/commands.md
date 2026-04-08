@@ -34,3 +34,9 @@
 - DB 스크립트: `scripts/inventory_system.sql` (mysql -h 127.0.0.1 -u admin -p mockdb < scripts/inventory_system.sql)
 - MySQL 접속 (WSL): `"/mnt/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe" -h 127.0.0.1 -u admin -p'flfhelem1!' mockdb`
 - 빌드 (Windows): 프로젝트 루트에서 `build.bat`
+
+## AgentCore CLI
+- 프로토콜 생성: `python cli.py --api-url URL --api-key KEY generate --source PATH --output FILE`
+  - --api-url/--api-key는 서브커맨드(generate) **앞에** 위치해야 함
+  - 소스 경로는 프로젝트 루트 지정 (Common/ 등 공유 헤더 포함 필수)
+- Terraform 출력 확인: `cd agent-core/terraform && terraform output -json`

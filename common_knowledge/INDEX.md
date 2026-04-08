@@ -12,6 +12,7 @@
 | Mermaid, 시퀀스 다이어그램, GitHub 렌더링, rect | mermaid-patterns.md | sequenceDiagram rect/loop/Note 패턴, GitHub 네이티브 지원 |
 | 공유 상수, 중복 정의, 공통 헤더 | shared-constants.md | 여러 모듈 공유 상수는 공통 파일에 통합 정의 |
 | 기능 추가, 확장, 인터페이스 분리, Open/Closed | extension-pattern.md | 기존 코드 수정 없이 새 파일 + 인터페이스 구현으로 기능 추가 |
+| LLM 파이프라인, 결정론적 변환, 하이브리드, 비결정성 | llm-pipeline-design.md | 결정론적 변환 가능한 단계는 코드로 전환, LLM은 의미 추론만 |
 
 ## Last Updated
-2026-03-25
+2026-04-08

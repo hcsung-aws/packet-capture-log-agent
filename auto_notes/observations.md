@@ -30,3 +30,8 @@
 - HTTP API v2는 네이티브 API Key 미지원 → Lambda authorizer로 구현
 - Orchestrator가 source.zip을 언팩하여 개별 파일로 S3 업로드하는 구조
 - Program.cs 호출부는 .GetAwaiter().GetResult()로 동기 래핑 중 — Main async 전환 시 제거 가능
+
+### AgentCore 파이프라인 개선 (Mickey 22)
+- Discovery가 missing_dependencies를 감지하지만 CLI에 경고 미표시 → 개선 필요
+- Generation을 결정론적 코드로 전환: 실행 시간 ~100초→<1초, count_field 100% 정확
+- packet_handler 역할을 Analysis 대상에 추가하면 struct 없이 직접 읽는 필드도 추출 가능

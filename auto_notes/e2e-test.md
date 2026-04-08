@@ -19,3 +19,7 @@
 - 캡처: `PacketCaptureAgent.exe -p <절대경로>/mmorpg_simulator.json` → 인터페이스 선택 → 포트 9000
 - 재현: `PacketCaptureAgent.exe -p <절대경로>/mmorpg_simulator.json -r <로그파일> -t <IP>:9000`
 - 재현 모드: timing / response / hybrid(기본)
+
+## 프로토콜 자동 생성 (agent-core)
+- 소스 경로는 프로젝트 루트 지정 필수 (GameServer/만 지정하면 Common/Protocol.h 누락 → type 번호 전부 오류)
+- CLI 인자 순서: `--api-url URL --api-key KEY` → `generate` → `--source PATH --output FILE`
