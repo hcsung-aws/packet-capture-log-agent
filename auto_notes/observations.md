@@ -35,3 +35,8 @@
 - Discovery가 missing_dependencies를 감지하지만 CLI에 경고 미표시 → 개선 필요
 - Generation을 결정론적 코드로 전환: 실행 시간 ~100초→<1초, count_field 100% 정확
 - packet_handler 역할을 Analysis 대상에 추가하면 struct 없이 직접 읽는 필드도 추출 가능
+
+## Step Functions 실패 시 output
+- FAILED 상태에서 describe_execution의 output은 빈 객체 `{}`
+- 중간 단계 결과(discovery.json 등)는 S3에서 직접 읽어야 함
+- orchestrator _get_status에서 S3 discovery.json 읽어 warnings에 포함하도록 구현됨

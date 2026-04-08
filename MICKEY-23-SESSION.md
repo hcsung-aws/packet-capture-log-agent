@@ -30,8 +30,13 @@ Discovery missing_dependencies CLI 경고 표시 + E2E 실행 검증
 - 초기 FAILED 케이스 발견 → orchestrator에 S3 discovery.json 읽기 추가하여 해결
 - Completion: terraform apply + CLI E2E 실행 + 결과 비교 검증
 
+### 3. 배포 가이드 작성 ✅
+- docs/DEPLOYMENT_GUIDE.md 생성 (한국어+영어, Terraform 배포 절차)
+- README 한국어/영어 양쪽에 링크 추가
+- Completion: git push 3b7fdb6
+
 ## Progress
-- Completed: missing_dependencies 경고, E2E 검증, git push e647689
+- Completed: missing_dependencies 경고, E2E 검증, 배포 가이드, git push 3b7fdb6
 - InProgress: 없음
 - Blocked: 없음
 
@@ -44,6 +49,8 @@ Discovery missing_dependencies CLI 경고 표시 + E2E 실행 검증
 - agent-core/lambda/discovery/handler.py
 - agent-core/lambda/orchestrator/handler.py
 - agent-core/client/cli.py
+- docs/DEPLOYMENT_GUIDE.md (신규)
+- README.md
 
 ## Lessons Learned
 1. Step Functions FAILED 시 output이 빈 객체 — 중간 단계 결과는 S3에서 직접 읽어야 함
@@ -52,4 +59,5 @@ Discovery missing_dependencies CLI 경고 표시 + E2E 실행 검증
 낮음
 
 ## Next Steps
-- 추가 개선 사항 사용자 확인 후 결정
+- PURPOSE-SCENARIO 목표 전체 달성 완료 (Phase 4-2 async는 조건부)
+- 다른 프로젝트에 실제 적용 후 피드백 기반 개선
