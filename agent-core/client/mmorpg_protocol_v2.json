@@ -1,0 +1,1027 @@
+{
+  "protocol": {
+    "name": "Game Server Protocol",
+    "version": "1.0",
+    "endian": "little",
+    "pack": 1,
+    "header": {
+      "size_field": "length",
+      "type_field": "type",
+      "fields": [
+        {
+          "name": "length",
+          "type": "uint16",
+          "offset": 0
+        },
+        {
+          "name": "type",
+          "type": "uint16",
+          "offset": 2
+        }
+      ]
+    }
+  },
+  "types": [
+    {
+      "name": "NPC",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "uid",
+          "type": "uint64"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "maxHp",
+          "type": "uint16"
+        },
+        {
+          "name": "atk",
+          "type": "uint16"
+        },
+        {
+          "name": "def",
+          "type": "uint16"
+        },
+        {
+          "name": "expReward",
+          "type": "uint32"
+        },
+        {
+          "name": "goldReward",
+          "type": "uint32"
+        },
+        {
+          "name": "npcType",
+          "type": "uint8"
+        },
+        {
+          "name": "alive",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "ItemData",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint16"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "length": 64
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "atk",
+          "type": "uint16"
+        },
+        {
+          "name": "def",
+          "type": "uint16"
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "price",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "DropEntry",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "weight",
+          "type": "int32"
+        }
+      ]
+    },
+    {
+      "name": "QuestData",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint16"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "length": 64
+        },
+        {
+          "name": "target",
+          "type": "uint16"
+        },
+        {
+          "name": "rewardGold",
+          "type": "uint32"
+        },
+        {
+          "name": "rewardExp",
+          "type": "uint32"
+        },
+        {
+          "name": "rewardItemId",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "QuestProgress",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "name": "progress",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "Party",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32"
+        },
+        {
+          "name": "memberCount",
+          "type": "uint8"
+        },
+        {
+          "name": "members",
+          "type": "array",
+          "length": 8,
+          "element": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "InvSlot",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        },
+        {
+          "name": "itemTid",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "slots",
+          "type": "array",
+          "length": 64,
+          "element": "InvSlot"
+        },
+        {
+          "name": "weaponUid",
+          "type": "uint64"
+        },
+        {
+          "name": "armorUid",
+          "type": "uint64"
+        },
+        {
+          "name": "weaponTid",
+          "type": "uint16"
+        },
+        {
+          "name": "armorTid",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "SC_CharInfo",
+      "type": "struct",
+      "fields": [
+        {
+          "name": "charId",
+          "type": "uint32"
+        },
+        {
+          "name": "charName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "level",
+          "type": "uint16"
+        },
+        {
+          "name": "exp",
+          "type": "uint32"
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "maxHp",
+          "type": "uint16"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        },
+        {
+          "name": "gold",
+          "type": "uint32"
+        }
+      ]
+    }
+  ],
+  "packets": [
+    {
+      "type": 1,
+      "name": "CS_LOGIN",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "accountId",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "length": 32
+        }
+      ]
+    },
+    {
+      "type": 4097,
+      "name": "SC_LOGIN_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "sessionId",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 2,
+      "name": "CS_CHAR_LIST",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 3,
+      "name": "CS_CHAR_CREATE",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "charName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "charClass",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "type": 4099,
+      "name": "SC_CHAR_CREATE_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "charId",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4,
+      "name": "CS_CHAR_SELECT",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "charId",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4098,
+      "name": "SC_CHAR_LIST",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "charCount",
+          "type": "uint8"
+        },
+        {
+          "name": "characters",
+          "type": "array",
+          "length": 10,
+          "element": "SC_CharInfo"
+        }
+      ]
+    },
+    {
+      "type": 5,
+      "name": "CS_ATTENDANCE_CHECK",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 4101,
+      "name": "SC_ATTENDANCE_INFO",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "dayCount",
+          "type": "uint8"
+        },
+        {
+          "name": "lastCheckTime",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 4102,
+      "name": "SC_ATTENDANCE_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "rewardGold",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 6,
+      "name": "CS_HEARTBEAT",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 4103,
+      "name": "SC_HEARTBEAT",
+      "direction": "S2C",
+      "fields": []
+    },
+    {
+      "type": 7,
+      "name": "CS_MOVE",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
+      ]
+    },
+    {
+      "type": 4104,
+      "name": "SC_MOVE_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "name": "CS_ATTACK",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "targetId",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 4105,
+      "name": "SC_ATTACK_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "damage",
+          "type": "uint16"
+        },
+        {
+          "name": "targetHp",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 9,
+      "name": "CS_CHAT",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "message",
+          "type": "string",
+          "length": 256
+        }
+      ]
+    },
+    {
+      "type": 4112,
+      "name": "SC_CHAT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "senderId",
+          "type": "uint32"
+        },
+        {
+          "name": "senderName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "length": 256
+        }
+      ]
+    },
+    {
+      "type": 10,
+      "name": "CS_ITEM_USE",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 4113,
+      "name": "SC_ITEM_USE_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 11,
+      "name": "CS_ITEM_EQUIP",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        },
+        {
+          "name": "equipSlot",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "type": 4114,
+      "name": "SC_EQUIP_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 12,
+      "name": "CS_SHOP_OPEN",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 4115,
+      "name": "SC_SHOP_LIST",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "itemCount",
+          "type": "uint8"
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "length": 50,
+          "element": "ItemData"
+        }
+      ]
+    },
+    {
+      "type": 13,
+      "name": "CS_SHOP_BUY",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "quantity",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 4116,
+      "name": "SC_SHOP_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "newGold",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 14,
+      "name": "CS_SHOP_SELL",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 15,
+      "name": "CS_QUEST_LIST",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 4117,
+      "name": "SC_QUEST_LIST",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "questCount",
+          "type": "uint8"
+        },
+        {
+          "name": "quests",
+          "type": "array",
+          "length": 20,
+          "element": "QuestData"
+        }
+      ]
+    },
+    {
+      "type": 16,
+      "name": "CS_QUEST_ACCEPT",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "questId",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 4118,
+      "name": "SC_QUEST_ACCEPT_RESULT",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "result",
+          "type": "uint8"
+        },
+        {
+          "name": "questId",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 17,
+      "name": "CS_QUEST_COMPLETE",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "questId",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 4119,
+      "name": "SC_QUEST_REWARD",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "goldReward",
+          "type": "uint32"
+        },
+        {
+          "name": "expReward",
+          "type": "uint32"
+        },
+        {
+          "name": "itemReward",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 18,
+      "name": "CS_PARTY_INVITE",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "targetId",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4120,
+      "name": "SC_PARTY_INVITE",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "inviterId",
+          "type": "uint32"
+        },
+        {
+          "name": "inviterName",
+          "type": "string",
+          "length": 32
+        }
+      ]
+    },
+    {
+      "type": 19,
+      "name": "CS_PARTY_ACCEPT",
+      "direction": "C2S",
+      "fields": [
+        {
+          "name": "accept",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "type": 20,
+      "name": "CS_PARTY_LEAVE",
+      "direction": "C2S",
+      "fields": []
+    },
+    {
+      "type": 4121,
+      "name": "SC_PARTY_UPDATE",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "partyId",
+          "type": "uint32"
+        },
+        {
+          "name": "memberCount",
+          "type": "uint8"
+        },
+        {
+          "name": "members",
+          "type": "array",
+          "length": 8,
+          "element": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4122,
+      "name": "SC_PARTY_LEAVE",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "memberId",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4123,
+      "name": "SC_CHAR_INFO",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "charId",
+          "type": "uint32"
+        },
+        {
+          "name": "charName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "level",
+          "type": "uint16"
+        },
+        {
+          "name": "exp",
+          "type": "uint32"
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "maxHp",
+          "type": "uint16"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        },
+        {
+          "name": "gold",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4124,
+      "name": "SC_OTHER_CHAR",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "charId",
+          "type": "uint32"
+        },
+        {
+          "name": "charName",
+          "type": "string",
+          "length": 32
+        },
+        {
+          "name": "level",
+          "type": "uint16"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
+      ]
+    },
+    {
+      "type": 4125,
+      "name": "SC_LEVEL_UP",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "newLevel",
+          "type": "uint16"
+        },
+        {
+          "name": "newMaxHp",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 4126,
+      "name": "SC_NPC_SPAWN",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "npcUid",
+          "type": "uint64"
+        },
+        {
+          "name": "npcType",
+          "type": "uint8"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        },
+        {
+          "name": "hp",
+          "type": "uint16"
+        },
+        {
+          "name": "maxHp",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "type": 4127,
+      "name": "SC_NPC_DEATH",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "npcUid",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "type": 4128,
+      "name": "SC_EXP_UPDATE",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "expGain",
+          "type": "uint32"
+        },
+        {
+          "name": "newExp",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "type": 4129,
+      "name": "SC_ITEM_DROP",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "itemUid",
+          "type": "uint64"
+        },
+        {
+          "name": "itemId",
+          "type": "uint16"
+        },
+        {
+          "name": "posX",
+          "type": "int16"
+        },
+        {
+          "name": "posY",
+          "type": "int16"
+        }
+      ]
+    },
+    {
+      "type": 4130,
+      "name": "SC_INVENTORY_LIST",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "inventory",
+          "type": "Inventory"
+        }
+      ]
+    },
+    {
+      "type": 4131,
+      "name": "SC_INVENTORY_UPDATE",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "slotIndex",
+          "type": "uint8"
+        },
+        {
+          "name": "slot",
+          "type": "InvSlot"
+        }
+      ]
+    },
+    {
+      "type": 4132,
+      "name": "SC_QUEST_PROGRESS",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "questId",
+          "type": "uint16"
+        },
+        {
+          "name": "progress",
+          "type": "QuestProgress"
+        }
+      ]
+    },
+    {
+      "type": 4133,
+      "name": "SC_ERROR",
+      "direction": "S2C",
+      "fields": [
+        {
+          "name": "errorCode",
+          "type": "uint16"
+        },
+        {
+          "name": "errorMsg",
+          "type": "string",
+          "length": 128
+        }
+      ]
+    }
+  ]
+}

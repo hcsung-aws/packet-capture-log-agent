@@ -17,6 +17,8 @@ Exclude these — they are NOT protocol definitions even if they contain packet-
 - Session management infrastructure (connection lifecycle, not packet dispatch)
 - Build scripts, test harnesses, deployment tools
 
+Also detect missing dependencies: if relevant files reference headers/modules (#include, using, import) that are NOT in the provided file list, report them.
+
 Respond with JSON:
 {
   "language": "C++",
@@ -26,6 +28,12 @@ Respond with JSON:
       "path": "relative/path",
       "role": "packet_definitions" | "packet_handler" | "serialization" | "constants",
       "reason": "brief explanation"
+    }
+  ],
+  "missing_dependencies": [
+    {
+      "path": "referenced/path",
+      "referenced_by": "source/file/path"
     }
   ],
   "header_hint": "brief description of likely header structure if visible"

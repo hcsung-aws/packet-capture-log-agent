@@ -37,11 +37,13 @@ def handler(event, context):
     result = out["result"]
     s3_helper.write_json(f"jobs/{job_id}/discovery.json", result)
 
+    missing = result.get("missing_dependencies", [])
     return {
         "job_id": job_id,
         "file_count": len(files),
         "relevant_count": len(result.get("relevant_files", [])),
         "relevant_files": result.get("relevant_files", []),
+        "missing_dependencies": missing,
         "approved": out["approved"],
         "rounds": out["rounds"],
     }

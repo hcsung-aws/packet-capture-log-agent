@@ -101,8 +101,25 @@ def cmd_generate(args):
             time.sleep(30)
 
         if status != "SUCCEEDED":
+            # Show discovery warnings even on failure
+            missing = status_data.get("warnings", {}).get("missing_dependencies", [])
+            if missing:
+                print(f"\n⚠ Warning: Missing dependencies detected — results may be incomplete:")
+                for dep in missing:
+                    ref_by = dep.get("referenced_by", "?")
+                    print(f"  - {dep.get('path', '?')} (referenced by {ref_by})")
+                print("  Consider including the project root directory as --source.\n")
             print(f"Pipeline {status}")
             sys.exit(1)
+
+        # 5.5. Check discovery warnings
+        missing = status_data.get("warnings", {}).get("missing_dependencies", [])
+        if missing:
+            print(f"\n⚠ Warning: Missing dependencies detected — results may be incomplete:")
+            for dep in missing:
+                ref_by = dep.get("referenced_by", "?")
+                print(f"  - {dep.get('path', '?')} (referenced by {ref_by})")
+            print("  Consider including the project root directory as --source.\n")
 
         # 6. Download result
         resp = requests.get(f"{api_url}/jobs/{job_id}/result", headers=_headers(api_key))

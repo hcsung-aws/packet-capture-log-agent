@@ -113,6 +113,15 @@ def _get_status(job_id):
         result["output"] = json.loads(desc.get("output", "{}"))
         if desc.get("stopDate"):
             result["end"] = str(desc["stopDate"])
+        # Include discovery warnings from S3 (available even on FAILED)
+        try:
+            obj = s3.get_object(Bucket=BUCKET, Key=f"jobs/{job_id}/discovery.json")
+            discovery = json.loads(obj["Body"].read())
+            missing = discovery.get("missing_dependencies", [])
+            if missing:
+                result["warnings"] = {"missing_dependencies": missing}
+        except Exception:
+            pass
     return _resp(200, result)
 
 
