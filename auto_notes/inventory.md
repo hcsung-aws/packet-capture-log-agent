@@ -1,6 +1,6 @@
 # File Roles
 
-## Source (PacketCaptureAgent/) — 33파일, 5,515줄
+## Source (PacketCaptureAgent/) — 36파일, 5,850줄
 
 ### 코어 (캡처/파싱/재현)
 | 파일 | 역할 |
@@ -45,6 +45,12 @@
 | FsmExecutor.cs (113) | FSM 런타임 실행 |
 | LoadTestRunner.cs (77) | 다중 클라이언트 부하 테스트 |
 
+### 멀티 에이전트 (분산 부하)
+| 파일 | 역할 |
+|------|------|
+| ManagerRunner.cs (148) | 매니저 — 에이전트 분배 + 결과 집계 |
+| AgentServer.cs (139) | 에이전트 HTTP API 서버 (원격 제어 수신) |
+
 ### 인터셉터/변환
 | 파일 | 역할 |
 |------|------|
@@ -88,9 +94,7 @@
 ## Protocols
 | 파일 | 대상 | 패킷 수 |
 |------|------|---------|
-| echoclient.json | 에코 테스트 | 1 |
-| mmorpg_simulator.json | MMORPG 시뮬레이터 | 37 + phases + field_mappings |
-| tibia.json | Tibia/ForgottenServer | 5 (RSA+XTEA) |
+| mmorpg_simulator.json | MMORPG 시뮬레이터 | 51 packets |
 
 ## Last Updated
-2026-04-06, Mickey 21
+2026-04-09, Mickey 24

@@ -1,6 +1,6 @@
 {
   "protocol": "MMORPG Simulator Protocol",
-  "last_updated": "2026-04-03T23:27:41",
+  "last_updated": "2026-04-09T00:06:44",
   "actions": [
     {
       "id": "login",
@@ -37,8 +37,8 @@
         "accountId",
         "password"
       ],
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "char_create",
@@ -74,8 +74,8 @@
       "user_input_fields": [
         "name"
       ],
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "char_select",
@@ -131,8 +131,8 @@
         "login"
       ],
       "repeat_count": 1,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "move",
@@ -158,8 +158,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 224,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "dirX": [
           1,
@@ -204,8 +204,8 @@
         "char_select"
       ],
       "repeat_count": 35,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "targetUid": [
           4,
@@ -251,8 +251,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 1,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "item_equip",
@@ -295,8 +295,8 @@
       ],
       "dependencies": [],
       "repeat_count": 2,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "slot": [
           4,
@@ -364,8 +364,8 @@
       ],
       "dependencies": [],
       "repeat_count": 7,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "shop_buy",
@@ -398,8 +398,8 @@
         "shop_open"
       ],
       "repeat_count": 3,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "itemId": [
           4,
@@ -431,8 +431,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 4,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "quest_accept",
@@ -457,8 +457,8 @@
       "outputs": [],
       "dependencies": [],
       "repeat_count": 2,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "questId": [
           1,
@@ -544,8 +544,8 @@
         "targetName",
         "message"
       ],
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316"
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011"
     },
     {
       "id": "item_use",
@@ -628,15 +628,17 @@
         "SC_INVENTORY_UPDATE.slot"
       ],
       "dependencies": [],
-      "repeat_count": 2,
-      "source_log": "capture_20260403_232054.log",
-      "last_observed": "23:21:03.316",
+      "repeat_count": 3,
+      "source_log": "capture_20260408_234920.log",
+      "last_observed": "23:51:41.011",
       "field_variants": {
         "slot": [
           4,
           6,
           0,
-          3
+          3,
+          7,
+          5
         ]
       }
     },

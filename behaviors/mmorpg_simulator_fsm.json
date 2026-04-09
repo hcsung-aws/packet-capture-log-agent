@@ -3,87 +3,93 @@
   "initial_state": "connect",
   "transitions": {
     "login": {
-      "char_create": 0.6,
-      "char_select": 0.4
+      "char_create": 0.568,
+      "char_select": 0.432
     },
     "char_create": {
       "char_select": 1
     },
     "char_select": {
-      "move": 0.7,
-      "chat": 0.1,
-      "party_invite": 0.1,
-      "disconnect": 0.1
+      "move": 0.784,
+      "chat": 0.081,
+      "party_invite": 0.081,
+      "disconnect": 0.054
     },
     "move": {
-      "move": 0.879,
-      "attack": 0.089,
+      "move": 0.881,
+      "attack": 0.086,
       "attendance_check": 0.003,
       "shop_open": 0.005,
-      "quest_list": 0.015,
-      "party_accept": 0.003,
-      "shop_buy": 0.001,
-      "party_invite": 0.002,
-      "disconnect": 0.003
+      "quest_list": 0.016,
+      "party_accept": 0.002,
+      "shop_buy": 0,
+      "party_invite": 0.001,
+      "item_equip": 0.002,
+      "shop_sell": 0.001,
+      "disconnect": 0.002
     },
     "attack": {
-      "attack": 0.608,
-      "move": 0.268,
-      "item_equip": 0.008,
-      "shop_open": 0.036,
-      "party_leave": 0.016,
-      "party_invite": 0.008,
-      "party_accept": 0.016,
-      "attendance_check": 0.028,
-      "shop_sell": 0.004,
-      "disconnect": 0.008
+      "attack": 0.592,
+      "move": 0.295,
+      "item_equip": 0.011,
+      "shop_open": 0.025,
+      "party_leave": 0.011,
+      "party_invite": 0.006,
+      "party_accept": 0.011,
+      "attendance_check": 0.021,
+      "shop_sell": 0.002,
+      "item_use": 0.013,
+      "disconnect": 0.011
     },
     "item_equip": {
-      "shop_sell": 0.143,
-      "move": 0.429,
-      "item_use": 0.143,
-      "shop_open": 0.143,
-      "disconnect": 0.143
+      "shop_sell": 0.179,
+      "move": 0.536,
+      "item_use": 0.071,
+      "shop_open": 0.071,
+      "chat": 0.071,
+      "disconnect": 0.071
     },
     "shop_sell": {
-      "shop_sell": 0.5,
-      "move": 0.5
+      "shop_sell": 0.55,
+      "move": 0.35,
+      "shop_open": 0.1
     },
     "shop_open": {
-      "move": 0.429,
-      "shop_buy": 0.393,
-      "shop_open": 0.179
+      "move": 0.353,
+      "shop_buy": 0.49,
+      "shop_open": 0.157
     },
     "attendance_check": {
-      "shop_open": 0.182,
-      "move": 0.182,
-      "item_equip": 0.545,
-      "chat": 0.091
+      "shop_open": 0.15,
+      "move": 0.4,
+      "item_equip": 0.35,
+      "chat": 0.1
     },
     "shop_buy": {
-      "shop_open": 0.176,
-      "item_equip": 0.353,
-      "shop_buy": 0.294,
-      "move": 0.059,
-      "attendance_check": 0.059,
-      "disconnect": 0.059
+      "shop_open": 0.125,
+      "item_equip": 0.25,
+      "shop_buy": 0.35,
+      "move": 0.1,
+      "attendance_check": 0.025,
+      "disconnect": 0.15
     },
     "quest_list": {
-      "quest_accept": 0.444,
-      "quest_complete": 0.444,
-      "quest_list": 0.056,
-      "move": 0.056
+      "quest_accept": 0.476,
+      "quest_complete": 0.429,
+      "quest_list": 0.048,
+      "move": 0.048
     },
     "quest_accept": {
-      "move": 1
+      "move": 0.85,
+      "chat": 0.15
     },
     "quest_complete": {
-      "move": 0.375,
-      "disconnect": 0.625
+      "move": 0.556,
+      "disconnect": 0.444
     },
     "party_accept": {
-      "move": 0.778,
-      "party_leave": 0.222
+      "move": 0.786,
+      "party_leave": 0.214
     },
     "party_leave": {
       "party_invite": 0.333,
@@ -96,11 +102,13 @@
       "disconnect": 0.2
     },
     "chat": {
-      "move": 1
+      "move": 0.8,
+      "disconnect": 0.2
     },
     "item_use": {
-      "shop_open": 0.5,
-      "disconnect": 0.5
+      "shop_open": 0.556,
+      "move": 0.333,
+      "disconnect": 0.111
     },
     "connect": {
       "login": 1

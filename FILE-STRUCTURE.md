@@ -4,7 +4,7 @@
 ```
 packet-capture-log-agent/
 ├── PacketCaptureAgent/            # 메인 소스 (C# .NET 9.0)
-│   ├── Program.cs                 # 진입점 (캡처/재현/분석/BT/FSM 모드 분기)
+│   ├── Program.cs                 # 진입점 (캡처/재현/분석/BT/FSM/에이전트/매니저 모드 분기)
 │   ├── Protocol.cs                # JSON 프로토콜 정의 모델 (semantics 포함)
 │   ├── PacketParser.cs            # TCP 스트림 → 동적 패킷 파싱 (string_prefixed, conditional)
 │   ├── PacketBuilder.cs           # 파싱 데이터 → 바이너리 패킷 재구성
@@ -16,7 +16,7 @@ packet-capture-log-agent/
 │   ├── GameWorldState.cs          # 리플레이 중 게임 상태 추적
 │   ├── ReplayLogger.cs            # 리플레이 로깅
 │   ├── SequenceAnalyzer.cs        # 요청-응답 시퀀스 매칭 (이름 패턴 + 위치 폴백)
-│   ├── ScenarioBuilder.cs         # 녹화 → 시나리오 빌드
+│   ├── ScenarioBuilder.cs         # 녹화 → 시나리오 빌드 + ConvertJsonElement 유틸
 │   ├── RecordingStore.cs          # 녹화 저장소
 │   ├── FieldFlattener.cs          # 중첩 필드 평탄화 유틸리티
 │   ├── BehaviorTree.cs            # BT 노드 모델 + JSON 직렬화
@@ -31,6 +31,8 @@ packet-capture-log-agent/
 │   ├── FsmBuilder.cs              # 녹화 → FSM 전이 확률 생성
 │   ├── FsmExecutor.cs             # FSM 런타임 실행
 │   ├── LoadTestRunner.cs          # 부하 테스트 실행 (멀티 클라이언트)
+│   ├── ManagerRunner.cs           # 멀티 에이전트 매니저 (에이전트 분배 + 결과 집계)
+│   ├── AgentServer.cs             # 에이전트 HTTP API 서버 (원격 제어 수신)
 │   ├── IReplayInterceptor.cs      # 인터셉터 인터페이스 + ReplayContext
 │   ├── NpcAttackInterceptor.cs    # NPC 공격 동적 대상 교체
 │   ├── ProximityInterceptor.cs    # 근접 기반 인터셉터
@@ -42,49 +44,26 @@ packet-capture-log-agent/
 │   └── analyze_all.bat            # 다중 로그 일괄 분석 (Batch)
 ├── PacketCaptureAgent.Tests/      # 단위 테스트 (14파일, 162개)
 ├── agent-core/                    # 프로토콜 자동 생성 (LLM Agent)
-│   ├── poc/                       # 로컬 PoC (Bedrock 직접 호출)
-│   │   ├── discovery.py           # Phase 1: 패킷 관련 파일 식별
-│   │   ├── analysis.py            # Phase 2: 파일별 메타데이터 추출
-│   │   ├── merge.py               # Phase 3: 통합 메타데이터
-│   │   ├── generation.py          # Phase 4: 프로토콜 JSON 생성
-│   │   ├── validation.py          # Phase 5: 스키마 검증 + 자동 수정
-│   │   ├── pipeline.py            # 전체 파이프라인 래핑
-│   │   ├── llm_client.py          # Bedrock 호출 (Generator+Reviewer 2-agent)
-│   │   ├── config.py              # 설정 (리전, 모델 ID)
-│   │   └── prompts/               # Phase별 프롬프트 템플릿 (8개)
-│   ├── lambda/                    # AWS Lambda 함수
-│   │   ├── common/                # 공통 모듈 (llm_client, s3_helper, prompt_loader, prompts/)
-│   │   ├── discovery/             # Phase 1 Lambda
-│   │   ├── analysis/              # Phase 2 Lambda (Map state 병렬)
-│   │   ├── merge/                 # Phase 3 Lambda
-│   │   ├── generation/            # Phase 4 Lambda
-│   │   ├── validation/            # Phase 5 Lambda
-│   │   ├── orchestrator/          # API Gateway → Step Functions 연동
-│   │   ├── authorizer/            # API Gateway Lambda Authorizer
-│   │   └── layer_pkg/             # Lambda Layer 패키지 (python/ prefix)
-│   ├── terraform/                 # 인프라 정의
-│   │   ├── main.tf                # S3, IAM, Lambda, Step Functions, API Gateway
-│   │   ├── variables.tf           # 설정 변수 (리전, 모델 ID)
-│   │   └── outputs.tf             # API endpoint, S3 bucket, SFN ARN
-│   └── client/                    # 클라이언트
-│       ├── cli.py                 # CLI (generate, status, download)
-│       ├── app.py                 # 웹 UI (Flask)
-│       ├── web/index.html         # 프론트엔드 (바닐라 HTML/JS)
-│       └── dist/                  # 빌드 산출물 (exe)
-├── protocols/                     # 프로토콜 정의 JSON
+│   ├── poc/                       # 로컬 PoC (Bedrock 직접 호출, Lambda 대체됨)
+│   ├── lambda/                    # AWS Lambda 함수 (5 Phase + Orchestrator + Authorizer)
+│   ├── terraform/                 # 인프라 정의 (S3, Lambda, Step Functions, API GW)
+│   └── client/                    # CLI + 웹 프론트엔드
+├── protocols/
 │   └── mmorpg_simulator.json      # MMORPG 시뮬레이터 (51 packets)
 ├── recordings/                    # 녹화 데이터
 ├── actions/                       # 액션 카탈로그
 ├── behaviors/                     # BT/FSM JSON
 ├── captures/                      # 캡처 로그 아카이브
-├── scenarios/                     # 시나리오 데이터
+├── scenarios/                     # (비어 있음, ScenarioBuilder 코드는 유지)
 ├── logs/                          # 실행 로그
-├── sessions/                      # 아카이빙된 세션 파일
+├── sessions/                      # 아카이빙된 세션 파일 (MICKEY-1~23)
 ├── docs/
 │   ├── BEHAVIOR_TREE_DESIGN.md    # BT 아키텍처 설계
-│   └── PROTOCOL_SCHEMA.md         # 프로토콜 JSON 스키마 가이드
+│   ├── PROTOCOL_SCHEMA.md         # 프로토콜 JSON 스키마 가이드
+│   ├── E2E_TEST_GUIDE.md          # E2E 테스트 가이드
+│   └── DEPLOYMENT_GUIDE.md        # AgentCore 배포 가이드
 ├── context_rule/                  # 프로젝트 특화 규칙 (5개)
-├── common_knowledge/              # 범용 재사용 패턴 (8개)
+├── common_knowledge/              # 범용 재사용 패턴 (9개)
 └── auto_notes/                    # 자동 관찰 메모 (9개)
 ```
 
@@ -92,18 +71,17 @@ packet-capture-log-agent/
 - Config: PacketCaptureAgent.csproj (.NET 9.0, no NuGet dependencies)
 - Entry: Program.cs
 - Infra: agent-core/terraform/main.tf
-- Docs: docs/PROTOCOL_SCHEMA.md, docs/BEHAVIOR_TREE_DESIGN.md, README.md
+- Docs: docs/PROTOCOL_SCHEMA.md, docs/BEHAVIOR_TREE_DESIGN.md, docs/E2E_TEST_GUIDE.md, docs/DEPLOYMENT_GUIDE.md, README.md
 
 ## File Statistics
-- C# source: 33 files / 5,515 lines
+- C# source: 36 files / 5,850 lines
 - C# tests: 14 files / 2,863 lines / 162 tests
 - Python (AgentCore): ~20 files (PoC 8 + Lambda 10 + Client 2)
-- AgentCore Lambda: 674 lines, Client: cli.py 173 + app.py 26 + index.html 203
 - Terraform: 3 files / 446 lines
-- Protocol definitions: 1 active (.json)
+- Protocol definitions: 1 active (mmorpg_simulator.json, 51 packets)
 
 ## Project Structure Pattern
-C# 콘솔 앱 (패킷 캡처/재현/BT/FSM) + Python AgentCore (프로토콜 자동 생성, AWS 배포)
+C# 콘솔 앱 (패킷 캡처/재현/BT/FSM/멀티에이전트) + Python AgentCore (프로토콜 자동 생성, AWS 배포)
 
 ## Last Updated
-2026-04-06
+2026-04-09
