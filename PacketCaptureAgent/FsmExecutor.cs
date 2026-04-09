@@ -96,7 +96,7 @@ public class FsmExecutor
         _output.WriteLine($"\nFSM completed. ({step} steps, {sw.Elapsed:mm\\:ss})");
     }
 
-    private static string? SelectNextState(FsmDefinition fsm, string currentState)
+    internal static string? SelectNextState(FsmDefinition fsm, string currentState)
     {
         if (!fsm.Transitions.TryGetValue(currentState, out var targets) || targets.Count == 0)
             return null;
