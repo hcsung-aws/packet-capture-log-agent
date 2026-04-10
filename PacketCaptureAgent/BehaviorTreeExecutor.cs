@@ -39,7 +39,7 @@ public class BehaviorTreeExecutor
         _output.WriteLine($"=== Behavior Tree Validation: {tree.Name} ===\n");
 
         using var client = new TcpClient();
-        client.Connect(host, port);
+        await client.ConnectAsync(host, port);
         using var stream = client.GetStream();
         _output.WriteLine($"Connected to {host}:{port}\n");
 

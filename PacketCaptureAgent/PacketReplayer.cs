@@ -224,7 +224,7 @@ public class PacketReplayer
         try
         {
         using var client = new TcpClient();
-        client.Connect(host, port);
+        await client.ConnectAsync(host, port);
         using var stream = client.GetStream();
 
         output.WriteLine($"Connected to {host}:{port}");
@@ -268,7 +268,10 @@ public class PacketReplayer
             if (options.Mode != ReplayMode.Timing)
             {
                 bool expectResponse = packets.Skip(i + 1).Any(p => p.Direction == "RECV");
-                if (expectResponse && WaitForData(stream, recvBuffer, options.TimeoutMs, out var recvLen))
+                var (gotData, recvLen) = expectResponse
+                    ? await WaitForDataAsync(stream, recvBuffer, options.TimeoutMs)
+                    : (false, 0);
+                if (gotData)
                 {
                     context.Elapsed = DateTime.Now - startTime;
                     received += handler.OnResponse(recvBuffer, recvLen, context);
@@ -293,7 +296,6 @@ public class PacketReplayer
         }
     }
 
-    /// <summary>DataAvailable인 동안 추가 데이터를 읽어 handler에 전달.</summary>
     internal static async Task DrainPendingDataAsync(NetworkStream stream, byte[] buffer, IResponseHandler handler, ReplayContext context, int received, DateTime startTime)
     {
         await Task.Delay(50); // 서버 응답 도착 대기
@@ -301,30 +303,42 @@ public class PacketReplayer
         {
             try
             {
-                stream.ReadTimeout = 100;
-                int len = stream.Read(buffer);
+                using var cts = new CancellationTokenSource(100);
+                int len = await stream.ReadAsync(buffer, cts.Token);
                 if (len > 0)
                 {
                     context.Elapsed = DateTime.Now - startTime;
                     received += handler.OnResponse(buffer, len, context);
                 }
             }
+            catch (OperationCanceledException) { break; }
             catch (IOException) { break; }
         }
     }
 
-    internal static bool WaitForData(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
+    internal static async Task<(bool success, int length)> WaitForDataAsync(NetworkStream stream, byte[] buffer, int timeoutMs)
     {
-        length = 0;
-        stream.ReadTimeout = timeoutMs;
         try
         {
-            length = stream.Read(buffer);
-            return length > 0;
+            using var cts = new CancellationTokenSource(timeoutMs);
+            int length = await stream.ReadAsync(buffer, cts.Token);
+            return (length > 0, length);
+        }
+        catch (OperationCanceledException)
+        {
+            return (false, 0);
         }
         catch (IOException)
         {
-            return false;
+            return (false, 0);
         }
+    }
+
+    // 동기 호환용 (기존 테스트)
+    internal static bool WaitForData(NetworkStream stream, byte[] buffer, int timeoutMs, out int length)
+    {
+        var (success, len) = WaitForDataAsync(stream, buffer, timeoutMs).GetAwaiter().GetResult();
+        length = len;
+        return success;
     }
 }

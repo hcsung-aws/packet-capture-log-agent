@@ -170,23 +170,23 @@ class Program
         return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath);
     }
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var cli = ParseArgs(args);
 
         if (cli.ShowHelp) { ShowUsage(); return; }
         if (cli.AgentMode) { AgentMode.Run(cli); return; }
-        if (cli.ManagerPath != null) { ManagerMode.Run(cli); return; }
+        if (cli.ManagerPath != null) { await ManagerMode.RunAsync(cli); return; }
         if (cli.AnalyzeLog != null) { AnalyzeMode.Run(cli); return; }
         if (cli.BuildScenario) { ScenarioMode.RunBuild(cli); return; }
-        if (cli.FsmPath != null) { FsmMode.Run(cli); return; }
+        if (cli.FsmPath != null) { await FsmMode.RunAsync(cli); return; }
         if (cli.BuildFsm) { FsmMode.RunBuild(cli); return; }
-        if (cli.BehaviorPath != null) { BehaviorTreeMode.Run(cli); return; }
+        if (cli.BehaviorPath != null) { await BehaviorTreeMode.RunAsync(cli); return; }
         if (cli.BuildBehavior) { BehaviorTreeMode.RunBuild(cli); return; }
         if (cli.EditBehaviorPath != null) { BehaviorTreeMode.RunEdit(cli); return; }
         if (cli.WebEditorPath != null) { BehaviorTreeMode.RunWebEditor(cli); return; }
-        if (cli.ScenarioPath != null) { ScenarioMode.RunReplay(cli); return; }
-        if (cli.ReplayLog != null) { ReplayModeRunner.Run(cli); return; }
+        if (cli.ScenarioPath != null) { await ScenarioMode.RunReplayAsync(cli); return; }
+        if (cli.ReplayLog != null) { await ReplayModeRunner.RunAsync(cli); return; }
         CaptureMode.Run(cli);
     }
 

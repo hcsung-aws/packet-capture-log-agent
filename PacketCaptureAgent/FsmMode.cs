@@ -32,7 +32,7 @@ static class FsmMode
         }
     }
 
-    public static void Run(Program.CliOptions cli)
+    public static async Task RunAsync(Program.CliOptions cli)
     {
         var protocol = Program.LoadProtocol(cli.ProtocolPath);
         if (protocol == null) return;
@@ -65,6 +65,6 @@ static class FsmMode
         };
 
         var executor = new FsmExecutor(new ActionExecutor(protocol, catalog), logger);
-        executor.ExecuteAsync(fsm, host, port, syncHandler, context, interceptors, durationSec: cli.Duration).GetAwaiter().GetResult();
+        await executor.ExecuteAsync(fsm, host, port, syncHandler, context, interceptors, durationSec: cli.Duration);
     }
 }

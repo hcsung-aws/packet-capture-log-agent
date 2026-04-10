@@ -81,7 +81,8 @@ public class ActionExecutor
                     var startTime = DateTime.Now;
                     for (int c = 0; c < count; c++)
                     {
-                        if (PacketReplayer.WaitForData(stream, recvBuffer, timeoutMs, out var len))
+                        var (got, len) = await PacketReplayer.WaitForDataAsync(stream, recvBuffer, timeoutMs);
+                        if (got)
                             handler.OnResponse(recvBuffer, len, context);
                     }
                     int received = 0;

@@ -29,7 +29,7 @@ static class BehaviorTreeMode
         PrintTree(tree.Root, "");
     }
 
-    public static void Run(Program.CliOptions cli)
+    public static async Task RunAsync(Program.CliOptions cli)
     {
         var protocol = Program.LoadProtocol(cli.ProtocolPath);
         if (protocol == null) return;
@@ -62,7 +62,7 @@ static class BehaviorTreeMode
         };
 
         var executor = new BehaviorTreeExecutor(new ActionExecutor(protocol, catalog), logger, protocol.Semantics);
-        executor.ExecuteAsync(tree, host, port, syncHandler, context, interceptors, durationSec: cli.Duration).GetAwaiter().GetResult();
+        await executor.ExecuteAsync(tree, host, port, syncHandler, context, interceptors, durationSec: cli.Duration);
     }
 
     public static void RunEdit(Program.CliOptions cli)

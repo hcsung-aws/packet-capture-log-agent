@@ -2,7 +2,7 @@ namespace PacketCaptureAgent;
 
 static class ReplayModeRunner
 {
-    public static void Run(Program.CliOptions cli)
+    public static async Task RunAsync(Program.CliOptions cli)
     {
         Console.WriteLine("=== Packet Replay Mode ===\n");
 
@@ -35,7 +35,7 @@ static class ReplayModeRunner
         var options = ParseReplayOptions(cli);
         var handler = new ParsingResponseHandler(protocol, host, port, logger);
         var interceptors = new List<IReplayInterceptor> { new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new()) };
-        replayer.ReplayAsync(host, port, packets, handler, options, interceptors, logger).GetAwaiter().GetResult();
+        await replayer.ReplayAsync(host, port, packets, handler, options, interceptors, logger);
     }
 
     internal static ReplayOptions ParseReplayOptions(Program.CliOptions cli) => new()

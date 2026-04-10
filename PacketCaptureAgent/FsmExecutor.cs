@@ -44,7 +44,7 @@ public class FsmExecutor
                     _output.WriteLine($"[FSM] Step {step}: connect → {host}:{port}");
                     client?.Dispose();
                     client = new TcpClient();
-                    client.Connect(host, port);
+                    await client.ConnectAsync(host, port);
                     stream = client.GetStream();
                     _output.WriteLine($"Connected to {host}:{port}\n");
                 }

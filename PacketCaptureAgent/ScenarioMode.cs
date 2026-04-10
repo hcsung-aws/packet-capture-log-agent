@@ -51,7 +51,7 @@ static class ScenarioMode
         }
     }
 
-    public static void RunReplay(Program.CliOptions cli)
+    public static async Task RunReplayAsync(Program.CliOptions cli)
     {
         if (cli.Clients <= 1)
             Console.WriteLine("=== Scenario Replay Mode ===\n");
@@ -102,7 +102,7 @@ static class ScenarioMode
         {
             var logDir = Program.LogDir(cli.ProtocolPath!);
             var options = ReplayModeRunner.ParseReplayOptions(cli);
-            LoadTestRunner.Run(protocol, scenario, catalog, parts[0], port, cli.Clients, options, logDir);
+            await new LoadTestRunner().RunAsync(protocol, scenario, catalog, parts[0], port, cli.Clients, options, logDir);
             return;
         }
 
@@ -130,6 +130,6 @@ static class ScenarioMode
 
         var replayOptions = ReplayModeRunner.ParseReplayOptions(cli);
         var replayer = new PacketReplayer(protocol);
-        replayer.ReplayAsync(parts[0], port, singlePackets, handler, replayOptions, interceptors, logger).GetAwaiter().GetResult();
+        await replayer.ReplayAsync(parts[0], port, singlePackets, handler, replayOptions, interceptors, logger);
     }
 }
