@@ -1,11 +1,11 @@
 # File Roles
 
-## Source (PacketCaptureAgent/) — 36파일, 5,850줄
+## Source (PacketCaptureAgent/) — 39파일
 
 ### 코어 (캡처/파싱/재현)
 | 파일 | 역할 |
 |------|------|
-| Program.cs (830) | 진입점. CLI 인자 파싱, 모드 분기 (Composition Root) |
+| Program.cs | 진입점. CLI 인자 파싱, 모드 분기 (async Main) |
 | Protocol.cs (236) | JSON 프로토콜 정의 모델 (9개 클래스) |
 | PacketParser.cs (302) | TcpStream → 헤더 → 타입 매칭 → 필드 동적 파싱 |
 | PacketBuilder.cs (275) | Dictionary → 바이너리 패킷 재구성 |
@@ -57,9 +57,18 @@
 | IReplayInterceptor.cs (61) | 리플레이 패킷 가로채기 인터페이스 + ReplaySession |
 | NpcAttackInterceptor.cs (50) | NPC 공격 대상 자동 교체 |
 | ProximityInterceptor.cs (78) | 근접 NPC 탐색 (FindBestPos 공유) |
+| DynamicFieldInterceptor.cs | 동적 필드 자동 주입 인터셉터 |
+| TrackingResponseHandler.cs | 응답 추적 핸들러 (SessionState 복사) |
 | IPacketTransform.cs (46) | 패킷 변환 인터페이스 + TransformFactory |
 | RsaDecryptor.cs (134) | RSA 복호화 (Tibia용) |
 | XteaDecryptor.cs (83) | XTEA 복호화 (Tibia용) |
+
+### 프록시
+| 파일 | 역할 |
+|------|------|
+| ProxyServer.cs | TCP 프록시 (패스스루 + takeover + FSM/BT 상태 동기화) |
+| ProxyMode.cs | 프록시 CLI 진입점 |
+| PacketObserver.cs | SEND 패킷→액션 역매핑, FSM/BT 상태 추적 |
 
 ## AgentCore (프로토콜 자동 생성)
 
