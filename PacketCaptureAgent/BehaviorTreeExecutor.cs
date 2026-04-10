@@ -43,9 +43,25 @@ public class BehaviorTreeExecutor
         using var stream = client.GetStream();
         _output.WriteLine($"Connected to {host}:{port}\n");
 
+        await ExecuteOnStreamAsync(tree, stream, handler, context, interceptors, timeoutMs);
+    }
+
+    /// <summary>기존 연결로 BT 실행 (프록시 takeover용). preObserved에 이미 실행된 액션 전달.</summary>
+    public async Task ExecuteOnStreamAsync(
+        BehaviorTreeDefinition tree,
+        NetworkStream stream,
+        IResponseHandler handler,
+        ReplayContext context,
+        List<IReplayInterceptor> interceptors,
+        int timeoutMs = 5000,
+        HashSet<string>? preObserved = null)
+    {
         _totalActions = _successCount = _failCount = _skippedCount = 0;
         _failures.Clear();
         _validatedActions.Clear();
+        if (preObserved != null)
+            foreach (var a in preObserved)
+                _validatedActions.Add(a);
 
         await RunNodeAsync(tree.Root, stream, handler, context, interceptors, timeoutMs);
 

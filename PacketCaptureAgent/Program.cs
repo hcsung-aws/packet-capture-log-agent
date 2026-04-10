@@ -63,7 +63,8 @@ class Program
         bool BuildFsm = false,
         bool AgentMode = false,
         int AgentPort = 8090,
-        string? ManagerPath = null);
+        string? ManagerPath = null,
+        bool Proxy = false);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -90,6 +91,7 @@ class Program
         bool agentMode = false;
         int agentPort = 8090;
         string? managerPath = null;
+        bool proxy = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -164,10 +166,13 @@ class Program
                 case "--manager" when i + 1 < args.Length:
                     managerPath = args[++i];
                     break;
+                case "--proxy":
+                    proxy = true;
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath, proxy);
     }
 
     static async Task Main(string[] args)
@@ -175,6 +180,7 @@ class Program
         var cli = ParseArgs(args);
 
         if (cli.ShowHelp) { ShowUsage(); return; }
+        if (cli.Proxy) { await ProxyMode.RunAsync(cli); return; }
         if (cli.AgentMode) { AgentMode.Run(cli); return; }
         if (cli.ManagerPath != null) { await ManagerMode.RunAsync(cli); return; }
         if (cli.AnalyzeLog != null) { AnalyzeMode.Run(cli); return; }

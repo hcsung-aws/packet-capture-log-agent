@@ -24,13 +24,45 @@ public class FsmExecutor
         int timeoutMs = 5000,
         int? durationSec = null)
     {
+        using var client = new TcpClient();
+        await client.ConnectAsync(host, port);
+        var stream = client.GetStream();
+        _output.WriteLine($"Connected to {host}:{port}\n");
+        await ExecuteOnStreamAsync(fsm, host, port, stream, handler, context, interceptors, fsm.InitialState, timeoutMs, durationSec, ownsConnection: true);
+    }
+
+    /// <summary>기존 연결 + 시작 상태로 FSM 실행 (프록시 takeover용). 연결 소유권 없음.</summary>
+    public Task ExecuteOnStreamAsync(
+        FsmDefinition fsm,
+        string host, int port,
+        NetworkStream stream,
+        IResponseHandler handler,
+        ReplayContext context,
+        List<IReplayInterceptor> interceptors,
+        string startState,
+        int timeoutMs = 5000,
+        int? durationSec = null,
+        bool ownsConnection = false)
+        => RunFsmLoopAsync(fsm, host, port, stream, handler, context, interceptors, startState, timeoutMs, durationSec, ownsConnection);
+
+    private async Task RunFsmLoopAsync(
+        FsmDefinition fsm,
+        string host, int port,
+        NetworkStream? stream,
+        IResponseHandler handler,
+        ReplayContext context,
+        List<IReplayInterceptor> interceptors,
+        string startState,
+        int timeoutMs,
+        int? durationSec,
+        bool ownsConnection)
+    {
         _output.WriteLine($"=== FSM: {fsm.Name} (states: {fsm.Transitions.Count}) ===\n");
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        string currentState = fsm.InitialState;
+        string currentState = startState;
         int step = 0;
         TcpClient? client = null;
-        NetworkStream? stream = null;
 
         try
         {
@@ -89,8 +121,11 @@ public class FsmExecutor
         }
         finally
         {
-            stream?.Dispose();
-            client?.Dispose();
+            if (ownsConnection)
+            {
+                stream?.Dispose();
+                client?.Dispose();
+            }
         }
 
         _output.WriteLine($"\nFSM completed. ({step} steps, {sw.Elapsed:mm\\:ss})");
