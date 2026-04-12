@@ -3,6 +3,27 @@ using System.Net.Sockets;
 
 namespace PacketCaptureAgent;
 
+/// <summary>응답 처리 후 원본 바이트를 클라이언트에도 전달하는 래퍼.</summary>
+public class ForwardingResponseHandler : IResponseHandler
+{
+    private readonly IResponseHandler _inner;
+    private readonly NetworkStream _clientStream;
+
+    public ForwardingResponseHandler(IResponseHandler inner, NetworkStream clientStream)
+    {
+        _inner = inner;
+        _clientStream = clientStream;
+    }
+
+    public int OnResponse(byte[] data, int length, ReplayContext context)
+    {
+        int count = _inner.OnResponse(data, length, context);
+        try { _clientStream.Write(data, 0, length); }
+        catch (IOException) { }
+        return count;
+    }
+}
+
 /// <summary>TCP 프록시 서버. 패스스루 중계 + takeover 전환.</summary>
 public class ProxyServer
 {
@@ -69,7 +90,7 @@ public class ProxyServer
                     {
                         _takeover = true;
                         _output.WriteLine($"\n[Proxy] === TAKEOVER === (FSM state: {_observer.CurrentFsmState ?? "unknown"})");
-                        await RunTakeoverAsync(serverStream, context, sharedState, serverHost, serverPort, fsmPath, behaviorPath, durationSec);
+                        await RunTakeoverAsync(serverStream, clientStream, context, sharedState, serverHost, serverPort, fsmPath, behaviorPath, durationSec);
                         _takeover = false;
                         _output.WriteLine("[Proxy] === PASSTHROUGH restored ===\n");
                     }
@@ -106,6 +127,13 @@ public class ProxyServer
                     continue;
                 }
 
+                if (_takeover && !isClientToServer)
+                {
+                    // takeover 중 서버→클라이언트는 FSM이 처리 + 전달하므로 대기
+                    await Task.Delay(100);
+                    continue;
+                }
+
                 using var cts2 = new CancellationTokenSource(1000);
                 int len;
                 try { len = await source.ReadAsync(buffer, cts2.Token); }
@@ -139,12 +167,13 @@ public class ProxyServer
         catch (ObjectDisposedException) { }
     }
 
-    private async Task RunTakeoverAsync(NetworkStream serverStream, ReplayContext context,
-        Dictionary<string, object> sharedState, string host, int port,
-        string? fsmPath, string? behaviorPath, int? durationSec)
+    private async Task RunTakeoverAsync(NetworkStream serverStream, NetworkStream clientStream,
+        ReplayContext context, Dictionary<string, object> sharedState,
+        string host, int port, string? fsmPath, string? behaviorPath, int? durationSec)
     {
         var innerHandler = new ParsingResponseHandler(_protocol, host, port, _output);
-        var handler = new TrackingResponseHandler(innerHandler, sharedState);
+        var trackingHandler = new TrackingResponseHandler(innerHandler, sharedState);
+        var handler = new ForwardingResponseHandler(trackingHandler, clientStream);
         var interceptors = new List<IReplayInterceptor>
         {
             new DynamicFieldInterceptor(new ScenarioBuilder().CollectAllDynamicFields(_catalog), sharedState),

@@ -202,7 +202,7 @@ public class ScenarioBuilderTests
     // ── DynamicFieldInterceptor ──
 
     [Fact]
-    public void DynamicFieldInterceptor_InjectsFromSharedState()
+    public async Task DynamicFieldInterceptor_InjectsFromSharedState()
     {
         var dynamicFields = new List<ActionDynamicField>
         {
@@ -218,7 +218,7 @@ public class ScenarioBuilderTests
 
         Assert.True(interceptor.ShouldIntercept(packet, new GameWorldState()));
 
-        var modified = interceptor.PrepareAsync(null!, packet).GetAwaiter().GetResult();
+        var modified = await interceptor.PrepareAsync(null!, packet);
         Assert.Equal(9999, modified.Fields["charUid"]);
     }
 

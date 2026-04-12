@@ -73,6 +73,11 @@ public class FsmExecutor
                 // connect: TCP 연결 수립
                 if (currentState == "connect")
                 {
+                    if (!ownsConnection)
+                    {
+                        _output.WriteLine($"[FSM] Step {step}: connect — proxy mode, ending FSM");
+                        break;
+                    }
                     _output.WriteLine($"[FSM] Step {step}: connect → {host}:{port}");
                     client?.Dispose();
                     client = new TcpClient();
@@ -83,6 +88,11 @@ public class FsmExecutor
                 // disconnect: TCP 연결 종료
                 else if (currentState == "disconnect")
                 {
+                    if (!ownsConnection)
+                    {
+                        _output.WriteLine($"[FSM] Step {step}: disconnect — proxy mode, ending FSM");
+                        break;
+                    }
                     _output.WriteLine($"[FSM] Step {step}: disconnect");
                     stream?.Dispose(); stream = null;
                     client?.Dispose(); client = null;

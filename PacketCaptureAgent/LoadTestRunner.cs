@@ -107,13 +107,4 @@ public class LoadTestRunner
             success.Length > 0 ? success.Max(r => r.Duration.TotalSeconds) : 0,
             errors.Select(r => r.Error!).ToArray());
     }
-
-    /// <summary>기존 동기 호출 호환용</summary>
-    public static LoadTestResult Run(
-        ProtocolDefinition protocol, ScenarioDefinition scenario, ActionCatalog catalog,
-        string host, int port, int clientCount, ReplayOptions options, string? logDir = null)
-    {
-        var runner = new LoadTestRunner();
-        return runner.RunAsync(protocol, scenario, catalog, host, port, clientCount, options, logDir).GetAwaiter().GetResult();
-    }
 }
