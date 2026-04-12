@@ -20,6 +20,7 @@
 - **FSM (부하 테스트)**: 녹화에서 전이 확률 추출, 확률 기반 랜덤 행동, 접속/종료 사이클
 - **멀티 에이전트 매니저**: 여러 머신에 에이전트 분산 배치, 수만 동시 클라이언트 부하 테스트
 - **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → 결정론적 변환 → JSON 프로토콜 자동 생성
+- **프록시 모드**: 클라이언트↔서버 중계, 패스스루 + takeover (FSM/BT 상태 동기화)
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
@@ -92,6 +93,25 @@ PacketCaptureAgent.exe --agent-mode -p protocol.json --agent-port 8090
 PacketCaptureAgent.exe --manager agents.json -t host:port -s behaviors/auto.json --clients 2000
 ```
 
+### 프록시 모드 (클라이언트 연동 테스트)
+
+클라이언트↔서버 사이에 프록시로 개입하여, 클라이언트의 인증/암호화를 활용한 뒤 원하는 시점에 FSM/BT로 자동 테스트를 전환합니다.
+
+```bash
+# FSM 모드 프록시 (클라이언트는 localhost:9000에 접속)
+PacketCaptureAgent.exe -p protocol.json --proxy -t server:port --port 9000 --fsm behaviors/fsm.json
+
+# BT 모드 프록시
+PacketCaptureAgent.exe -p protocol.json --proxy -t server:port --port 9000 --behavior behaviors/auto.json
+
+# 콘솔에서 t=takeover (현재 FSM/BT 상태에서 자동 실행), q=종료
+```
+
+동작 흐름:
+1. 클라이언트가 프록시(localhost:9000)에 접속 → 프록시가 서버에 연결
+2. 패스스루: 양방향 중계 + 패킷 파싱 + FSM/BT 상태 동기화
+3. `t` 키: takeover — 클라이언트 차단, FSM/BT가 현재 상태에서 자동 실행
+
 ### 프로토콜 자동 생성
 
 게임 소스코드에서 패킷 구조를 자동 분석하여 프로토콜 JSON을 생성합니다. 다른 AWS 계정에 배포하려면 **[배포 가이드](docs/DEPLOYMENT_GUIDE.md)** 를 참조하세요.
@@ -133,6 +153,7 @@ python3 app.py 8090  # http://localhost:8090
 | `--agent-mode` | 에이전트 모드 (HTTP API 서버) |
 | `--agent-port` | 에이전트 포트 (기본: 8090) |
 | `--manager` | 매니저 모드 (agents.json 경로) |
+| `--proxy` | 프록시 모드 (패스스루 + takeover) |
 
 ## 프로토콜 JSON 형식
 
@@ -185,7 +206,9 @@ packet-capture-log-agent/
 │   ├── FsmBuilder.cs           # 녹화 → FSM 전이 확률 생성
 │   ├── FsmExecutor.cs          # FSM 런타임 실행
 │   ├── IReplayInterceptor.cs   # 인터셉터 인터페이스
-│   └── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
+│   ├── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
+│   ├── ProxyServer.cs          # TCP 프록시 (패스스루 + takeover)
+│   └── PacketObserver.cs       # 패킷→액션 역매핑 (FSM/BT 상태 동기화)
 ├── agent-core/                 # 프로토콜 자동 생성 (LLM Agent)
 │   ├── poc/                    # 로컬 PoC (Bedrock 직접 호출)
 │   ├── lambda/                 # AWS Lambda 함수 (5 Phase + Orchestrator)
@@ -206,9 +229,10 @@ packet-capture-log-agent/
 ```
 실제 플레이 캡처 → 분석(녹화+카탈로그) → BT/FSM 자동 생성
                                               ├─ BT → Build Validation (기능 검증)
-                                              └─ FSM → 부하 테스트
-                                                   ├─ 단일 머신 (~200 클라이언트)
-                                                   └─ 멀티 에이전트 (수만 클라이언트)
+                                              ├─ FSM → 부하 테스트
+                                              │    ├─ 단일 머신 (~200 클라이언트)
+                                              │    └─ 멀티 에이전트 (수만 클라이언트)
+                                              └─ 프록시 → 클라이언트 연동 takeover 테스트
 ```
 
 ## 제한사항
@@ -241,7 +265,12 @@ A tool for capturing TCP packets from online games, parsing them according to pr
 - **Protocol Parsing**: Dynamic packet parsing based on JSON definitions
 - **Packet Replay**: Resend packets using captured logs (timing-based delay)
 - **Interceptor**: Dynamically modify packets during replay (e.g., auto-retarget NPC attacks)
-- **Supported Types**: integers, strings, arrays, structs
+- **Behavior Tree**: Auto-generate from capture recordings, Build Validation execution, web editor
+- **FSM (Load Testing)**: Extract transition probabilities from recordings, random behavior, connect/disconnect cycles
+- **Multi-Agent Manager**: Distribute agents across machines, tens of thousands of concurrent clients
+- **Protocol Auto-Generation**: Game source code → LLM multi-agent analysis → deterministic conversion → JSON protocol
+- **Proxy Mode**: Client↔Server relay, passthrough + takeover (FSM/BT state synchronization)
+- **Supported Types**: integers, strings, arrays, structs, length-prefixed strings, conditional fields
 
 ## Requirements
 
@@ -269,6 +298,58 @@ PacketCaptureAgent.exe -p protocol.json --port 9000
 ```bash
 PacketCaptureAgent.exe -p protocol.json -r capture.log -t host:port
 ```
+
+### Behavior Tree (Build Validation)
+
+```bash
+# Analyze capture log → recordings + action catalog
+PacketCaptureAgent.exe -p protocol.json --analyze capture.log
+
+# Auto-generate BT from recordings
+PacketCaptureAgent.exe -p protocol.json --build-behavior
+
+# Run BT Validation
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t host:port
+```
+
+### FSM (Load Testing)
+
+```bash
+# Generate FSM transition probabilities from recordings
+PacketCaptureAgent.exe -p protocol.json --build-fsm
+
+# Run FSM (random behavior + connect/disconnect cycles)
+PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t host:port --duration 120
+```
+
+### Multi-Agent Manager (Large-Scale Load Testing)
+
+```bash
+# 1. Start agents on each machine
+PacketCaptureAgent.exe --agent-mode -p protocol.json --agent-port 8090
+
+# 2. Run manager from control machine
+PacketCaptureAgent.exe --manager agents.json -t host:port -s behaviors/auto.json --clients 2000
+```
+
+### Proxy Mode (Client Integration Testing)
+
+Intercept client↔server communication as a proxy. The client handles authentication/encryption, then takeover switches to automated FSM/BT testing at the desired point.
+
+```bash
+# FSM proxy (client connects to localhost:9000)
+PacketCaptureAgent.exe -p protocol.json --proxy -t server:port --port 9000 --fsm behaviors/fsm.json
+
+# BT proxy
+PacketCaptureAgent.exe -p protocol.json --proxy -t server:port --port 9000 --behavior behaviors/auto.json
+
+# Console: t=takeover (auto-execute from current FSM/BT state), q=quit
+```
+
+Flow:
+1. Client connects to proxy (localhost:9000) → proxy connects to server
+2. Passthrough: bidirectional relay + packet parsing + FSM/BT state synchronization
+3. `t` key: takeover — block client, FSM/BT auto-executes from current state
 
 ## E2E Testing (Full Pipeline)
 

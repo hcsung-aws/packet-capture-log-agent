@@ -223,5 +223,13 @@ class Program
         Console.WriteLine("  --mode timing|response|hybrid  재현 모드 (기본: hybrid)");
         Console.WriteLine("  --timeout 5000                 응답 대기 타임아웃 ms (기본: 5000)");
         Console.WriteLine("  --speed 1.0                    재생 속도 배율 (기본: 1.0)");
+        Console.WriteLine();
+        Console.WriteLine("프록시 옵션:");
+        Console.WriteLine("  --proxy                        프록시 모드 (패스스루 + takeover)");
+        Console.WriteLine("  --proxy --fsm fsm.json         프록시 + FSM takeover");
+        Console.WriteLine("  --proxy --behavior bt.json     프록시 + BT takeover");
+        Console.WriteLine("  --port 9000                    프록시 리슨 포트 (기본: 9000)");
+        Console.WriteLine("  -t host:port                   대상 서버");
+        Console.WriteLine("  콘솔: t=takeover, q=quit");
     }
 }
