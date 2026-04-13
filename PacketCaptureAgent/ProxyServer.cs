@@ -171,6 +171,8 @@ public class ProxyServer
         ReplayContext context, Dictionary<string, object> sharedState,
         string host, int port, string? fsmPath, string? behaviorPath, int? durationSec)
     {
+        try
+        {
         var innerHandler = new ParsingResponseHandler(_protocol, host, port, _output);
         var trackingHandler = new TrackingResponseHandler(innerHandler, sharedState);
         var handler = new ForwardingResponseHandler(trackingHandler, clientStream);
@@ -195,7 +197,14 @@ public class ProxyServer
             var tree = BehaviorTreeDefinition.Load(behaviorPath);
             _output.WriteLine($"[Proxy] BT starting, pre-observed actions: {_observer.ObservedActions.Count}");
             var executor = new BehaviorTreeExecutor(actionExecutor, _output, _protocol.Semantics);
-            await executor.ExecuteOnStreamAsync(tree, serverStream, syncHandler, context, interceptors, preObserved: _observer.ObservedActions);
+            try
+            {
+                await executor.ExecuteOnStreamAsync(tree, serverStream, syncHandler, context, interceptors, preObserved: _observer.ObservedActions);
+            }
+            catch (Exception ex)
+            {
+                _output.WriteLine($"[Proxy] BT error: {ex.Message}");
+            }
         }
         else
         {
@@ -206,6 +215,11 @@ public class ProxyServer
                     break;
                 await Task.Delay(50);
             }
+        }
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"[Proxy] Takeover error: {ex}");
         }
     }
 }

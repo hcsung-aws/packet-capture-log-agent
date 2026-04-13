@@ -227,7 +227,6 @@ class Program
         Console.WriteLine("프록시 옵션:");
         Console.WriteLine("  --proxy                        프록시 모드 (패스스루 + takeover)");
         Console.WriteLine("  --proxy --fsm fsm.json         프록시 + FSM takeover");
-        Console.WriteLine("  --proxy --behavior bt.json     프록시 + BT takeover");
         Console.WriteLine("  --port 9000                    프록시 리슨 포트 (기본: 9000)");
         Console.WriteLine("  -t host:port                   대상 서버");
         Console.WriteLine("  콘솔: t=takeover, q=quit");

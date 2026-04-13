@@ -16,6 +16,12 @@ static class ProxyMode
 
         int listenPort = cli.Port ?? 9000;
 
+        if (cli.BehaviorPath != null)
+        {
+            Console.WriteLine("프록시 모드에서 BT는 지원하지 않습니다. --fsm을 사용하세요.");
+            return;
+        }
+
         var proxy = new ProxyServer(protocol, catalog);
         await proxy.RunAsync(listenPort, host, port, cli.FsmPath, cli.BehaviorPath, cli.Duration);
     }
