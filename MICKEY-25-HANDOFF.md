@@ -1,15 +1,16 @@
 # MICKEY-25-HANDOFF
 
 ## Current Status
-async 전환 완료 + 프록시 모드 구현 (패스스루 + takeover + FSM/BT 상태 동기화). 테스트 212개 통과.
+프록시 모드 E2E 검증 완료 (FSM takeover 정상, BT 차단). 버그픽스 3건 + 코드 정리. 테스트 212개 통과.
 
 ## Next Steps
-프록시 모드 E2E 테스트 (mmorpg-simulator 연동). PURPOSE-SCENARIO에 프록시 시나리오 추가. ShowUsage에 프록시 도움말 추가.
+CI/CD 파이프라인 (GitHub Actions). 프록시 HTTP API (외부 스크립트 제어).
 
 ## Important Context
-- 프록시 모드 핵심 설계: PacketObserver가 패스스루 중 SEND 패킷→액션 역매핑으로 FSM/BT 상태를 동기화. takeover 시 기존 TCP 연결 + GameWorldState/SessionState를 그대로 FSM/BT Executor에 전달하여 현재 상태에서 실행 재개.
-- FsmExecutor/BtExecutor에 ExecuteOnStreamAsync 오버로드 추가 (기존 연결 + 시작 상태/preObserved)
+- 프록시 takeover 핵심 이슈: 같은 NetworkStream을 FSM과 RelayAsync가 동시에 읽으면 경합 → ForwardingResponseHandler + relay 일시중단으로 해결
+- BT는 프록시 takeover에 부적합 (순차 실행 전제, 중간 진입 시 완료 액션 재실행) → ProxyMode에서 차단
+- GameClient 포트 파라미터화 완료 (mmorpg_simulator 쪽)
 
 ## Quick Reference
-- SESSION: MICKEY-25-SESSION.md
+- SESSION: MICKEY-25-SESSION.md + MICKEY-25-SESSION-continued.md
 - Context window: 높음
