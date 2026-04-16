@@ -70,6 +70,14 @@
 | ProxyMode.cs | 프록시 CLI 진입점 |
 | PacketObserver.cs | SEND 패킷→액션 역매핑, FSM/BT 상태 추적 |
 
+### 목업 서버
+| 파일 | 역할 |
+|------|------|
+| MockRule.cs | 규칙 모델 (MockRule/MockResponse/MockRuleSet) + 세션 상태 (MockSession/NpcState) + FieldRange |
+| MockRuleBuilder.cs | ActionCatalog + recordings → MockRuleSet 자동 생성, field_ranges 추출 |
+| MockServer.cs | TCP 목업 서버 — 세션별 상태 추적 + 동적 응답 생성 |
+| MockServerMode.cs | 목업 서버 CLI 진입점 (--build-mock, --mock) |
+
 ## AgentCore (프로토콜 자동 생성)
 
 ### Lambda (674줄 Python)
@@ -106,4 +114,4 @@
 | mmorpg_simulator.json | MMORPG 시뮬레이터 | 51 packets |
 
 ## Last Updated
-2026-04-09, Mickey 24
+2026-04-16, Mickey 27

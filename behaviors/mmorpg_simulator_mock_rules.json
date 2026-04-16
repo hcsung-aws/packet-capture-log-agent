@@ -1,0 +1,1130 @@
+{
+  "protocol": "MMORPG Simulator Protocol",
+  "rules": [
+    {
+      "trigger": "CS_LOGIN",
+      "responses": [
+        {
+          "packet": "SC_LOGIN_RESULT",
+          "fields": {
+            "success": 0,
+            "accountUid": 0,
+            "message": ""
+          }
+        },
+        {
+          "packet": "SC_CHAR_LIST",
+          "fields": {
+            "count": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_CHAR_CREATE",
+      "responses": [
+        {
+          "packet": "SC_CHAR_CREATE_RESULT",
+          "fields": {
+            "success": 0,
+            "charUid": 0,
+            "message": ""
+          }
+        },
+        {
+          "packet": "SC_CHAR_LIST",
+          "fields": {
+            "count": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_CHAR_SELECT",
+      "responses": [
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_SPAWN",
+          "fields": {
+            "npcUid": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "npcType": 0
+          }
+        },
+        {
+          "packet": "SC_ATTENDANCE_INFO",
+          "fields": {
+            "todayAttended": 0,
+            "rewardGold": 0
+          }
+        },
+        {
+          "packet": "SC_INVENTORY_LIST",
+          "fields": {
+            "count": 0
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_MOVE",
+      "responses": [
+        {
+          "packet": "SC_MOVE_RESULT",
+          "fields": {
+            "success": 0,
+            "posX": 0,
+            "posY": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_ATTACK",
+      "responses": [
+        {
+          "packet": "SC_ATTACK_RESULT",
+          "fields": {
+            "success": 0,
+            "targetUid": 0,
+            "damage": 0,
+            "targetHp": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_ATTENDANCE_CHECK",
+      "responses": [
+        {
+          "packet": "SC_ATTENDANCE_RESULT",
+          "fields": {
+            "success": 0,
+            "rewardGold": 0
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_ITEM_EQUIP",
+      "responses": [
+        {
+          "packet": "SC_EQUIP_RESULT",
+          "fields": {
+            "success": 0,
+            "slot": 0,
+            "atk": 0,
+            "def": 0,
+            "weaponName": "",
+            "armorName": "",
+            "message": ""
+          }
+        },
+        {
+          "packet": "SC_INVENTORY_UPDATE",
+          "fields": {
+            "slot": 0,
+            "itemId": 0,
+            "itemName": ""
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_PARTY_INVITE",
+      "responses": [
+        {
+          "packet": "SC_PARTY_UPDATE",
+          "fields": {
+            "memberCount": 0
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_SHOP_OPEN",
+      "responses": [
+        {
+          "packet": "SC_SHOP_LIST",
+          "fields": {
+            "count": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_SHOP_BUY",
+      "responses": [
+        {
+          "packet": "SC_SHOP_RESULT",
+          "fields": {
+            "success": 0,
+            "itemId": 0,
+            "remainGold": 0,
+            "message": ""
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_QUEST_LIST",
+      "responses": [
+        {
+          "packet": "SC_QUEST_LIST",
+          "fields": {
+            "count": 0
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_QUEST_ACCEPT",
+      "responses": [
+        {
+          "packet": "SC_QUEST_ACCEPT_RESULT",
+          "fields": {
+            "success": 0,
+            "questId": 0,
+            "message": ""
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_QUEST_COMPLETE",
+      "responses": [
+        {
+          "packet": "SC_EXP_UPDATE",
+          "fields": {
+            "exp": 0,
+            "maxExp": 0
+          }
+        },
+        {
+          "packet": "SC_LEVEL_UP",
+          "fields": {
+            "level": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "atk": 0,
+            "def": 0
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        },
+        {
+          "packet": "SC_QUEST_REWARD",
+          "fields": {
+            "success": 0,
+            "questId": 0,
+            "rewardGold": 0,
+            "rewardExp": 0,
+            "rewardItemId": 0,
+            "message": ""
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_CHAT",
+      "responses": [
+        {
+          "packet": "SC_CHAT",
+          "fields": {
+            "channel": 0,
+            "senderName": "",
+            "message": ""
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_ITEM_USE",
+      "responses": [
+        {
+          "packet": "SC_ITEM_USE_RESULT",
+          "fields": {
+            "charUid": 0,
+            "charName": "",
+            "itemName": "",
+            "effectType": 0,
+            "effectValue": 0
+          }
+        },
+        {
+          "packet": "SC_INVENTORY_UPDATE",
+          "fields": {
+            "slot": 0,
+            "itemId": 0,
+            "itemName": ""
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_SHOP_SELL",
+      "responses": [
+        {
+          "packet": "SC_INVENTORY_UPDATE",
+          "fields": {
+            "slot": 0,
+            "itemId": 0,
+            "itemName": ""
+          }
+        },
+        {
+          "packet": "SC_SHOP_RESULT",
+          "fields": {
+            "success": 0,
+            "itemId": 0,
+            "remainGold": 0,
+            "message": ""
+          }
+        }
+      ],
+      "stateful": true
+    },
+    {
+      "trigger": "CS_PARTY_ACCEPT",
+      "responses": [
+        {
+          "packet": "SC_PARTY_UPDATE",
+          "fields": {
+            "memberCount": 0
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_DEATH",
+          "fields": {
+            "npcUid": 0,
+            "expReward": 0,
+            "goldReward": 0
+          }
+        },
+        {
+          "packet": "SC_EXP_UPDATE",
+          "fields": {
+            "exp": 0,
+            "maxExp": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_SPAWN",
+          "fields": {
+            "npcUid": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "npcType": 0
+          }
+        },
+        {
+          "packet": "SC_CHAR_INFO",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "level": 0,
+            "exp": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "gold": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_DEATH",
+          "fields": {
+            "npcUid": 0,
+            "expReward": 0,
+            "goldReward": 0
+          }
+        },
+        {
+          "packet": "SC_EXP_UPDATE",
+          "fields": {
+            "exp": 0,
+            "maxExp": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_SPAWN",
+          "fields": {
+            "npcUid": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "npcType": 0
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_PARTY_LEAVE",
+      "responses": [
+        {
+          "packet": "SC_OTHER_CHAR",
+          "fields": {
+            "charUid": 0,
+            "name": "",
+            "posX": 0,
+            "posY": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_DEATH",
+          "fields": {
+            "npcUid": 0,
+            "expReward": 0,
+            "goldReward": 0
+          }
+        },
+        {
+          "packet": "SC_NPC_SPAWN",
+          "fields": {
+            "npcUid": 0,
+            "posX": 0,
+            "posY": 0,
+            "hp": 0,
+            "maxHp": 0,
+            "npcType": 0
+          }
+        }
+      ],
+      "stateful": false
+    },
+    {
+      "trigger": "CS_HEARTBEAT",
+      "responses": [
+        {
+          "packet": "SC_HEARTBEAT"
+        }
+      ],
+      "stateful": true
+    }
+  ],
+  "field_ranges": {
+    "SC_LOGIN_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_LOGIN_RESULT.accountUid": {
+      "min": 151461524,
+      "max": 774632638
+    },
+    "SC_CHAR_LIST.count": {
+      "min": 0,
+      "max": 3
+    },
+    "SC_CHAR_CREATE_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_CHAR_CREATE_RESULT.charUid": {
+      "min": 1,
+      "max": 186346157001
+    },
+    "SC_CHAR_LIST.chars[0].charUid": {
+      "min": 1,
+      "max": 186346157000
+    },
+    "SC_CHAR_LIST.chars[0].charType": {
+      "min": 1,
+      "max": 3
+    },
+    "SC_CHAR_LIST.chars[0].level": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_CHAR_INFO.charUid": {
+      "min": 151461524,
+      "max": 774632638
+    },
+    "SC_CHAR_INFO.level": {
+      "min": 0,
+      "max": 3
+    },
+    "SC_CHAR_INFO.exp": {
+      "min": 0,
+      "max": 270
+    },
+    "SC_CHAR_INFO.posX": {
+      "min": 1,
+      "max": 16
+    },
+    "SC_CHAR_INFO.posY": {
+      "min": 2,
+      "max": 17
+    },
+    "SC_CHAR_INFO.hp": {
+      "min": 0,
+      "max": 140
+    },
+    "SC_CHAR_INFO.maxHp": {
+      "min": 0,
+      "max": 140
+    },
+    "SC_CHAR_INFO.gold": {
+      "min": 0,
+      "max": 520
+    },
+    "SC_NPC_SPAWN.npcUid": {
+      "min": 5,
+      "max": 21
+    },
+    "SC_NPC_SPAWN.posX": {
+      "min": 0,
+      "max": 19
+    },
+    "SC_NPC_SPAWN.posY": {
+      "min": 0,
+      "max": 19
+    },
+    "SC_NPC_SPAWN.hp": {
+      "min": 30,
+      "max": 30
+    },
+    "SC_NPC_SPAWN.maxHp": {
+      "min": 30,
+      "max": 30
+    },
+    "SC_ATTENDANCE_INFO.todayAttended": {
+      "min": 0,
+      "max": 1
+    },
+    "SC_ATTENDANCE_INFO.rewardGold": {
+      "min": 100,
+      "max": 100
+    },
+    "SC_INVENTORY_LIST.count": {
+      "min": 0,
+      "max": 20
+    },
+    "SC_MOVE_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_MOVE_RESULT.posX": {
+      "min": 0,
+      "max": 18
+    },
+    "SC_MOVE_RESULT.posY": {
+      "min": 0,
+      "max": 19
+    },
+    "SC_ATTACK_RESULT.success": {
+      "min": 0,
+      "max": 1
+    },
+    "SC_ATTACK_RESULT.targetUid": {
+      "min": 0,
+      "max": 20
+    },
+    "SC_ATTACK_RESULT.damage": {
+      "min": 0,
+      "max": 27
+    },
+    "SC_ATTACK_RESULT.targetHp": {
+      "min": 0,
+      "max": 17
+    },
+    "SC_NPC_DEATH.npcUid": {
+      "min": 1,
+      "max": 20
+    },
+    "SC_NPC_DEATH.expReward": {
+      "min": 30,
+      "max": 30
+    },
+    "SC_NPC_DEATH.goldReward": {
+      "min": 10,
+      "max": 10
+    },
+    "SC_EXP_UPDATE.exp": {
+      "min": 20,
+      "max": 300
+    },
+    "SC_EXP_UPDATE.maxExp": {
+      "min": 100,
+      "max": 400
+    },
+    "SC_ITEM_DROP.slot": {
+      "min": 0,
+      "max": 18
+    },
+    "SC_ITEM_DROP.itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_LEVEL_UP.level": {
+      "min": 2,
+      "max": 4
+    },
+    "SC_LEVEL_UP.hp": {
+      "min": 120,
+      "max": 160
+    },
+    "SC_LEVEL_UP.maxHp": {
+      "min": 120,
+      "max": 160
+    },
+    "SC_LEVEL_UP.atk": {
+      "min": 18,
+      "max": 29
+    },
+    "SC_LEVEL_UP.def": {
+      "min": 7,
+      "max": 14
+    },
+    "SC_EQUIP_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_EQUIP_RESULT.slot": {
+      "min": 0,
+      "max": 17
+    },
+    "SC_EQUIP_RESULT.atk": {
+      "min": 15,
+      "max": 27
+    },
+    "SC_EQUIP_RESULT.def": {
+      "min": 5,
+      "max": 15
+    },
+    "SC_INVENTORY_UPDATE.slot": {
+      "min": 0,
+      "max": 19
+    },
+    "SC_INVENTORY_UPDATE.itemId": {
+      "min": 0,
+      "max": 5
+    },
+    "SC_SHOP_RESULT.success": {
+      "min": 0,
+      "max": 2
+    },
+    "SC_SHOP_RESULT.itemId": {
+      "min": 0,
+      "max": 5
+    },
+    "SC_SHOP_RESULT.remainGold": {
+      "min": 0,
+      "max": 490
+    },
+    "SC_SHOP_LIST.count": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_SHOP_LIST.items[0].itemId": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_SHOP_LIST.items[0].price": {
+      "min": 50,
+      "max": 50
+    },
+    "SC_SHOP_LIST.items[1].itemId": {
+      "min": 2,
+      "max": 2
+    },
+    "SC_SHOP_LIST.items[1].price": {
+      "min": 200,
+      "max": 200
+    },
+    "SC_SHOP_LIST.items[2].itemId": {
+      "min": 3,
+      "max": 3
+    },
+    "SC_SHOP_LIST.items[2].price": {
+      "min": 80,
+      "max": 80
+    },
+    "SC_SHOP_LIST.items[3].itemId": {
+      "min": 4,
+      "max": 4
+    },
+    "SC_SHOP_LIST.items[3].price": {
+      "min": 300,
+      "max": 300
+    },
+    "SC_SHOP_LIST.items[4].itemId": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_SHOP_LIST.items[4].price": {
+      "min": 30,
+      "max": 30
+    },
+    "SC_ATTENDANCE_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_ATTENDANCE_RESULT.rewardGold": {
+      "min": 100,
+      "max": 100
+    },
+    "SC_QUEST_LIST.count": {
+      "min": 3,
+      "max": 3
+    },
+    "SC_QUEST_LIST.quests[0].questId": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_QUEST_LIST.quests[0].status": {
+      "min": 0,
+      "max": 3
+    },
+    "SC_QUEST_LIST.quests[0].progress": {
+      "min": 0,
+      "max": 3
+    },
+    "SC_QUEST_LIST.quests[0].target": {
+      "min": 3,
+      "max": 3
+    },
+    "SC_QUEST_LIST.quests[1].questId": {
+      "min": 2,
+      "max": 2
+    },
+    "SC_QUEST_LIST.quests[1].status": {
+      "min": 0,
+      "max": 2
+    },
+    "SC_QUEST_LIST.quests[1].progress": {
+      "min": 0,
+      "max": 5
+    },
+    "SC_QUEST_LIST.quests[1].target": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_QUEST_LIST.quests[2].questId": {
+      "min": 3,
+      "max": 3
+    },
+    "SC_QUEST_LIST.quests[2].status": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_QUEST_LIST.quests[2].progress": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_QUEST_LIST.quests[2].target": {
+      "min": 10,
+      "max": 10
+    },
+    "SC_QUEST_ACCEPT_RESULT.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_QUEST_ACCEPT_RESULT.questId": {
+      "min": 1,
+      "max": 2
+    },
+    "SC_QUEST_PROGRESS.questId": {
+      "min": 1,
+      "max": 2
+    },
+    "SC_QUEST_PROGRESS.progress": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_QUEST_PROGRESS.target": {
+      "min": 3,
+      "max": 5
+    },
+    "SC_QUEST_REWARD.success": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_QUEST_REWARD.questId": {
+      "min": 1,
+      "max": 2
+    },
+    "SC_QUEST_REWARD.rewardGold": {
+      "min": 100,
+      "max": 200
+    },
+    "SC_QUEST_REWARD.rewardExp": {
+      "min": 50,
+      "max": 100
+    },
+    "SC_QUEST_REWARD.rewardItemId": {
+      "min": 0,
+      "max": 5
+    },
+    "SC_OTHER_CHAR.charUid": {
+      "min": 151461524,
+      "max": 471800011
+    },
+    "SC_OTHER_CHAR.posX": {
+      "min": 2,
+      "max": 14
+    },
+    "SC_OTHER_CHAR.posY": {
+      "min": 3,
+      "max": 18
+    },
+    "SC_PARTY_UPDATE.memberCount": {
+      "min": 2,
+      "max": 2
+    },
+    "SC_PARTY_UPDATE.members[0].charUid": {
+      "min": 2,
+      "max": 22
+    },
+    "SC_PARTY_UPDATE.members[0].hp": {
+      "min": 100,
+      "max": 140
+    },
+    "SC_PARTY_UPDATE.members[0].maxHp": {
+      "min": 100,
+      "max": 140
+    },
+    "SC_PARTY_UPDATE.members[0].posX": {
+      "min": 2,
+      "max": 14
+    },
+    "SC_PARTY_UPDATE.members[0].posY": {
+      "min": 6,
+      "max": 14
+    },
+    "SC_PARTY_UPDATE.members[1].charUid": {
+      "min": 1,
+      "max": 23
+    },
+    "SC_PARTY_UPDATE.members[1].hp": {
+      "min": 100,
+      "max": 140
+    },
+    "SC_PARTY_UPDATE.members[1].maxHp": {
+      "min": 100,
+      "max": 140
+    },
+    "SC_PARTY_UPDATE.members[1].posX": {
+      "min": 3,
+      "max": 11
+    },
+    "SC_PARTY_UPDATE.members[1].posY": {
+      "min": 3,
+      "max": 14
+    },
+    "SC_PARTY_LEAVE.charUid": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_CHAR_LEAVE.charUid": {
+      "min": 151461524,
+      "max": 183428222
+    },
+    "SC_CHAR_LIST.chars[1].charUid": {
+      "min": 23,
+      "max": 186346157001
+    },
+    "SC_CHAR_LIST.chars[1].charType": {
+      "min": 1,
+      "max": 3
+    },
+    "SC_CHAR_LIST.chars[1].level": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_CHAT.channel": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_INVENTORY_LIST.items[0].slot": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_INVENTORY_LIST.items[0].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[1].slot": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_INVENTORY_LIST.items[1].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[2].slot": {
+      "min": 2,
+      "max": 2
+    },
+    "SC_INVENTORY_LIST.items[2].itemId": {
+      "min": 1,
+      "max": 3
+    },
+    "SC_INVENTORY_LIST.items[3].slot": {
+      "min": 3,
+      "max": 3
+    },
+    "SC_INVENTORY_LIST.items[3].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[4].slot": {
+      "min": 4,
+      "max": 4
+    },
+    "SC_INVENTORY_LIST.items[4].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[5].slot": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[5].itemId": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_INVENTORY_LIST.items[6].slot": {
+      "min": 6,
+      "max": 6
+    },
+    "SC_INVENTORY_LIST.items[6].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[7].slot": {
+      "min": 7,
+      "max": 7
+    },
+    "SC_INVENTORY_LIST.items[7].itemId": {
+      "min": 3,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[8].slot": {
+      "min": 8,
+      "max": 8
+    },
+    "SC_INVENTORY_LIST.items[8].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[9].slot": {
+      "min": 9,
+      "max": 9
+    },
+    "SC_INVENTORY_LIST.items[9].itemId": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[10].slot": {
+      "min": 10,
+      "max": 10
+    },
+    "SC_INVENTORY_LIST.items[10].itemId": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[11].slot": {
+      "min": 11,
+      "max": 11
+    },
+    "SC_INVENTORY_LIST.items[11].itemId": {
+      "min": 5,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[12].slot": {
+      "min": 12,
+      "max": 12
+    },
+    "SC_INVENTORY_LIST.items[12].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[13].slot": {
+      "min": 13,
+      "max": 13
+    },
+    "SC_INVENTORY_LIST.items[13].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[14].slot": {
+      "min": 14,
+      "max": 14
+    },
+    "SC_INVENTORY_LIST.items[14].itemId": {
+      "min": 3,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[15].slot": {
+      "min": 15,
+      "max": 15
+    },
+    "SC_INVENTORY_LIST.items[15].itemId": {
+      "min": 3,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[16].slot": {
+      "min": 16,
+      "max": 16
+    },
+    "SC_INVENTORY_LIST.items[16].itemId": {
+      "min": 2,
+      "max": 5
+    },
+    "SC_INVENTORY_LIST.items[17].slot": {
+      "min": 17,
+      "max": 17
+    },
+    "SC_INVENTORY_LIST.items[17].itemId": {
+      "min": 2,
+      "max": 4
+    },
+    "SC_INVENTORY_LIST.items[18].slot": {
+      "min": 18,
+      "max": 18
+    },
+    "SC_INVENTORY_LIST.items[18].itemId": {
+      "min": 1,
+      "max": 4
+    },
+    "SC_INVENTORY_LIST.items[19].slot": {
+      "min": 19,
+      "max": 19
+    },
+    "SC_INVENTORY_LIST.items[19].itemId": {
+      "min": 1,
+      "max": 5
+    },
+    "SC_ITEM_USE_RESULT.charUid": {
+      "min": 3,
+      "max": 186346157000
+    },
+    "SC_ITEM_USE_RESULT.effectType": {
+      "min": 0,
+      "max": 0
+    },
+    "SC_ITEM_USE_RESULT.effectValue": {
+      "min": 50,
+      "max": 50
+    },
+    "SC_NPC_SPAWN.npcType": {
+      "min": 0,
+      "max": 1
+    },
+    "SC_CHAR_LIST.chars[2].charUid": {
+      "min": 26,
+      "max": 26
+    },
+    "SC_CHAR_LIST.chars[2].charType": {
+      "min": 1,
+      "max": 1
+    },
+    "SC_CHAR_LIST.chars[2].level": {
+      "min": 1,
+      "max": 1
+    }
+  }
+}

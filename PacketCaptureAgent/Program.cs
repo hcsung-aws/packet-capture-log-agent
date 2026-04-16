@@ -64,7 +64,9 @@ class Program
         bool AgentMode = false,
         int AgentPort = 8090,
         string? ManagerPath = null,
-        bool Proxy = false);
+        bool Proxy = false,
+        bool BuildMock = false,
+        string? MockPath = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -92,6 +94,8 @@ class Program
         int agentPort = 8090;
         string? managerPath = null;
         bool proxy = false;
+        bool buildMock = false;
+        string? mockPath = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -169,10 +173,16 @@ class Program
                 case "--proxy":
                     proxy = true;
                     break;
+                case "--build-mock":
+                    buildMock = true;
+                    break;
+                case "--mock" when i + 1 < args.Length:
+                    mockPath = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath, proxy);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath, proxy, buildMock, mockPath);
     }
 
     static async Task Main(string[] args)
@@ -180,6 +190,8 @@ class Program
         var cli = ParseArgs(args);
 
         if (cli.ShowHelp) { ShowUsage(); return; }
+        if (cli.MockPath != null) { await MockServerMode.RunAsync(cli); return; }
+        if (cli.BuildMock) { MockServerMode.RunBuild(cli); return; }
         if (cli.Proxy) { await ProxyMode.RunAsync(cli); return; }
         if (cli.AgentMode) { AgentMode.Run(cli); return; }
         if (cli.ManagerPath != null) { await ManagerMode.RunAsync(cli); return; }
@@ -230,5 +242,10 @@ class Program
         Console.WriteLine("  --port 9000                    프록시 리슨 포트 (기본: 9000)");
         Console.WriteLine("  -t host:port                   대상 서버");
         Console.WriteLine("  콘솔: t=takeover, q=quit");
+        Console.WriteLine();
+        Console.WriteLine("목업 서버 옵션:");
+        Console.WriteLine("  --build-mock                   ActionCatalog에서 목업 규칙 생성");
+        Console.WriteLine("  --mock rules.json              목업 서버 실행");
+        Console.WriteLine("  --port 9000                    목업 서버 리슨 포트 (기본: 9000)");
     }
 }
