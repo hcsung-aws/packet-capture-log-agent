@@ -9,6 +9,7 @@
 | SequenceAnalyzer, 요청-응답 매칭, 이름 패턴, 폴백 | sequence-analysis.md | 이름 패턴 우선 + 위치 기반 폴백 전략 |
 | BehaviorTree, 행동 트리, 조건 분기, 녹화, ActionExecutor | ../docs/BEHAVIOR_TREE_DESIGN.md | BT 아키텍처, 노드 모델, 구현 단계, 설계 원칙 |
 | AgentCore, 프로토콜 자동 생성, Lambda, Step Functions, Terraform | agentcore-architecture.md | 5 Phase 파이프라인, 멀티 에이전트 검증, AWS 인프라, CLI/웹 |
+| ProxyServer, takeover, 프록시 모드 | proxy-design.md | NetworkStream 경합 방지, BT 부적합/FSM만 지원 |
 
 ## Last Updated
-2026-04-08
+2026-04-17

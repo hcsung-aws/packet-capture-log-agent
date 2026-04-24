@@ -24,11 +24,7 @@ public class FsmExecutor
         int timeoutMs = 5000,
         int? durationSec = null)
     {
-        using var client = new TcpClient();
-        await client.ConnectAsync(host, port);
-        var stream = client.GetStream();
-        _output.WriteLine($"Connected to {host}:{port}\n");
-        await ExecuteOnStreamAsync(fsm, host, port, stream, handler, context, interceptors, fsm.InitialState, timeoutMs, durationSec, ownsConnection: true);
+        await RunFsmLoopAsync(fsm, host, port, null, handler, context, interceptors, fsm.InitialState, timeoutMs, durationSec, ownsConnection: true);
     }
 
     /// <summary>기존 연결 + 시작 상태로 FSM 실행 (프록시 takeover용). 연결 소유권 없음.</summary>

@@ -13,6 +13,7 @@
 | 공유 상수, 중복 정의, 공통 헤더 | shared-constants.md | 여러 모듈 공유 상수는 공통 파일에 통합 정의 |
 | 기능 추가, 확장, 인터페이스 분리, Open/Closed | extension-pattern.md | 기존 코드 수정 없이 새 파일 + 인터페이스 구현으로 기능 추가 |
 | LLM 파이프라인, 결정론적 변환, 하이브리드, 비결정성 | llm-pipeline-design.md | 결정론적 변환 가능한 단계는 코드로 전환, LLM은 의미 추론만 |
+| Task.Run, async 예외, fire-and-forget | async-csharp.md | Task.Run 내부 예외 관찰 불가 → 내부 try-catch 필수 |
 
 ## Last Updated
-2026-04-08
+2026-04-17

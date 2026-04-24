@@ -40,3 +40,23 @@
 - FAILED 상태에서 describe_execution의 output은 빈 객체 `{}`
 - 중간 단계 결과(discovery.json 등)는 S3에서 직접 읽어야 함
 - orchestrator _get_status에서 S3 discovery.json 읽어 warnings에 포함하도록 구현됨
+
+### PacketBuilder 배열 직렬화 (Mickey 27)
+- GetList()는 `List<object>`만 인식. `List<Dictionary<string,object>>`는 빈 리스트로 처리됨
+- 배열 데이터 전달 시 `(object)` 캐스트 필수: `.Select(x => (object)new Dictionary<...>{...}).ToList()`
+
+### 동작 시나리오 확인 시 데이터 타입 호환성 (Mickey 27)
+- 시나리오 확인(T1.5 §10)에서 동작 흐름/연결점/사용법을 검토했지만 배열 직렬화 버그를 사전에 못 잡음
+- 시나리오 확인 시 "데이터가 어떤 타입으로 전달되어 기존 코드가 처리할 수 있는가"까지 검토 필요
+
+### FsmExecutor 이중 연결 (Mickey 29)
+- FsmBuilder가 생성하는 connect/disconnect는 가상 상태 (실제 액션이 아님)
+- ExecuteAsync()에서 사전 TCP 연결 후 FSM 루프의 connect 상태에서 또 연결 → 이중 연결 버그
+- 수정: ExecuteAsync()에서 사전 연결 제거, connect 상태에서만 연결
+
+### 암호화 파이프라인 Gap (Mickey 29)
+- IPacketTransform: 복호화(수신)만 구현, 암호화(송신) 없음
+- PacketBuilder: Transform 미적용 → 재현/BT/FSM이 평문 패킷 전송
+- 방향별 Transform 분리 없음 (C2S/S2C 다른 암호화 시 대응 불가)
+- 프록시 모드: raw 바이트 중계, 암호화 패킷 파싱/재암호화 미지원
+- 실서비스 게임 적용 시 필수 해결 대상

@@ -21,6 +21,7 @@
 - **멀티 에이전트 매니저**: 여러 머신에 에이전트 분산 배치, 수만 동시 클라이언트 부하 테스트
 - **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → 결정론적 변환 → JSON 프로토콜 자동 생성
 - **프록시 모드**: 클라이언트↔서버 중계, 패스스루 + takeover (FSM/BT 상태 동기화)
+- **목업 서버**: 녹화 기반 상태 추적 서버, 실제 게임 서버 없이 BT/FSM 테스트 가능
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
@@ -107,6 +108,22 @@ PacketCaptureAgent.exe -p protocol.json --proxy -t server:port --port 9000 --beh
 # 콘솔에서 t=takeover (현재 FSM/BT 상태에서 자동 실행), q=종료
 ```
 
+### 목업 서버 (게임 서버 없이 테스트)
+
+녹화 데이터에서 상태 추적 규칙을 생성하여, 실제 게임 서버 없이 BT/FSM을 테스트할 수 있습니다.
+
+```bash
+# 녹화에서 목업 규칙 생성
+PacketCaptureAgent.exe -p protocol.json --build-mock
+
+# 목업 서버 실행
+PacketCaptureAgent.exe -p protocol.json --mock behaviors/mock_rules.json --port 9000
+
+# BT/FSM이 목업 서버에 접속하여 테스트
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t localhost:9000
+PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t localhost:9000 --duration 60
+```
+
 동작 흐름:
 1. 클라이언트가 프록시(localhost:9000)에 접속 → 프록시가 서버에 연결
 2. 패스스루: 양방향 중계 + 패킷 파싱 + FSM/BT 상태 동기화
@@ -154,6 +171,8 @@ python3 app.py 8090  # http://localhost:8090
 | `--agent-port` | 에이전트 포트 (기본: 8090) |
 | `--manager` | 매니저 모드 (agents.json 경로) |
 | `--proxy` | 프록시 모드 (패스스루 + takeover) |
+| `--build-mock` | 녹화에서 목업 규칙 생성 |
+| `--mock` | 목업 서버 실행 (규칙 파일 경로) |
 
 ## 프로토콜 JSON 형식
 
@@ -270,6 +289,7 @@ A tool for capturing TCP packets from online games, parsing them according to pr
 - **Multi-Agent Manager**: Distribute agents across machines, tens of thousands of concurrent clients
 - **Protocol Auto-Generation**: Game source code → LLM multi-agent analysis → deterministic conversion → JSON protocol
 - **Proxy Mode**: Client↔Server relay, passthrough + takeover (FSM/BT state synchronization)
+- **Mock Server**: Recording-based stateful server, test BT/FSM without a real game server
 - **Supported Types**: integers, strings, arrays, structs, length-prefixed strings, conditional fields
 
 ## Requirements
@@ -350,6 +370,22 @@ Flow:
 1. Client connects to proxy (localhost:9000) → proxy connects to server
 2. Passthrough: bidirectional relay + packet parsing + FSM/BT state synchronization
 3. `t` key: takeover — block client, FSM/BT auto-executes from current state
+
+### Mock Server (Test Without Game Server)
+
+Generate stateful rules from recordings to test BT/FSM without a real game server.
+
+```bash
+# Generate mock rules from recordings
+PacketCaptureAgent.exe -p protocol.json --build-mock
+
+# Run mock server
+PacketCaptureAgent.exe -p protocol.json --mock behaviors/mock_rules.json --port 9000
+
+# BT/FSM connects to mock server for testing
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t localhost:9000
+PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t localhost:9000 --duration 60
+```
 
 ## E2E Testing (Full Pipeline)
 
