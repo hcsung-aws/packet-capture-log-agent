@@ -22,6 +22,8 @@ public class PacketParser
     private readonly List<IPacketTransform> _transforms;
     private readonly TransformContext _transformContext = new();
 
+    public TransformContext Context => _transformContext;
+
     public PacketParser(ProtocolDefinition protocol)
     {
         _protocol = protocol;
@@ -67,9 +69,17 @@ public class PacketParser
         var data = new byte[packetSize];
         if (!stream.TryRead(data)) return null;
 
-        // Transform 파이프라인 적용 (복호화 등)
-        foreach (var transform in _transforms)
-            data = transform.Transform(data, _transformContext);
+        // Transform 파이프라인 적용 (페이로드만 복호화, 헤더는 평문)
+        if (_transforms.Count > 0 && data.Length > _headerSize)
+        {
+            var payload = data[_headerSize..];
+            foreach (var transform in _transforms)
+                payload = transform.Transform(payload, _transformContext);
+            var result = new byte[_headerSize + payload.Length];
+            Array.Copy(data, 0, result, 0, _headerSize);
+            Array.Copy(payload, 0, result, _headerSize, payload.Length);
+            data = result;
+        }
 
         int packetType = ReadIntByType(data, _typeOffset, _typeType);
         var def = _protocol.GetPacketByType(packetType);

@@ -1,12 +1,13 @@
 namespace PacketCaptureAgent;
 
 /// <summary>
-/// 패킷 데이터 변환 인터페이스 (복호화, 압축해제 등)
+/// 패킷 데이터 변환 인터페이스 (복호화/암호화, 압축/해제 등)
 /// </summary>
 public interface IPacketTransform
 {
     string Name { get; }
     byte[] Transform(byte[] data, TransformContext context);
+    byte[] ReverseTransform(byte[] data, TransformContext context);
 }
 
 /// <summary>
@@ -30,17 +31,21 @@ public static class TransformFactory
     {
         return def.Type.ToLower() switch
         {
-            "xtea" => new XteaDecryptor(def.Options),
-            "rsa" => new RsaDecryptor(def.Options),
+            "xtea" => new XteaTransform(def.Options),
+            "rsa" => new RsaTransform(def.Options),
             _ => throw new NotSupportedException($"Unknown transform: {def.Type}")
         };
     }
 
-    public static List<IPacketTransform> CreatePipeline(List<TransformDefinition>? definitions)
+    public static List<IPacketTransform> CreatePipeline(List<TransformDefinition>? definitions, string? direction = null)
     {
         if (definitions == null || definitions.Count == 0)
             return new List<IPacketTransform>();
         
-        return definitions.Select(Create).ToList();
+        return definitions
+            .Where(d => d.Direction == null || direction == null || 
+                        d.Direction.Equals(direction, StringComparison.OrdinalIgnoreCase))
+            .Select(Create)
+            .ToList();
     }
 }

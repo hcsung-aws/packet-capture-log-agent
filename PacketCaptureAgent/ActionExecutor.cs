@@ -12,10 +12,11 @@ public class ActionExecutor
     private readonly ActionCatalog _catalog;
     private readonly Dictionary<string, string> _randomCache = new();
 
-    public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog)
+    public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog, TransformContext? transformContext = null)
     {
         _protocol = protocol;
-        _builder = new PacketBuilder(protocol);
+        var transforms = TransformFactory.CreatePipeline(protocol.Transforms, "C2S");
+        _builder = new PacketBuilder(protocol, transforms, transformContext);
         _catalog = catalog;
     }
 

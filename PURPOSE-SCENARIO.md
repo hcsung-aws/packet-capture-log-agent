@@ -44,13 +44,20 @@
 - Takeover: 클라이언트 인증/암호화 활용 후 원하는 시점에 자동 테스트 전환
 - 클라이언트가 로그인까지 처리 → 이후 FSM/BT가 현재 상태에서 자동 실행
 
+### Phase 6: 실제 서비스 게임 적용
+- 암호화 파이프라인 완성 (IPacketTransform 양방향 + PacketBuilder 암호화 + 프록시 통합)
+- 실서비스 게임의 암호화된 패킷을 캡처/파싱/재현 가능하게 확장
+- 외부에서 제공받은 암호화 코드를 플러그인으로 통합
+- 커버리지 리포팅, CI/CD 통합, 부하 테스트 메트릭 등 운영 품질 강화
+
 ## Acceptance Criteria
 - mmorpg-simulator 대상으로 캡처 → 파싱 → 재현 전체 파이프라인 동작
 - 시나리오 기반 다중 클라이언트 동시 재현 가능 (Phase 4 Step 1) ✅
 - 프록시 모드로 클라이언트 연동 takeover 테스트 가능 (Phase 5, E2E 검증 필요)
+- 암호화된 패킷의 캡처/파싱/재현이 가능하고, 실서비스 게임에 적용 가능 (Phase 6)
 
 ## Related Project
 - [mmorpg-simulator](../mmorpg-simulator/) — 검증용 mockup 게임 클라이언트/서버
 
 ## Last Confirmed
-2026-04-11, Mickey 25
+2026-04-24, Mickey 30

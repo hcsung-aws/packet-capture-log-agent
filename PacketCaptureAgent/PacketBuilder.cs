@@ -9,11 +9,17 @@ public class PacketBuilder
     private readonly bool _littleEndian;
     private readonly int _sizeOffset;
     private readonly string _sizeType;
+    private readonly List<IPacketTransform> _transforms;
+    private readonly TransformContext _transformContext;
+    private readonly int _headerSize;
 
-    public PacketBuilder(ProtocolDefinition protocol)
+    public PacketBuilder(ProtocolDefinition protocol, List<IPacketTransform>? transforms = null, TransformContext? transformContext = null)
     {
         _protocol = protocol;
         _littleEndian = protocol.Protocol.Endian == "little";
+        _transforms = transforms ?? new List<IPacketTransform>();
+        _transformContext = transformContext ?? new TransformContext();
+        _headerSize = protocol.Protocol.Header.GetHeaderSize();
 
         var header = protocol.Protocol.Header;
         if (header.Fields != null && header.Fields.Count > 0)
@@ -66,6 +72,21 @@ public class PacketBuilder
         
         // Update size field
         WriteSizeToBuffer(data, data.Length);
+
+        // 암호화 파이프라인 적용 (페이로드만, 헤더는 평문 유지)
+        if (_transforms.Count > 0 && data.Length > _headerSize)
+        {
+            var payload = data[_headerSize..];
+            for (int i = _transforms.Count - 1; i >= 0; i--)
+                payload = _transforms[i].ReverseTransform(payload, _transformContext);
+            var result = new byte[_headerSize + payload.Length];
+            Array.Copy(data, 0, result, 0, _headerSize);
+            Array.Copy(payload, 0, result, _headerSize, payload.Length);
+            // 암호화 후 전체 크기가 변경될 수 있으므로 size 재갱신
+            WriteSizeToBuffer(result, result.Length);
+            data = result;
+        }
+
         return data;
     }
 

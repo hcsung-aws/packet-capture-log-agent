@@ -4,42 +4,38 @@ using System.Security.Cryptography;
 namespace PacketCaptureAgent;
 
 /// <summary>
-/// RSA 복호화 (Tibia/Forgotten Server 로그인 패킷)
+/// RSA 암호화/복호화 (Tibia/Forgotten Server 로그인 패킷)
 /// </summary>
-public class RsaDecryptor : IPacketTransform
+public class RsaTransform : IPacketTransform
 {
     public string Name => "RSA";
     
-    private BigInteger _d; // private exponent
+    private BigInteger _d; // private exponent (decrypt)
+    private BigInteger _e; // public exponent (encrypt)
     private BigInteger _n; // modulus
     private bool _hasKey;
     private readonly int _offset;
     private readonly int _length;
     private readonly string? _xteaKeyOutput;
-    private readonly bool _useRawRsa; // Tibia uses raw RSA (no padding)
+    private readonly bool _useRawRsa;
 
-    public RsaDecryptor(Dictionary<string, object>? options)
+    public RsaTransform(Dictionary<string, object>? options)
     {
         if (options == null) return;
 
-        // PEM 키 파일 경로
         if (options.TryGetValue("private_key_file", out var keyFile))
             LoadPrivateKey(keyFile?.ToString());
 
-        // RSA 복호화 시작 오프셋 (헤더 이후)
         if (options.TryGetValue("offset", out var off))
             _offset = Convert.ToInt32(off);
 
-        // RSA 블록 길이 (기본 128 = 1024bit)
         _length = 128;
         if (options.TryGetValue("length", out var len))
             _length = Convert.ToInt32(len);
 
-        // XTEA 키 추출 후 컨텍스트에 저장할 이름
         if (options.TryGetValue("xtea_key_output", out var output))
             _xteaKeyOutput = output?.ToString();
 
-        // Raw RSA (no padding) - Tibia 프로토콜용
         _useRawRsa = true;
         if (options.TryGetValue("use_raw_rsa", out var raw))
             _useRawRsa = Convert.ToBoolean(raw);
@@ -52,24 +48,9 @@ public class RsaDecryptor : IPacketTransform
 
         try
         {
-            // RSA 블록 추출
             var encrypted = data.AsSpan(_offset, _length).ToArray();
-            
-            byte[] decrypted;
-            if (_useRawRsa)
-            {
-                // Raw RSA 복호화 (Tibia 프로토콜)
-                decrypted = RawRsaDecrypt(encrypted);
-            }
-            else
-            {
-                // 표준 PKCS#1 복호화
-                using var rsa = RSA.Create();
-                rsa.ImportParameters(new RSAParameters { D = _d.ToByteArray(true, true), Modulus = _n.ToByteArray(true, true) });
-                decrypted = rsa.Decrypt(encrypted, RSAEncryptionPadding.Pkcs1);
-            }
+            byte[] decrypted = _useRawRsa ? RawRsaOp(encrypted, _d) : StdRsaDecrypt(encrypted);
 
-            // XTEA 키 추출 (Tibia: 복호화된 데이터의 처음 16바이트)
             if (_xteaKeyOutput != null && decrypted.Length >= 16)
             {
                 var xteaKey = new uint[4];
@@ -78,7 +59,6 @@ public class RsaDecryptor : IPacketTransform
                 context.Set(_xteaKeyOutput, xteaKey);
             }
 
-            // 결과 조합: 헤더 + 복호화된 데이터 + 나머지
             var result = new byte[_offset + decrypted.Length + (data.Length - _offset - _length)];
             Array.Copy(data, 0, result, 0, _offset);
             Array.Copy(decrypted, 0, result, _offset, decrypted.Length);
@@ -88,34 +68,57 @@ public class RsaDecryptor : IPacketTransform
 
             return result;
         }
-        catch
-        {
-            return data; // 복호화 실패시 원본 반환
-        }
+        catch { return data; }
     }
 
-    private byte[] RawRsaDecrypt(byte[] encrypted)
+    public byte[] ReverseTransform(byte[] data, TransformContext context)
     {
-        // BigInteger는 little-endian, RSA는 big-endian
-        var reversed = encrypted.Reverse().ToArray();
-        var cipher = new BigInteger(reversed, isUnsigned: true);
-        
-        // RSA 복호화: plaintext = cipher^d mod n
-        var plain = BigInteger.ModPow(cipher, _d, _n);
-        
-        // 결과를 바이트 배열로 변환 (big-endian)
-        var result = plain.ToByteArray(isUnsigned: true);
+        if (!_hasKey || data.Length < _offset)
+            return data;
+
+        try
+        {
+            var plainLen = data.Length - _offset;
+            var plain = data.AsSpan(_offset, plainLen).ToArray();
+            byte[] encrypted = _useRawRsa ? RawRsaOp(plain, _e) : StdRsaEncrypt(plain);
+
+            var result = new byte[_offset + encrypted.Length];
+            Array.Copy(data, 0, result, 0, _offset);
+            Array.Copy(encrypted, 0, result, _offset, encrypted.Length);
+            return result;
+        }
+        catch { return data; }
+    }
+
+    private byte[] RawRsaOp(byte[] input, BigInteger exponent)
+    {
+        var reversed = input.Reverse().ToArray();
+        var value = new BigInteger(reversed, isUnsigned: true);
+        var output = BigInteger.ModPow(value, exponent, _n);
+        var result = output.ToByteArray(isUnsigned: true);
         Array.Reverse(result);
-        
-        // 128바이트로 패딩 (앞에 0 추가)
+
         if (result.Length < _length)
         {
             var padded = new byte[_length];
             Array.Copy(result, 0, padded, _length - result.Length, result.Length);
             return padded;
         }
-        
         return result;
+    }
+
+    private byte[] StdRsaDecrypt(byte[] encrypted)
+    {
+        using var rsa = RSA.Create();
+        rsa.ImportParameters(new RSAParameters { D = _d.ToByteArray(true, true), Modulus = _n.ToByteArray(true, true) });
+        return rsa.Decrypt(encrypted, RSAEncryptionPadding.Pkcs1);
+    }
+
+    private byte[] StdRsaEncrypt(byte[] plain)
+    {
+        using var rsa = RSA.Create();
+        rsa.ImportParameters(new RSAParameters { Exponent = _e.ToByteArray(true, true), Modulus = _n.ToByteArray(true, true) });
+        return rsa.Encrypt(plain, RSAEncryptionPadding.Pkcs1);
     }
 
     private void LoadPrivateKey(string? path)
@@ -128,6 +131,7 @@ public class RsaDecryptor : IPacketTransform
         
         var parameters = rsa.ExportParameters(true);
         _d = new BigInteger(parameters.D!, isUnsigned: true, isBigEndian: true);
+        _e = new BigInteger(parameters.Exponent!, isUnsigned: true, isBigEndian: true);
         _n = new BigInteger(parameters.Modulus!, isUnsigned: true, isBigEndian: true);
         _hasKey = true;
     }

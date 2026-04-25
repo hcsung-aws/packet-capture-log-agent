@@ -54,9 +54,9 @@
 - ExecuteAsync()에서 사전 TCP 연결 후 FSM 루프의 connect 상태에서 또 연결 → 이중 연결 버그
 - 수정: ExecuteAsync()에서 사전 연결 제거, connect 상태에서만 연결
 
-### 암호화 파이프라인 Gap (Mickey 29)
-- IPacketTransform: 복호화(수신)만 구현, 암호화(송신) 없음
-- PacketBuilder: Transform 미적용 → 재현/BT/FSM이 평문 패킷 전송
-- 방향별 Transform 분리 없음 (C2S/S2C 다른 암호화 시 대응 불가)
-- 프록시 모드: raw 바이트 중계, 암호화 패킷 파싱/재암호화 미지원
-- 실서비스 게임 적용 시 필수 해결 대상
+### 암호화 파이프라인 Gap (Mickey 29) → ✅ 해결 (Mickey 30)
+- ~~IPacketTransform: 복호화(수신)만 구현~~ → ReverseTransform 추가, XteaTransform/RsaTransform 양방향
+- ~~PacketBuilder: Transform 미적용~~ → 페이로드 암호화 적용
+- ~~방향별 Transform 분리 없음~~ → TransformDefinition.Direction (C2S/S2C/null)
+- ~~프록시 모드: 암호화 미지원~~ → TransformContext 공유로 takeover 암호화 지원
+- docs/ENCRYPTION_PIPELINE.md 문서화 완료

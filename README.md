@@ -22,6 +22,7 @@
 - **프로토콜 자동 생성**: 게임 소스코드 → LLM 멀티 에이전트 분석 → 결정론적 변환 → JSON 프로토콜 자동 생성
 - **프록시 모드**: 클라이언트↔서버 중계, 패스스루 + takeover (FSM/BT 상태 동기화)
 - **목업 서버**: 녹화 기반 상태 추적 서버, 실제 게임 서버 없이 BT/FSM 테스트 가능
+- **암호화 파이프라인**: 양방향 Transform (XTEA/RSA), 방향별 적용, 커스텀 플러그인 — **[상세 문서](docs/ENCRYPTION_PIPELINE.md)**
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
@@ -257,7 +258,7 @@ packet-capture-log-agent/
 ## 제한사항
 
 - TCP만 지원 (UDP 미지원)
-- 암호화된 패킷 미지원
+- 암호화된 패킷은 transform 파이프라인 설정 필요 ([상세](docs/ENCRYPTION_PIPELINE.md))
 - 127.0.0.1 loopback 캡처 불가 (Windows 제한)
 
 ## 개발 히스토리
@@ -290,6 +291,7 @@ A tool for capturing TCP packets from online games, parsing them according to pr
 - **Protocol Auto-Generation**: Game source code → LLM multi-agent analysis → deterministic conversion → JSON protocol
 - **Proxy Mode**: Client↔Server relay, passthrough + takeover (FSM/BT state synchronization)
 - **Mock Server**: Recording-based stateful server, test BT/FSM without a real game server
+- **Encryption Pipeline**: Bidirectional Transform (XTEA/RSA), per-direction application, custom plugins — **[Details](docs/ENCRYPTION_PIPELINE.md)**
 - **Supported Types**: integers, strings, arrays, structs, length-prefixed strings, conditional fields
 
 ## Requirements
@@ -398,7 +400,7 @@ See **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** to deploy the LLM agent pip
 ## Limitations
 
 - TCP only (no UDP support)
-- No encrypted packet support
+- Encrypted packets require transform pipeline configuration ([Details](docs/ENCRYPTION_PIPELINE.md))
 - Cannot capture 127.0.0.1 loopback (Windows limitation)
 
 ## Development History

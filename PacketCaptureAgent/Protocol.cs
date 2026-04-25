@@ -35,6 +35,9 @@ public class TransformDefinition
     [JsonPropertyName("type")]
     public string Type { get; set; } = "";
 
+    [JsonPropertyName("direction")]
+    public string? Direction { get; set; }
+
     [JsonPropertyName("options")]
     public Dictionary<string, object>? Options { get; set; }
 }

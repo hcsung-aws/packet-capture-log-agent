@@ -182,7 +182,7 @@ public class ProxyServer
             new ProximityInterceptor(_protocol.Semantics?.ProximityActions ?? new())
         };
         var syncHandler = new BtSyncHandler(handler, context, sharedState);
-        var actionExecutor = new ActionExecutor(_protocol, _catalog);
+        var actionExecutor = new ActionExecutor(_protocol, _catalog, _parser.Context);
 
         if (fsmPath != null)
         {

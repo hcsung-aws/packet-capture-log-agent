@@ -112,7 +112,8 @@ public class PacketReplayer
     public PacketReplayer(ProtocolDefinition protocol)
     {
         _protocol = protocol;
-        _builder = new PacketBuilder(protocol);
+        var transforms = TransformFactory.CreatePipeline(protocol.Transforms, "C2S");
+        _builder = new PacketBuilder(protocol, transforms);
     }
 
     public List<ReplayPacket> ParseLog(string logPath)
