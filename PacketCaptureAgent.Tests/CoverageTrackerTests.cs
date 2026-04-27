@@ -61,4 +61,27 @@ public class CoverageTrackerTests
         Assert.Empty(tracker.FsmTransitions);
         Assert.Empty(tracker.BtNodesExecuted);
     }
+
+    [Fact]
+    public async Task ConcurrentWrites_NoException()
+    {
+        var tracker = new CoverageTracker();
+        var tasks = Enumerable.Range(0, 10).Select(i => Task.Run(() =>
+        {
+            for (int j = 0; j < 100; j++)
+            {
+                tracker.OnSend($"CS_{i}_{j}");
+                tracker.OnReceive($"SC_{i}_{j}");
+                tracker.OnFsmTransition($"s{i}", $"s{j}");
+                tracker.OnBtNode($"node_{i}_{j}");
+            }
+        })).ToArray();
+
+        await Task.WhenAll(tasks);
+
+        Assert.True(tracker.SentPackets.Count > 0);
+        Assert.True(tracker.ReceivedPackets.Count > 0);
+        Assert.True(tracker.FsmStatesVisited.Count > 0);
+        Assert.True(tracker.BtNodesExecuted.Count > 0);
+    }
 }

@@ -6,6 +6,7 @@ namespace PacketCaptureAgent;
 public class BehaviorTreeExecutor
 {
     private readonly ActionExecutor _actionExecutor;
+    private readonly CoverageTracker? _tracker;
     private readonly TextWriter _output;
     private readonly HashSet<string> _interactionActions;
 
@@ -15,9 +16,10 @@ public class BehaviorTreeExecutor
     private readonly HashSet<string> _validatedActions = new();
 
     public BehaviorTreeExecutor(ActionExecutor actionExecutor, TextWriter? output = null,
-        SemanticsDefinition? semantics = null)
+        SemanticsDefinition? semantics = null, CoverageTracker? tracker = null)
     {
         _actionExecutor = actionExecutor;
+        _tracker = tracker;
         _output = output ?? Console.Out;
 
         // 상호작용 필수 액션 패턴 수집 (실패 허용)
@@ -97,6 +99,8 @@ public class BehaviorTreeExecutor
     private async Task<bool> RunActionAsync(BtAction node, NetworkStream stream, IResponseHandler handler,
         ReplayContext context, List<IReplayInterceptor> interceptors, int timeoutMs)
     {
+        _tracker?.OnBtNode(node.Id);
+
         if (!_validatedActions.Add(node.Id))
         {
             _skippedCount++;

@@ -66,7 +66,9 @@ class Program
         string? ManagerPath = null,
         bool Proxy = false,
         bool BuildMock = false,
-        string? MockPath = null);
+        string? MockPath = null,
+        bool Coverage = false,
+        string? CoverageOutput = null);
 
     public static CliOptions ParseArgs(string[] args)
     {
@@ -96,6 +98,8 @@ class Program
         bool proxy = false;
         bool buildMock = false;
         string? mockPath = null;
+        bool coverage = false;
+        string? coverageOutput = null;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -179,10 +183,16 @@ class Program
                 case "--mock" when i + 1 < args.Length:
                     mockPath = args[++i];
                     break;
+                case "--coverage":
+                    coverage = true;
+                    break;
+                case "--coverage-output" when i + 1 < args.Length:
+                    coverageOutput = args[++i];
+                    break;
             }
         }
 
-        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath, proxy, buildMock, mockPath);
+        return new CliOptions(protocolPath, replayLog, target, mode, timeout, speed, port, showHelp, analyzeLog, scenarioPath, buildScenario, clients, behaviorPath, buildBehavior, editBehaviorPath, duration, webEditorPath, webPort, fsmPath, buildFsm, agentMode, agentPort, managerPath, proxy, buildMock, mockPath, coverage, coverageOutput);
     }
 
     static async Task Main(string[] args)

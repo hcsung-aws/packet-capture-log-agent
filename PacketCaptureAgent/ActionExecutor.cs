@@ -10,14 +10,16 @@ public class ActionExecutor
     private readonly ProtocolDefinition _protocol;
     private readonly PacketBuilder _builder;
     private readonly ActionCatalog _catalog;
+    private readonly CoverageTracker? _tracker;
     private readonly Dictionary<string, string> _randomCache = new();
 
-    public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog, TransformContext? transformContext = null)
+    public ActionExecutor(ProtocolDefinition protocol, ActionCatalog catalog, TransformContext? transformContext = null, CoverageTracker? tracker = null)
     {
         _protocol = protocol;
         var transforms = TransformFactory.CreatePipeline(protocol.Transforms, "C2S");
         _builder = new PacketBuilder(protocol, transforms, transformContext);
         _catalog = catalog;
+        _tracker = tracker;
     }
 
     /// <summary>단일 액션의 패킷을 전송하고 응답을 처리. SessionState 업데이트 포함.</summary>
@@ -70,12 +72,16 @@ public class ActionExecutor
 
                 var data = _builder.Build(pkt.Name, pkt.Fields);
                 await stream.WriteAsync(data);
+                _tracker?.OnSend(name);
                 context.Elapsed = TimeSpan.Zero;
                 output.WriteLine($"[BT] SEND {pkt.Name} ({data.Length} bytes)");
             }
 
             if (ap.Direction == "RECV" || ap.Direction == "SEND")
             {
+                if (ap.Direction == "RECV")
+                    _tracker?.OnReceive(name);
+
                 // SEND 후 응답 대기
                 if (ap.Direction == "SEND")
                 {

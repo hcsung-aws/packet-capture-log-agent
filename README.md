@@ -23,6 +23,7 @@
 - **프록시 모드**: 클라이언트↔서버 중계, 패스스루 + takeover (FSM/BT 상태 동기화)
 - **목업 서버**: 녹화 기반 상태 추적 서버, 실제 게임 서버 없이 BT/FSM 테스트 가능
 - **암호화 파이프라인**: 양방향 Transform (XTEA/RSA), 방향별 적용, 커스텀 플러그인 — **[상세 문서](docs/ENCRYPTION_PIPELINE.md)**
+- **커버리지 리포팅**: BT/FSM 실행 시 패킷·상태·전이·노드 커버리지 측정 + JSON 리포트 출력
 - **지원 타입**: 정수, 문자열, 배열, 구조체, length-prefixed 문자열, 조건부 필드
 
 ## 요구사항
@@ -130,6 +131,29 @@ PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t localhost:90
 2. 패스스루: 양방향 중계 + 패킷 파싱 + FSM/BT 상태 동기화
 3. `t` 키: takeover — 클라이언트 차단, FSM/BT가 현재 상태에서 자동 실행
 
+### 커버리지 리포팅
+
+BT/FSM 실행 시 `--coverage` 옵션으로 커버리지를 측정합니다. 패킷 타입, FSM 상태/전이, BT 노드 커버리지를 리포트합니다.
+
+```bash
+# BT 실행 + 커버리지 리포트 (콘솔 출력)
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t host:port --coverage
+
+# FSM 실행 + 커버리지 JSON 저장
+PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t host:port --duration 60 --coverage --coverage-output coverage.json
+```
+
+출력 예시:
+```
+=== Coverage Report ===
+Packet Types: 8/12 (66.7%)
+  Missing: CS_TRADE, SC_TRADE_OK, CS_PARTY, SC_PARTY_OK
+FSM States: 5/6 (83.3%)
+  Missing: trade
+FSM Transitions: 7/9 (77.8%)
+  Missing: idle → trade, trade → idle
+```
+
 ### 프로토콜 자동 생성
 
 게임 소스코드에서 패킷 구조를 자동 분석하여 프로토콜 JSON을 생성합니다. 다른 AWS 계정에 배포하려면 **[배포 가이드](docs/DEPLOYMENT_GUIDE.md)** 를 참조하세요.
@@ -174,6 +198,8 @@ python3 app.py 8090  # http://localhost:8090
 | `--proxy` | 프록시 모드 (패스스루 + takeover) |
 | `--build-mock` | 녹화에서 목업 규칙 생성 |
 | `--mock` | 목업 서버 실행 (규칙 파일 경로) |
+| `--coverage` | 커버리지 리포트 활성화 (BT/FSM 실행 시) |
+| `--coverage-output` | 커버리지 JSON 리포트 저장 경로 |
 
 ## 프로토콜 JSON 형식
 
@@ -228,7 +254,9 @@ packet-capture-log-agent/
 │   ├── IReplayInterceptor.cs   # 인터셉터 인터페이스
 │   ├── NpcAttackInterceptor.cs # NPC 공격 대상 자동 교체
 │   ├── ProxyServer.cs          # TCP 프록시 (패스스루 + takeover)
-│   └── PacketObserver.cs       # 패킷→액션 역매핑 (FSM/BT 상태 동기화)
+│   ├── PacketObserver.cs       # 패킷→액션 역매핑 (FSM/BT 상태 동기화)
+│   ├── CoverageTracker.cs      # 실행 중 커버리지 데이터 수집
+│   └── CoverageReport.cs       # 커버리지 리포트 생성 + 출력/JSON 저장
 ├── agent-core/                 # 프로토콜 자동 생성 (LLM Agent)
 │   ├── poc/                    # 로컬 PoC (Bedrock 직접 호출)
 │   ├── lambda/                 # AWS Lambda 함수 (5 Phase + Orchestrator)
@@ -292,6 +320,7 @@ A tool for capturing TCP packets from online games, parsing them according to pr
 - **Proxy Mode**: Client↔Server relay, passthrough + takeover (FSM/BT state synchronization)
 - **Mock Server**: Recording-based stateful server, test BT/FSM without a real game server
 - **Encryption Pipeline**: Bidirectional Transform (XTEA/RSA), per-direction application, custom plugins — **[Details](docs/ENCRYPTION_PIPELINE.md)**
+- **Coverage Reporting**: Measure packet type, FSM state/transition, BT node coverage during BT/FSM execution + JSON report output
 - **Supported Types**: integers, strings, arrays, structs, length-prefixed strings, conditional fields
 
 ## Requirements
@@ -387,6 +416,18 @@ PacketCaptureAgent.exe -p protocol.json --mock behaviors/mock_rules.json --port 
 # BT/FSM connects to mock server for testing
 PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t localhost:9000
 PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t localhost:9000 --duration 60
+```
+
+### Coverage Reporting
+
+Use `--coverage` to measure coverage during BT/FSM execution. Reports packet types, FSM states/transitions, and BT node coverage.
+
+```bash
+# BT execution + coverage report (console output)
+PacketCaptureAgent.exe -p protocol.json --behavior behaviors/auto.json -t host:port --coverage
+
+# FSM execution + coverage JSON output
+PacketCaptureAgent.exe -p protocol.json --fsm behaviors/fsm.json -t host:port --duration 60 --coverage --coverage-output coverage.json
 ```
 
 ## E2E Testing (Full Pipeline)

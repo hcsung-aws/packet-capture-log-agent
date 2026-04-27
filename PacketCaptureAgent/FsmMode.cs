@@ -48,23 +48,75 @@ static class FsmMode
         if (ep == null) return;
         var (host, port) = ep.Value;
 
-        var logDir = Program.LogDir(cli.ProtocolPath!);
-        using var logger = new ReplayLogger(logDir, console: Console.Out);
+        CoverageTracker? tracker = cli.Coverage ? new CoverageTracker() : null;
 
-        var context = new ReplayContext();
-        var sharedState = new Dictionary<string, object>();
-        var innerHandler = new ParsingResponseHandler(protocol, host, port, logger);
-        var handler = new TrackingResponseHandler(innerHandler, sharedState);
-        var syncHandler = new BtSyncHandler(handler, context, sharedState);
-
-        var interceptors = new List<IReplayInterceptor>
+        if (cli.Clients > 1)
         {
-            new DynamicFieldInterceptor(
-                new ScenarioBuilder().CollectAllDynamicFields(catalog), sharedState),
-            new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new())
-        };
+            Console.WriteLine($"=== FSM Load Test: {cli.Clients} clients ===\n");
+            int completed = 0;
+            var tasks = new Task[cli.Clients];
+            for (int i = 0; i < cli.Clients; i++)
+            {
+                int idx = i;
+                tasks[i] = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var ctx = new ReplayContext();
+                        var state = new Dictionary<string, object>();
+                        var inner = new ParsingResponseHandler(protocol, host, port, TextWriter.Null, tracker);
+                        var hdl = new TrackingResponseHandler(inner, state);
+                        var sync = new BtSyncHandler(hdl, ctx, state);
+                        var ics = new List<IReplayInterceptor>
+                        {
+                            new DynamicFieldInterceptor(new ScenarioBuilder().CollectAllDynamicFields(catalog), state),
+                            new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new())
+                        };
+                        var ae = new ActionExecutor(protocol, catalog, tracker: tracker);
+                        var fe = new FsmExecutor(ae, TextWriter.Null, tracker: tracker);
+                        await fe.ExecuteAsync(fsm, host, port, sync, ctx, ics, durationSec: cli.Duration);
+                        var c = Interlocked.Increment(ref completed);
+                        Console.WriteLine($"  [{c}/{cli.Clients}] Client {idx + 1} completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        var c = Interlocked.Increment(ref completed);
+                        Console.WriteLine($"  [{c}/{cli.Clients}] Client {idx + 1} failed: {ex.Message}");
+                    }
+                });
+            }
+            await Task.WhenAll(tasks);
+            Console.WriteLine($"\nAll {cli.Clients} clients finished.");
+        }
+        else
+        {
+            var logDir = Program.LogDir(cli.ProtocolPath!);
+            using var logger = new ReplayLogger(logDir, console: Console.Out);
 
-        var executor = new FsmExecutor(new ActionExecutor(protocol, catalog), logger);
-        await executor.ExecuteAsync(fsm, host, port, syncHandler, context, interceptors, durationSec: cli.Duration);
+            var context = new ReplayContext();
+            var sharedState = new Dictionary<string, object>();
+            var innerHandler = new ParsingResponseHandler(protocol, host, port, logger, tracker);
+            var handler = new TrackingResponseHandler(innerHandler, sharedState);
+            var syncHandler = new BtSyncHandler(handler, context, sharedState);
+
+            var interceptors = new List<IReplayInterceptor>
+            {
+                new DynamicFieldInterceptor(
+                    new ScenarioBuilder().CollectAllDynamicFields(catalog), sharedState),
+                new ProximityInterceptor(protocol.Semantics?.ProximityActions ?? new())
+            };
+
+            var actionExecutor = new ActionExecutor(protocol, catalog, tracker: tracker);
+            var executor = new FsmExecutor(actionExecutor, logger, tracker: tracker);
+            await executor.ExecuteAsync(fsm, host, port, syncHandler, context, interceptors, durationSec: cli.Duration);
+        }
+
+        if (tracker != null)
+        {
+            var report = CoverageReport.Generate(tracker, protocol, fsm: fsm);
+            report.PrintToConsole(Console.Out);
+            if (cli.CoverageOutput != null)
+                report.SaveJson(cli.CoverageOutput);
+        }
     }
 }

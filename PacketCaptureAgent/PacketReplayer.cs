@@ -47,11 +47,13 @@ public class ParsingResponseHandler : IResponseHandler
     private readonly PacketParser _parser;
     private readonly TcpStream _tcpStream;
     private readonly TextWriter _output;
+    private readonly CoverageTracker? _tracker;
 
-    public ParsingResponseHandler(ProtocolDefinition protocol, string host, int port, TextWriter? output = null)
+    public ParsingResponseHandler(ProtocolDefinition protocol, string host, int port, TextWriter? output = null, CoverageTracker? tracker = null)
     {
         _parser = new PacketParser(protocol);
         _output = output ?? Console.Out;
+        _tracker = tracker;
         var connKey = new ConnectionKey(System.Net.IPAddress.Parse(host), port, System.Net.IPAddress.Loopback, 0);
         _tcpStream = new TcpStream(connKey);
     }
@@ -64,6 +66,7 @@ public class ParsingResponseHandler : IResponseHandler
         while ((result = _parser.TryParse(_tcpStream)) != null)
         {
             count++;
+            _tracker?.OnReceive(result.Name);
             _output.WriteLine($"[{context.Elapsed:mm\\:ss\\.fff}] RECV {result.Name}");
             foreach (var field in result.Fields)
                 FormatField($"    {field.Key}", field.Value);

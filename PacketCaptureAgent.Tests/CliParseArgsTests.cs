@@ -97,4 +97,28 @@ public class CliParseArgsTests
         var opts = Program.ParseArgs(["--unknown", "value", "-p", "proto.json"]);
         Assert.Equal("proto.json", opts.ProtocolPath);
     }
+
+    [Fact]
+    public void ParseArgs_Coverage_Flag()
+    {
+        var opts = Program.ParseArgs(["--coverage"]);
+        Assert.True(opts.Coverage);
+        Assert.Null(opts.CoverageOutput);
+    }
+
+    [Fact]
+    public void ParseArgs_CoverageOutput_WithPath()
+    {
+        var opts = Program.ParseArgs(["--coverage", "--coverage-output", "report.json"]);
+        Assert.True(opts.Coverage);
+        Assert.Equal("report.json", opts.CoverageOutput);
+    }
+
+    [Fact]
+    public void ParseArgs_CoverageDefaults()
+    {
+        var opts = Program.ParseArgs([]);
+        Assert.False(opts.Coverage);
+        Assert.Null(opts.CoverageOutput);
+    }
 }

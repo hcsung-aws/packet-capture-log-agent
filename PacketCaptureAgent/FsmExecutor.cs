@@ -6,11 +6,13 @@ namespace PacketCaptureAgent;
 public class FsmExecutor
 {
     private readonly ActionExecutor _actionExecutor;
+    private readonly CoverageTracker? _tracker;
     private readonly TextWriter _output;
 
-    public FsmExecutor(ActionExecutor actionExecutor, TextWriter? output = null)
+    public FsmExecutor(ActionExecutor actionExecutor, TextWriter? output = null, CoverageTracker? tracker = null)
     {
         _actionExecutor = actionExecutor;
+        _tracker = tracker;
         _output = output ?? Console.Out;
     }
 
@@ -122,6 +124,7 @@ public class FsmExecutor
                     currentState = fsm.InitialState;
                     continue;
                 }
+                _tracker?.OnFsmTransition(currentState, next);
                 currentState = next;
             }
         }
